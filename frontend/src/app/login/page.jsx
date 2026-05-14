@@ -11,7 +11,6 @@ export default function LoginPage() {
   const [usuarios, setUsuarios] = useState([]);
   const [email, setEmail] = useState("");
   const [senha, setSenha] = useState("");
-  const [autoFill, setAutoFill] = useState(false);
   const [erro, setErro] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -53,11 +52,7 @@ export default function LoginPage() {
               <select
                 className="input"
                 value={email}
-                onChange={(e) => {
-                  setEmail(e.target.value);
-                  const u = usuarios.find((u) => u.email === e.target.value);
-                  if (u?.codigo) { setSenha(u.codigo); setAutoFill(true); } else { setSenha(""); setAutoFill(false); }
-                }}
+                onChange={(e) => setEmail(e.target.value)}
                 required
                 autoFocus
               >
@@ -75,8 +70,7 @@ export default function LoginPage() {
                 type="password"
                 className="input"
                 value={senha}
-                onChange={(e) => { setSenha(e.target.value); setAutoFill(false); }}
-                placeholder={autoFill ? "Código preenchido automaticamente" : ""}
+                onChange={(e) => setSenha(e.target.value)}
                 required
               />
             </div>

@@ -77,12 +77,14 @@ async function main() {
 
   async function upsertUser(codigo, nome, role) {
     const email = `${codigo.toLowerCase()}@valemilk.com.br`;
+    const senhaHash = await User.gerarHash(codigo);
     const existe = await User.findOne({ $or: [{ codigo }, { email }] });
     if (existe) {
+      // Atualiza senha para o codigo (caso tenha sido criado com outra senha)
+      await User.updateOne({ _id: existe._id }, { $set: { senhaHash, ativo: true } });
       jaExistiam++;
       return;
     }
-    const senhaHash = await User.gerarHash(codigo);
     await User.create({ nome, email, codigo, senhaHash, role, ativo: true });
     criados++;
   }
