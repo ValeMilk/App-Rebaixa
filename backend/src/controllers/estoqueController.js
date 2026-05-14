@@ -30,8 +30,12 @@ async function listar(req, res) {
   if (produto) match.produto = produto;
   if (q) match.produto = { $regex: q, $options: "i" };
 
-  // Restrigir por carteira se for supervisor
-  if (req.user.role === "supervisor") {
+  // Restrigir por carteira conforme role
+  if (req.user.role === "vendedor") {
+    const carteira = await Carteira.find({ vendedorCodigo: req.user.codigo }, "clienteCodigo");
+    const codigos = carteira.map((c) => c.clienteCodigo);
+    match.clienteCodigo = { $in: codigos.length ? codigos : ["__none__"] };
+  } else if (req.user.role === "supervisor") {
     const carteira = await Carteira.find({ supervisorCodigo: req.user.codigo }, "clienteCodigo");
     const codigos = carteira.map((c) => c.clienteCodigo);
     match.clienteCodigo = { $in: codigos.length ? codigos : ["__none__"] };
@@ -77,7 +81,11 @@ async function resumo(req, res) {
     quantidade: { $gt: 5 },
     dataValidade: { $gte: hoje, $lte: limite31 },
   };
-  if (req.user.role === "supervisor") {
+  if (req.user.role === "vendedor") {
+    const carteira = await Carteira.find({ vendedorCodigo: req.user.codigo }, "clienteCodigo");
+    const codigos = carteira.map((c) => c.clienteCodigo);
+    match.clienteCodigo = { $in: codigos.length ? codigos : ["__none__"] };
+  } else if (req.user.role === "supervisor") {
     const carteira = await Carteira.find({ supervisorCodigo: req.user.codigo }, "clienteCodigo");
     const codigos = carteira.map((c) => c.clienteCodigo);
     match.clienteCodigo = { $in: codigos.length ? codigos : ["__none__"] };

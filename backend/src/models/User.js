@@ -9,8 +9,8 @@ const userSchema = new mongoose.Schema(
     senhaHash: { type: String, required: true },
     role: {
       type: String,
-      enum: ["supervisor", "diretoria", "admin"],
-      default: "supervisor",
+      enum: ["vendedor", "supervisor", "diretoria", "admin"],
+      default: "vendedor",
       required: true,
     },
     ativo: { type: Boolean, default: true },
