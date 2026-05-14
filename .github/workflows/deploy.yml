@@ -1,0 +1,30 @@
+name: Deploy na VPS
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    name: SSH deploy
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Conectar na VPS e atualizar containers
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          script: |
+            set -e
+            cd /opt/rebaixa
+            echo "==> git pull"
+            git pull origin main
+            echo "==> docker compose build + restart"
+            docker compose up -d --build --remove-orphans
+            echo "==> limpando imagens antigas"
+            docker image prune -f
+            echo "==> Deploy concluido"
+            docker compose ps

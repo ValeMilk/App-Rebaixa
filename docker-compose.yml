@@ -1,0 +1,47 @@
+version: "3.9"
+
+services:
+  backend:
+    build: ./backend
+    container_name: rebaixa-backend
+    restart: unless-stopped
+    env_file:
+      - ./backend/.env
+    expose:
+      - "4000"
+    networks:
+      - rebaixa-net
+
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        # /api sera interceptado pelo Nginx e redirecionado ao backend
+        NEXT_PUBLIC_API_URL: /api
+    container_name: rebaixa-frontend
+    restart: unless-stopped
+    expose:
+      - "3000"
+    depends_on:
+      - backend
+    networks:
+      - rebaixa-net
+
+  nginx:
+    image: nginx:alpine
+    container_name: rebaixa-nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+    depends_on:
+      - frontend
+      - backend
+    networks:
+      - rebaixa-net
+
+networks:
+  rebaixa-net:
+    driver: bridge
+
