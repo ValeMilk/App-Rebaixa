@@ -52,6 +52,23 @@ async function listar(req, res) {
       },
     },
     { $replaceRoot: { newRoot: "$doc" } },
+    // Busca precoTabela e custo do catalogo de produtos
+    {
+      $lookup: {
+        from: "produtos",
+        localField: "produtoCodigo",
+        foreignField: "codigo",
+        as: "_p",
+      },
+    },
+    {
+      $addFields: {
+        precoTabela: { $arrayElemAt: ["$_p.precoTabela", 0] },
+        precoMinimo: { $arrayElemAt: ["$_p.precoMinimo", 0] },
+        custo: { $arrayElemAt: ["$_p.custo", 0] },
+      },
+    },
+    { $unset: "_p" },
     // Recalcula diasParaVencer no momento da consulta
     {
       $addFields: {

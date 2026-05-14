@@ -7,6 +7,10 @@ const itemSchema = new mongoose.Schema(
     quantidade: { type: Number, required: true },
     dataValidade: { type: Date },
     diasParaVencer: { type: Number },
+    precoTabela: { type: Number },
+    precoOferta: { type: Number },
+    sellout: { type: Number },
+    margemCalculada: { type: Number },
     precoAtual: { type: Number },
     precoSugerido: { type: Number },
     descontoPercentual: { type: Number },
@@ -37,13 +41,18 @@ const solicitacaoSchema = new mongoose.Schema(
     },
     status: {
       type: String,
-      enum: ["pendente", "aprovada", "rejeitada", "cancelada"],
-      default: "pendente",
+      enum: ["pendente_supervisor", "aprovado_supervisor", "aprovado_final", "rejeitado", "cancelado"],
+      default: "pendente_supervisor",
       index: true,
     },
 
     cliente: { type: String, required: true },
     clienteCodigo: { type: String, required: true, index: true },
+
+    criadoPorId: { type: mongoose.Schema.Types.ObjectId, ref: "User", index: true },
+    criadoPorNome: { type: String },
+    criadoPorRole: { type: String },
+    criadoPorCodigo: { type: String },
 
     supervisorId: { type: mongoose.Schema.Types.ObjectId, ref: "User", index: true },
     supervisorNome: { type: String },
