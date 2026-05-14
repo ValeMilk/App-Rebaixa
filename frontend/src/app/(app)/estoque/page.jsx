@@ -361,10 +361,6 @@ export default function EstoquePage() {
   );
 }
 
-export default function EstoquePage() {
-  const { user } = useAuth();
-  const [itens, setItens] = useState([]);
-  const [classe, setClasse] = useState("");
   const [q, setQ] = useState("");
   const [loading, setLoading] = useState(true);
   const [selecionados, setSelecionados] = useState({});
