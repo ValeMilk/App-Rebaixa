@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState, useCallback } from "react";
 import api from "@/lib/api";
 import { fmtData } from "@/lib/utils";
-import { IcoSearch, IcoX, IcoChevronDown, IcoStore, IcoAlert, IcoClock, IcoPackage, IcoTrendDown, IcoTag } from "@/components/Icons";
+import { IcoSearch, IcoX, IcoChevronDown, IcoStore, IcoAlert, IcoClock, IcoPackage, IcoTrendDown, IcoTag, IcoUsers } from "@/components/Icons";
 
 const CLS = {
   critico:  { label: "Crítico",  bg: "bg-red-50",     text: "text-red-700",    border: "border-red-200",    dot: "bg-red-500",    ring: "ring-red-100" },
@@ -68,6 +68,8 @@ function RebaixaModal({ item, onClose, onEnviado }) {
         tipo: "rebaixa",
         cliente: item.cliente,
         clienteCodigo: item.clienteCodigo,
+        codigoRede: item.codigoRede || null,
+        redeSubrede: item.redeSubrede || null,
         motivo,
         itens: [{
           produto: item.produto,
@@ -101,6 +103,20 @@ function RebaixaModal({ item, onClose, onEnviado }) {
           </div>
         </div>
         <div className="px-5 pb-6">
+          {/* Banner de rede */}
+          {item.redeSubrede && (
+            <div className="mb-4 flex items-center gap-2.5 bg-blue-50 border border-blue-200 rounded-2xl px-3.5 py-2.5">
+              <div className="w-8 h-8 rounded-xl bg-blue-100 text-blue-600 flex items-center justify-center shrink-0">
+                <IcoUsers className="w-4 h-4" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <div className="text-xs font-bold text-blue-700 leading-tight">Rebaixa por Rede</div>
+                <div className="text-[11px] text-blue-600 truncate mt-0.5">{item.redeSubrede}</div>
+              </div>
+              <span className="shrink-0 text-[10px] font-semibold bg-blue-100 text-blue-700 border border-blue-200 px-2 py-0.5 rounded-full">todas as lojas</span>
+            </div>
+          )}
+
           <div className="flex items-start justify-between gap-3 mb-4">
             <div className="flex items-start gap-3 min-w-0 flex-1">
               <div className="w-10 h-10 rounded-xl bg-brand/10 text-brand flex items-center justify-center shrink-0">
@@ -228,7 +244,7 @@ function ProdutoCard({ item, onRebaixar }) {
   );
 }
 
-function LojaCard({ clienteCodigo, clienteNome, itens, expanded, onToggle, onRebaixar }) {
+function LojaCard({ clienteCodigo, clienteNome, redeSubrede, itens, expanded, onToggle, onRebaixar }) {
   const criticos = itens.filter((i) => i.classificacao === "critico").length;
   const alertas  = itens.filter((i) => i.classificacao === "alerta").length;
   const borda = criticos > 0 ? "border-red-200" : alertas > 0 ? "border-orange-200" : "border-slate-200";
@@ -242,7 +258,14 @@ function LojaCard({ clienteCodigo, clienteNome, itens, expanded, onToggle, onReb
         </div>
         <div className="flex-1 min-w-0">
           <div className="font-semibold text-slate-900 truncate text-sm">{clienteNome}</div>
-          <div className="text-[11px] text-slate-500 mt-0.5">Cód {clienteCodigo} · {itens.length} produto{itens.length !== 1 ? "s" : ""}</div>
+          <div className="text-[11px] text-slate-500 mt-0.5 flex items-center gap-2 flex-wrap">
+            <span>Cód {clienteCodigo} · {itens.length} produto{itens.length !== 1 ? "s" : ""}</span>
+            {redeSubrede && (
+              <span className="inline-flex items-center gap-1 text-blue-600 font-semibold">
+                <IcoUsers className="w-3 h-3" />{redeSubrede}
+              </span>
+            )}
+          </div>
         </div>
         <div className="flex gap-1.5 items-center shrink-0">
           {criticos > 0 && <span className="text-[10px] font-bold bg-red-100 text-red-700 px-2 py-0.5 rounded-full">{criticos}</span>}
@@ -288,7 +311,7 @@ export default function EstoquePage() {
     const map = new Map();
     for (const it of itens) {
       const k = it.clienteCodigo;
-      if (!map.has(k)) map.set(k, { clienteCodigo: k, clienteNome: it.cliente, itens: [] });
+      if (!map.has(k)) map.set(k, { clienteCodigo: k, clienteNome: it.cliente, redeSubrede: it.redeSubrede || null, itens: [] });
       map.get(k).itens.push(it);
     }
     return Array.from(map.values()).sort((a, b) => {
@@ -388,11 +411,12 @@ export default function EstoquePage() {
         </div>
       ) : (
         <div className="space-y-2">
-          {grupos.map(({ clienteCodigo, clienteNome, itens: gItens }) => (
+          {grupos.map(({ clienteCodigo, clienteNome, redeSubrede, itens: gItens }) => (
             <LojaCard
               key={clienteCodigo}
               clienteCodigo={clienteCodigo}
               clienteNome={clienteNome}
+              redeSubrede={redeSubrede}
               itens={gItens}
               expanded={expanded.has(clienteCodigo)}
               onToggle={() => toggleLoja(clienteCodigo)}

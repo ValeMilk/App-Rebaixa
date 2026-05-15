@@ -32,15 +32,22 @@ async function listar(req, res) {
   if (produto) match.produto = produto;
   if (q) match.produto = { $regex: q, $options: "i" };
 
-  // Restrigir por carteira conforme role
+  // Restrigir por carteira conforme role + construir mapa rede por cliente
+  let redeMap = {}; // clienteCodigo → { codigoRede, redeSubrede }
   if (req.user.role === "vendedor") {
-    const carteira = await Carteira.find({ vendedorCodigo: req.user.codigo }, "clienteCodigo");
+    const carteira = await Carteira.find({ vendedorCodigo: req.user.codigo }, "clienteCodigo codigoRede redeSubrede");
     const codigos = carteira.map((c) => c.clienteCodigo);
     match.clienteCodigo = { $in: codigos.length ? codigos : ["__none__"] };
+    for (const c of carteira) redeMap[c.clienteCodigo] = { codigoRede: c.codigoRede || null, redeSubrede: c.redeSubrede || null };
   } else if (req.user.role === "supervisor") {
-    const carteira = await Carteira.find({ supervisorCodigo: req.user.codigo }, "clienteCodigo");
+    const carteira = await Carteira.find({ supervisorCodigo: req.user.codigo }, "clienteCodigo codigoRede redeSubrede");
     const codigos = carteira.map((c) => c.clienteCodigo);
     match.clienteCodigo = { $in: codigos.length ? codigos : ["__none__"] };
+    for (const c of carteira) redeMap[c.clienteCodigo] = { codigoRede: c.codigoRede || null, redeSubrede: c.redeSubrede || null };
+  } else {
+    // admin/diretoria: busca toda a carteira para montar o mapa de redes
+    const carteira = await Carteira.find({}, "clienteCodigo codigoRede redeSubrede");
+    for (const c of carteira) redeMap[c.clienteCodigo] = { codigoRede: c.codigoRede || null, redeSubrede: c.redeSubrede || null };
   }
 
   // Pegar o snapshot mais recente por (clienteCodigo, produto)
@@ -88,7 +95,14 @@ async function listar(req, res) {
   ];
 
   const itens = await Estoque.aggregate(pipeline);
-  res.json({ total: itens.length, itens });
+
+  // Enriquecer cada item com dados de rede (codigoRede, redeSubrede)
+  const itensEnriquecidos = itens.map((it) => {
+    const rede = redeMap[String(it.clienteCodigo)] || {};
+    return { ...it, codigoRede: rede.codigoRede || null, redeSubrede: rede.redeSubrede || null };
+  });
+
+  res.json({ total: itensEnriquecidos.length, itens: itensEnriquecidos });
 }
 
 async function resumo(req, res) {

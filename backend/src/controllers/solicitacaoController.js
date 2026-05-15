@@ -15,20 +15,36 @@ async function criar(req, res) {
     return res.status(400).json({ error: "Dados incompletos" });
   }
 
-  // Buscar supervisor da carteira para o cliente (para notificação futura)
+  // Buscar carteira do cliente para obter supervisor e dados de rede
   let supervisorId = null, supervisorNome = null, supervisorCodigo = null;
+  let codigoRede = null, redeSubrede = null;
+
   if (req.user.role === "vendedor") {
     const entrada = await Carteira.findOne({ clienteCodigo: String(clienteCodigo), vendedorCodigo: req.user.codigo });
     if (entrada) {
       supervisorCodigo = entrada.supervisorCodigo;
-      supervisorNome = entrada.supervisorNome;
+      supervisorNome   = entrada.supervisorNome;
+      codigoRede       = entrada.codigoRede   || null;
+      redeSubrede      = entrada.redeSubrede  || null;
       const supUser = await User.findOne({ codigo: supervisorCodigo });
       if (supUser) supervisorId = supUser._id;
     }
   } else if (req.user.role === "supervisor") {
-    supervisorId = req.user.id;
-    supervisorNome = req.user.nome;
+    supervisorId     = req.user.id;
+    supervisorNome   = req.user.nome;
     supervisorCodigo = req.user.codigo;
+    const entrada = await Carteira.findOne({ clienteCodigo: String(clienteCodigo), supervisorCodigo: req.user.codigo });
+    if (entrada) {
+      codigoRede  = entrada.codigoRede  || null;
+      redeSubrede = entrada.redeSubrede || null;
+    }
+  } else {
+    // admin/diretoria: pegar rede da carteira sem filtro de vendedor
+    const entrada = await Carteira.findOne({ clienteCodigo: String(clienteCodigo) });
+    if (entrada) {
+      codigoRede  = entrada.codigoRede  || null;
+      redeSubrede = entrada.redeSubrede || null;
+    }
   }
 
   const status = statusInicial(req.user.role);
@@ -38,6 +54,8 @@ async function criar(req, res) {
     status,
     cliente,
     clienteCodigo: String(clienteCodigo),
+    codigoRede,
+    redeSubrede,
     itens,
     motivo,
     observacoes,

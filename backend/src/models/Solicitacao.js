@@ -48,6 +48,8 @@ const solicitacaoSchema = new mongoose.Schema(
 
     cliente: { type: String, required: true },
     clienteCodigo: { type: String, required: true, index: true },
+    codigoRede:    { type: String, default: null, index: true },
+    redeSubrede:   { type: String, default: null },
 
     criadoPorId: { type: mongoose.Schema.Types.ObjectId, ref: "User", index: true },
     criadoPorNome: { type: String },
