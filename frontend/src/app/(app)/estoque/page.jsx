@@ -361,13 +361,6 @@ export default function EstoquePage() {
   );
 }
 
-  const [q, setQ] = useState("");
-  const [loading, setLoading] = useState(true);
-  const [selecionados, setSelecionados] = useState({});
-  const [tipoSolic, setTipoSolic] = useState("rebaixa");
-  const [motivo, setMotivo] = useState("");
-  const [enviando, setEnviando] = useState(false);
-
   async function carregar() {
     setLoading(true);
     try {
