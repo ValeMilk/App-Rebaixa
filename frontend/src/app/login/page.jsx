@@ -26,8 +26,9 @@ export default function LoginPage() {
     setErro("");
     setLoading(true);
     try {
-      await login(email, senha);
-      router.replace("/estoque");
+      const u = await login(email, senha);
+      const role = u?.role ?? "vendedor";
+      router.replace(role === "vendedor" || role === "supervisor" ? "/estoque" : "/dashboard");
     } catch (err) {
       setErro(err.response?.data?.error || "Falha no login");
     } finally {
