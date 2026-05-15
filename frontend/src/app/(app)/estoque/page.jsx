@@ -3,21 +3,20 @@
 import { useEffect, useMemo, useState, useCallback } from "react";
 import api from "@/lib/api";
 import { fmtData } from "@/lib/utils";
-import { useAuth } from "@/lib/auth";
+import { IcoSearch, IcoX, IcoChevronDown, IcoStore, IcoAlert, IcoClock, IcoPackage, IcoTrendDown, IcoTag } from "@/components/Icons";
 
-// Classificação visual
 const CLS = {
-  critico:  { label: "Crítico",  bg: "bg-red-100",    text: "text-red-700",    border: "border-red-300",    dot: "bg-red-500" },
-  alerta:   { label: "Alerta",   bg: "bg-orange-100", text: "text-orange-700", border: "border-orange-300", dot: "bg-orange-500" },
-  atencao:  { label: "Atenção",  bg: "bg-yellow-100", text: "text-yellow-700", border: "border-yellow-200", dot: "bg-yellow-500" },
-  ok:       { label: "Regular",  bg: "bg-green-100",  text: "text-green-700",  border: "border-green-200",  dot: "bg-green-500" },
-  vencido:  { label: "Vencido",  bg: "bg-slate-100",  text: "text-slate-600",  border: "border-slate-200",  dot: "bg-slate-400" },
+  critico:  { label: "Crítico",  bg: "bg-red-50",     text: "text-red-700",    border: "border-red-200",    dot: "bg-red-500",    ring: "ring-red-100" },
+  alerta:   { label: "Alerta",   bg: "bg-orange-50",  text: "text-orange-700", border: "border-orange-200", dot: "bg-orange-500", ring: "ring-orange-100" },
+  atencao:  { label: "Atenção",  bg: "bg-amber-50",   text: "text-amber-700",  border: "border-amber-200",  dot: "bg-amber-500",  ring: "ring-amber-100" },
+  ok:       { label: "Regular",  bg: "bg-emerald-50", text: "text-emerald-700",border: "border-emerald-200",dot: "bg-emerald-500",ring: "ring-emerald-100" },
+  vencido:  { label: "Vencido",  bg: "bg-slate-50",   text: "text-slate-600",  border: "border-slate-200",  dot: "bg-slate-400",  ring: "ring-slate-100" },
 };
 
 function Badge({ cls }) {
   const c = CLS[cls] || CLS.ok;
   return (
-    <span className={`inline-flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded-full border ${c.bg} ${c.text} ${c.border}`}>
+    <span className={`inline-flex items-center gap-1.5 text-[11px] font-semibold px-2 py-0.5 rounded-full border ${c.bg} ${c.text} ${c.border}`}>
       <span className={`w-1.5 h-1.5 rounded-full ${c.dot}`} />
       {c.label}
     </span>
@@ -37,8 +36,12 @@ function calcMargem(precoOferta, custo) {
 }
 
 function MargemBadge({ pct }) {
-  if (pct == null) return <span className="text-slate-400 text-sm">—</span>;
-  const cor = pct >= 20 ? "text-emerald-700 bg-emerald-50 border-emerald-200" : pct >= 10 ? "text-yellow-700 bg-yellow-50 border-yellow-200" : "text-red-700 bg-red-50 border-red-200";
+  if (pct == null) return <span className="text-slate-300 text-2xl font-bold">—</span>;
+  const cor = pct >= 20
+    ? "text-emerald-700 bg-emerald-50 border-emerald-200"
+    : pct >= 10
+      ? "text-amber-700 bg-amber-50 border-amber-200"
+      : "text-red-700 bg-red-50 border-red-200";
   return (
     <span className={`inline-block font-bold text-2xl px-4 py-1.5 rounded-xl border ${cor}`}>
       {pct.toFixed(1)}%
@@ -89,43 +92,61 @@ function RebaixaModal({ item, onClose, onEnviado }) {
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex flex-col justify-end">
-      <div className="absolute inset-0 bg-black/40" onClick={onClose} />
-      <div className="relative bg-white rounded-t-2xl shadow-2xl max-h-[92vh] overflow-y-auto">
-        <div className="flex justify-center pt-3 pb-1">
-          <div className="w-10 h-1 bg-slate-300 rounded-full" />
+    <div className="fixed inset-0 z-50 flex flex-col justify-end animate-fade-in">
+      <div className="absolute inset-0 bg-slate-900/50 backdrop-blur-sm" onClick={onClose} />
+      <div className="relative bg-white rounded-t-3xl shadow-2xl max-h-[92vh] overflow-y-auto animate-slide-up safe-area-pb">
+        <div className="sticky top-0 bg-white pt-3 pb-2 z-10 rounded-t-3xl">
+          <div className="flex justify-center">
+            <div className="w-10 h-1 bg-slate-300 rounded-full" />
+          </div>
         </div>
-        <div className="px-5 pb-8">
-          <div className="flex items-start justify-between mb-4">
-            <div>
-              <h2 className="font-bold text-slate-900 text-lg leading-tight">{item.produto}</h2>
-              <p className="text-slate-500 text-sm mt-0.5">{item.cliente}</p>
+        <div className="px-5 pb-6">
+          <div className="flex items-start justify-between gap-3 mb-4">
+            <div className="flex items-start gap-3 min-w-0 flex-1">
+              <div className="w-10 h-10 rounded-xl bg-brand/10 text-brand flex items-center justify-center shrink-0">
+                <IcoTrendDown className="w-5 h-5" />
+              </div>
+              <div className="min-w-0">
+                <h2 className="font-bold text-slate-900 text-lg leading-tight">{item.produto}</h2>
+                <p className="text-slate-500 text-sm mt-0.5 truncate">{item.cliente}</p>
+              </div>
             </div>
-            <button onClick={onClose} className="text-slate-400 text-3xl leading-none ml-3 -mt-1">×</button>
+            <button onClick={onClose} aria-label="Fechar" className="shrink-0 h-9 w-9 rounded-full bg-slate-100 hover:bg-slate-200 active:scale-95 transition flex items-center justify-center text-slate-600">
+              <IcoX className="w-5 h-5" />
+            </button>
           </div>
 
-          <div className="flex gap-2 mb-5">
-            <div className="flex-1 bg-slate-50 rounded-xl p-3 text-center">
-              <div className="text-xs text-slate-500">Qtd</div>
-              <div className="font-bold text-slate-800 text-xl">{item.quantidade}</div>
+          <div className="grid grid-cols-3 gap-2 mb-5">
+            <div className="bg-slate-50 rounded-2xl p-3 text-center">
+              <div className="flex items-center justify-center text-slate-400 mb-1">
+                <IcoPackage className="w-4 h-4" />
+              </div>
+              <div className="text-[10px] text-slate-500 uppercase tracking-wide font-semibold">Qtd</div>
+              <div className="font-bold text-slate-800 text-xl mt-0.5">{item.quantidade}</div>
             </div>
-            <div className="flex-1 bg-slate-50 rounded-xl p-3 text-center">
-              <div className="text-xs text-slate-500">Vence em</div>
-              <div className={`font-bold text-xl ${item.diasParaVencer <= 15 ? "text-red-600" : "text-slate-800"}`}>{item.diasParaVencer ?? "—"}d</div>
-              <div className="text-xs text-slate-400">{fmtData(item.dataValidade)}</div>
+            <div className="bg-slate-50 rounded-2xl p-3 text-center">
+              <div className="flex items-center justify-center text-slate-400 mb-1">
+                <IcoClock className="w-4 h-4" />
+              </div>
+              <div className="text-[10px] text-slate-500 uppercase tracking-wide font-semibold">Vence em</div>
+              <div className={`font-bold text-xl mt-0.5 ${item.diasParaVencer <= 15 ? "text-red-600" : "text-slate-800"}`}>{item.diasParaVencer ?? "—"}d</div>
+              <div className="text-[10px] text-slate-400 mt-0.5">{fmtData(item.dataValidade)}</div>
             </div>
-            <div className="flex-1 bg-brand/5 rounded-xl p-3 text-center">
-              <div className="text-xs text-slate-500">Tabela</div>
-              <div className="font-bold text-brand text-base">{fmtBRL(item.precoTabela)}</div>
+            <div className="bg-brand/5 rounded-2xl p-3 text-center">
+              <div className="flex items-center justify-center text-brand/60 mb-1">
+                <IcoTag className="w-4 h-4" />
+              </div>
+              <div className="text-[10px] text-brand/70 uppercase tracking-wide font-semibold">Tabela</div>
+              <div className="font-bold text-brand text-base mt-0.5">{fmtBRL(item.precoTabela)}</div>
             </div>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label className="block text-sm font-semibold text-slate-700 mb-1.5">Preço da Oferta (R$)</label>
+              <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">Preço da Oferta (R$)</label>
               <input
                 type="number" step="0.01" min="0"
-                className="input text-xl font-bold"
+                className="input text-2xl font-bold py-3"
                 value={precoOferta}
                 onChange={(e) => setPrecoOferta(e.target.value)}
                 placeholder="0,00"
@@ -135,7 +156,7 @@ function RebaixaModal({ item, onClose, onEnviado }) {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1.5">Sellout — preço ao consumidor (R$)</label>
+              <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">Sellout (R$ ao consumidor)</label>
               <input
                 type="number" step="0.01" min="0"
                 className="input"
@@ -146,16 +167,16 @@ function RebaixaModal({ item, onClose, onEnviado }) {
               />
             </div>
 
-            <div className="bg-slate-50 rounded-xl p-4 flex items-center justify-between">
+            <div className="bg-gradient-to-br from-slate-50 to-slate-100/50 rounded-2xl p-4 flex items-center justify-between border border-slate-200">
               <div>
-                <div className="text-sm font-medium text-slate-700 mb-0.5">Margem Valemilk</div>
+                <div className="text-sm font-semibold text-slate-700 mb-0.5">Margem Valemilk</div>
                 <div className="text-xs text-slate-400">{item.custo ? `Custo: ${fmtBRL(item.custo)}` : "Custo não disponível"}</div>
               </div>
               <MargemBadge pct={margem} />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1.5">Motivo</label>
+              <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">Motivo</label>
               <input
                 className="input"
                 value={motivo}
@@ -165,10 +186,13 @@ function RebaixaModal({ item, onClose, onEnviado }) {
             </div>
 
             {erro && (
-              <div className="rounded-lg bg-red-50 border border-red-200 p-3 text-sm text-red-700">{erro}</div>
+              <div className="rounded-xl bg-red-50 border border-red-200 p-3.5 text-sm text-red-700 flex items-center gap-2 animate-fade-in">
+                <IcoAlert className="w-4 h-4 shrink-0" />
+                {erro}
+              </div>
             )}
 
-            <button type="submit" className="btn-primary w-full py-3.5 text-base font-semibold" disabled={enviando}>
+            <button type="submit" className="btn-primary w-full py-3.5 text-base" disabled={enviando}>
               {enviando ? "Enviando..." : "Solicitar Rebaixa"}
             </button>
           </form>
@@ -186,9 +210,9 @@ function ProdutoCard({ item, onRebaixar }) {
       <div className="flex-1 min-w-0">
         <div className="font-medium text-slate-800 text-sm leading-tight truncate">{item.produto}</div>
         <div className="text-xs text-slate-500 mt-1 flex gap-3 flex-wrap">
-          <span>Qtd: <b>{item.quantidade}</b></span>
-          <span>Vence: <b>{fmtData(item.dataValidade)}</b></span>
-          {item.precoTabela && <span>Tab: <b>{fmtBRL(item.precoTabela)}</b></span>}
+          <span className="inline-flex items-center gap-1"><IcoPackage className="w-3 h-3" />{item.quantidade}</span>
+          <span className="inline-flex items-center gap-1"><IcoClock className="w-3 h-3" />{fmtData(item.dataValidade)}</span>
+          {item.precoTabela && <span className="inline-flex items-center gap-1"><IcoTag className="w-3 h-3" />{fmtBRL(item.precoTabela)}</span>}
         </div>
       </div>
       <div className="flex flex-col items-end gap-1.5 shrink-0">
@@ -207,25 +231,27 @@ function ProdutoCard({ item, onRebaixar }) {
 function LojaCard({ clienteCodigo, clienteNome, itens, expanded, onToggle, onRebaixar }) {
   const criticos = itens.filter((i) => i.classificacao === "critico").length;
   const alertas  = itens.filter((i) => i.classificacao === "alerta").length;
-  const borda = criticos > 0 ? "border-red-300" : alertas > 0 ? "border-orange-300" : "border-slate-200";
+  const borda = criticos > 0 ? "border-red-200" : alertas > 0 ? "border-orange-200" : "border-slate-200";
+  const iconBg = criticos > 0 ? "bg-red-50 text-red-600" : alertas > 0 ? "bg-orange-50 text-orange-600" : "bg-brand/10 text-brand";
 
   return (
-    <div className={`bg-white rounded-2xl border-2 shadow-sm overflow-hidden ${borda}`}>
-      <button className="w-full flex items-center gap-3 px-4 py-3.5 text-left active:bg-slate-50" onClick={onToggle}>
-        <div className="flex-1 min-w-0">
-          <div className="font-semibold text-slate-900 truncate">{clienteNome}</div>
-          <div className="text-xs text-slate-500 mt-0.5">Cód {clienteCodigo} · {itens.length} produto{itens.length !== 1 ? "s" : ""}</div>
+    <div className={`bg-white rounded-2xl border shadow-sm overflow-hidden ${borda}`}>
+      <button className="w-full flex items-center gap-3 px-3 py-3 text-left active:bg-slate-50 transition-colors" onClick={onToggle}>
+        <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${iconBg}`}>
+          <IcoStore className="w-5 h-5" />
         </div>
-        <div className="flex gap-1.5 items-center">
-          {criticos > 0 && <span className="text-xs font-bold bg-red-100 text-red-700 px-2 py-0.5 rounded-full">{criticos}×crit</span>}
-          {alertas > 0 && <span className="text-xs font-bold bg-orange-100 text-orange-700 px-2 py-0.5 rounded-full">{alertas}×alert</span>}
-          <svg className={`w-5 h-5 text-slate-400 transition-transform duration-200 ${expanded ? "rotate-180" : ""}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
-          </svg>
+        <div className="flex-1 min-w-0">
+          <div className="font-semibold text-slate-900 truncate text-sm">{clienteNome}</div>
+          <div className="text-[11px] text-slate-500 mt-0.5">Cód {clienteCodigo} · {itens.length} produto{itens.length !== 1 ? "s" : ""}</div>
+        </div>
+        <div className="flex gap-1.5 items-center shrink-0">
+          {criticos > 0 && <span className="text-[10px] font-bold bg-red-100 text-red-700 px-2 py-0.5 rounded-full">{criticos}</span>}
+          {alertas > 0 && <span className="text-[10px] font-bold bg-orange-100 text-orange-700 px-2 py-0.5 rounded-full">{alertas}</span>}
+          <IcoChevronDown className={`w-5 h-5 text-slate-400 transition-transform duration-200 ${expanded ? "rotate-180" : ""}`} />
         </div>
       </button>
       {expanded && (
-        <div className="px-3 pb-3 space-y-2 border-t border-slate-100 pt-2">
+        <div className="px-3 pb-3 space-y-2 border-t border-slate-100 pt-2 animate-fade-in">
           {itens.map((item) => (
             <ProdutoCard key={item._id} item={item} onRebaixar={onRebaixar} />
           ))}
@@ -243,11 +269,12 @@ export default function EstoquePage() {
   const [formItem, setFormItem] = useState(null);
   const [toast, setToast] = useState("");
 
-  const carregar = useCallback(async () => {
+  const carregar = useCallback(async (search) => {
     setLoading(true);
     try {
       const params = { limit: 1000 };
-      if (q) params.q = q;
+      const s = search !== undefined ? search : q;
+      if (s) params.q = s;
       const { data } = await api.get("/estoque", { params });
       setItens(data.itens || []);
     } finally {
@@ -255,7 +282,7 @@ export default function EstoquePage() {
     }
   }, [q]);
 
-  useEffect(() => { carregar(); }, []);
+  useEffect(() => { carregar(""); }, []);
 
   const grupos = useMemo(() => {
     const map = new Map();
@@ -291,47 +318,74 @@ export default function EstoquePage() {
 
   return (
     <div className="space-y-4">
-      <div>
-        <h1 className="text-xl font-bold text-slate-900">Lojas</h1>
-        <p className="text-slate-500 text-sm">Produtos próximos ao vencimento</p>
+      <div className="flex items-end justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Lojas</h1>
+          <p className="text-slate-500 text-sm mt-0.5">Produtos próximos ao vencimento</p>
+        </div>
+        <div className="w-10 h-10 rounded-2xl bg-brand/10 text-brand flex items-center justify-center">
+          <IcoStore className="w-5 h-5" />
+        </div>
       </div>
 
-      {!loading && (totCritico > 0 || totAlerta > 0) && (
-        <div className="flex gap-2">
-          {totCritico > 0 && (
-            <div className="flex-1 bg-red-50 border border-red-200 rounded-xl p-3 text-center">
-              <div className="text-2xl font-bold text-red-700">{totCritico}</div>
-              <div className="text-xs text-red-600 font-medium">Críticos</div>
-            </div>
-          )}
-          {totAlerta > 0 && (
-            <div className="flex-1 bg-orange-50 border border-orange-200 rounded-xl p-3 text-center">
-              <div className="text-2xl font-bold text-orange-700">{totAlerta}</div>
-              <div className="text-xs text-orange-600 font-medium">Alertas</div>
-            </div>
-          )}
-          <div className="flex-1 bg-slate-50 border border-slate-200 rounded-xl p-3 text-center">
-            <div className="text-2xl font-bold text-slate-700">{grupos.length}</div>
-            <div className="text-xs text-slate-500 font-medium">Lojas</div>
+      {/* Cards de resumo */}
+      <div className="grid grid-cols-3 gap-2">
+        <div className="stat-card bg-red-50 border-red-100">
+          <div className="flex items-center justify-center text-red-500 mb-1">
+            <IcoAlert className="w-4 h-4" />
           </div>
+          <div className="text-2xl font-bold text-red-700 leading-none">{loading ? "…" : totCritico}</div>
+          <div className="text-[10px] text-red-600 font-semibold uppercase tracking-wide mt-1">Críticos</div>
         </div>
-      )}
+        <div className="stat-card bg-orange-50 border-orange-100">
+          <div className="flex items-center justify-center text-orange-500 mb-1">
+            <IcoClock className="w-4 h-4" />
+          </div>
+          <div className="text-2xl font-bold text-orange-700 leading-none">{loading ? "…" : totAlerta}</div>
+          <div className="text-[10px] text-orange-600 font-semibold uppercase tracking-wide mt-1">Alertas</div>
+        </div>
+        <div className="stat-card bg-brand/5 border-brand/10">
+          <div className="flex items-center justify-center text-brand/70 mb-1">
+            <IcoStore className="w-4 h-4" />
+          </div>
+          <div className="text-2xl font-bold text-brand leading-none">{loading ? "…" : grupos.length}</div>
+          <div className="text-[10px] text-brand/80 font-semibold uppercase tracking-wide mt-1">Lojas</div>
+        </div>
+      </div>
 
-      <div className="flex gap-2">
+      {/* Busca com ícone */}
+      <div className="relative">
+        <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none">
+          <IcoSearch className="w-5 h-5" />
+        </span>
         <input
-          className="input flex-1"
+          className="input pl-10 pr-10"
           value={q}
           onChange={(e) => setQ(e.target.value)}
           placeholder="Buscar produto..."
           onKeyDown={(e) => e.key === "Enter" && carregar()}
         />
-        <button onClick={carregar} className="btn-primary px-4">Buscar</button>
+        {q && (
+          <button onClick={() => { setQ(""); carregar(""); }} aria-label="Limpar" className="absolute right-2.5 top-1/2 -translate-y-1/2 h-7 w-7 rounded-full hover:bg-slate-100 text-slate-400 flex items-center justify-center">
+            <IcoX className="w-4 h-4" />
+          </button>
+        )}
       </div>
 
+      {/* Lista */}
       {loading ? (
-        <div className="text-center py-16 text-slate-400">Carregando...</div>
+        <div className="flex flex-col items-center justify-center py-16 gap-3">
+          <div className="w-9 h-9 rounded-full border-4 border-slate-200 border-t-brand animate-spin" />
+          <p className="text-sm text-slate-400">Carregando...</p>
+        </div>
       ) : grupos.length === 0 ? (
-        <div className="text-center py-16 text-slate-400">Nenhum produto encontrado</div>
+        <div className="text-center py-16 px-6">
+          <div className="w-14 h-14 mx-auto rounded-2xl bg-slate-100 text-slate-400 flex items-center justify-center mb-3">
+            <IcoStore className="w-7 h-7" />
+          </div>
+          <p className="text-slate-500 font-medium">Nenhum produto encontrado</p>
+          <p className="text-slate-400 text-sm mt-1">Tente ajustar a busca</p>
+        </div>
       ) : (
         <div className="space-y-2">
           {grupos.map(({ clienteCodigo, clienteNome, itens: gItens }) => (
@@ -353,7 +407,10 @@ export default function EstoquePage() {
       )}
 
       {toast && (
-        <div className="fixed bottom-24 left-1/2 -translate-x-1/2 bg-emerald-600 text-white text-sm font-medium px-5 py-2.5 rounded-full shadow-lg z-50 pointer-events-none">
+        <div className="fixed bottom-28 left-1/2 -translate-x-1/2 bg-emerald-600 text-white text-sm font-semibold px-5 py-2.5 rounded-full shadow-lg z-50 pointer-events-none animate-fade-in flex items-center gap-2">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={3} strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4">
+            <path d="M20 6L9 17l-5-5" />
+          </svg>
           {toast}
         </div>
       )}
