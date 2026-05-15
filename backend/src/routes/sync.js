@@ -1,8 +1,11 @@
 const express = require("express");
-const { rodarSyncEstoque, rodarSyncCarteira, rodarSyncProdutos, rodarSyncERP, status } = require("../controllers/syncController");
+const { rodarSyncEstoque, rodarSyncCarteira, rodarSyncProdutos, rodarSyncERP, triggerBackground, status } = require("../controllers/syncController");
 const { auth, requireRole } = require("../middlewares/auth");
 
 const router = express.Router();
+
+// Qualquer usuário autenticado pode disparar sync em background ao abrir o app
+router.post("/trigger", auth, triggerBackground);
 
 router.use(auth, requireRole("admin", "diretoria"));
 

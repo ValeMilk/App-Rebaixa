@@ -6,6 +6,21 @@ const { erpConfigurado } = require("../services/erpDbService");
 let executando = false;
 let ultimaExecucao = null;
 
+// Dispara sync em background sem bloquear resposta (qualquer usuário autenticado)
+async function triggerBackground(_req, res) {
+  res.json({ ok: true, msg: "sync iniciado em background" });
+  if (executando) return;
+  executando = true;
+  try {
+    const r = await sincronizarEstoque();
+    ultimaExecucao = { tipo: "estoque", em: new Date(), resultado: r };
+    await sincronizarCarteira();
+  } catch (err) {
+    console.error("[sync] erro no trigger background:", err.message);
+  } finally {
+    executando = false;
+  }
+}
 async function rodarSyncEstoque(req, res) {
   if (executando) {
     return res.status(409).json({ error: "Ja existe uma sincronizacao em andamento" });
@@ -46,4 +61,4 @@ function status(_req, res) {
   });
 }
 
-module.exports = { rodarSyncEstoque, rodarSyncCarteira, rodarSyncProdutos, rodarSyncERP, status };
+module.exports = { rodarSyncEstoque, rodarSyncCarteira, rodarSyncProdutos, rodarSyncERP, triggerBackground, status };

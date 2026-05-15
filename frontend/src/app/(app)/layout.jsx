@@ -2,8 +2,9 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { useAuth } from "@/lib/auth";
+import api from "@/lib/api";
 
 // Ícones SVG inline para bottom nav
 function IcoLojas() {
@@ -70,9 +71,18 @@ export default function AppLayout({ children }) {
   const router = useRouter();
   const pathname = usePathname();
   const { user, token, init, loading, logout } = useAuth();
+  const syncedRef = useRef(false);
 
   useEffect(() => { init(); }, [init]);
   useEffect(() => { if (!loading && !token) router.replace("/login"); }, [loading, token, router]);
+
+  // Dispara sync silencioso uma vez por sessão assim que o usuário estiver autenticado
+  useEffect(() => {
+    if (user && token && !syncedRef.current) {
+      syncedRef.current = true;
+      api.post("/sync/trigger").catch(() => {});
+    }
+  }, [user, token]);
 
   if (loading || !user) {
     return (
