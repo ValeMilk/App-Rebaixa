@@ -16,13 +16,15 @@ function hojeMidnight() {
 async function listar(req, res) {
   const { classificacao, clienteCodigo, produto, q, limit = 500 } = req.query;
   const hoje = hojeMidnight();
-  const limite31 = new Date(hoje);
-  limite31.setDate(limite31.getDate() + 31);
+  const amanha = new Date(hoje);
+  amanha.setDate(amanha.getDate() + 1);
+  const limite30 = new Date(amanha);
+  limite30.setDate(limite30.getDate() + 30);
 
   // Filtra por dataValidade dinamicamente (ignora diasParaVencer stale)
   const match = {
-    quantidade: { $gt: 5 },
-    dataValidade: { $gte: hoje, $lte: limite31 },
+    quantidade: { $gt: 10 },
+    dataValidade: { $gte: amanha, $lte: limite30 },
   };
 
   if (classificacao) match.classificacao = classificacao;
@@ -91,12 +93,14 @@ async function listar(req, res) {
 
 async function resumo(req, res) {
   const hoje = hojeMidnight();
-  const limite31 = new Date(hoje);
-  limite31.setDate(limite31.getDate() + 31);
+  const amanha = new Date(hoje);
+  amanha.setDate(amanha.getDate() + 1);
+  const limite30 = new Date(amanha);
+  limite30.setDate(limite30.getDate() + 30);
 
   const match = {
-    quantidade: { $gt: 5 },
-    dataValidade: { $gte: hoje, $lte: limite31 },
+    quantidade: { $gt: 10 },
+    dataValidade: { $gte: amanha, $lte: limite30 },
   };
   if (req.user.role === "vendedor") {
     const carteira = await Carteira.find({ vendedorCodigo: req.user.codigo }, "clienteCodigo");
