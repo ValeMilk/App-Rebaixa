@@ -214,6 +214,128 @@ function RebaixaModal({ item, onClose, onEnviado }) {
   );
 }
 
+function RedeRebaixaModal({ redeSubrede, codigoRede, lojas, onClose, onEnviado }) {
+  const [motivo, setMotivo] = useState("");
+  const [enviando, setEnviando] = useState(false);
+  const [erro, setErro] = useState("");
+
+  const totalItens = lojas.reduce((s, l) => s + l.itens.length, 0);
+
+  async function handleSubmit(e) {
+    e.preventDefault();
+    setErro("");
+    setEnviando(true);
+    try {
+      await Promise.all(
+        lojas.map((loja) =>
+          api.post("/solicitacoes", {
+            tipo: "rebaixa",
+            cliente: loja.clienteNome,
+            clienteCodigo: loja.clienteCodigo,
+            codigoRede,
+            redeSubrede,
+            motivo,
+            itens: loja.itens.map((item) => ({
+              produto: item.produto,
+              produtoCodigo: item.produtoCodigo,
+              quantidade: item.quantidade,
+              dataValidade: item.dataValidade,
+              diasParaVencer: item.diasParaVencer,
+              precoTabela: item.precoTabela,
+              estoqueRefId: item._id,
+            })),
+          })
+        )
+      );
+      onEnviado(lojas.length);
+      onClose();
+    } catch (err) {
+      setErro(err.response?.data?.error || "Erro ao criar solicitações");
+    } finally {
+      setEnviando(false);
+    }
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex flex-col sm:items-center sm:justify-center sm:p-6 animate-fade-in">
+      <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={onClose} />
+      <div className="relative bg-white shadow-2xl flex flex-col w-full sm:max-w-md sm:rounded-3xl sm:max-h-[90dvh] animate-slide-up safe-area-pb"
+        style={{ height: "100dvh", maxHeight: "100dvh" }}>
+
+        {/* Header fixo */}
+        <div className="shrink-0 px-4 pt-3 pb-2.5 border-b border-slate-100 bg-white sm:rounded-t-3xl safe-area-pt">
+          <div className="flex items-center justify-between gap-3">
+            <div className="min-w-0 flex-1">
+              <div className="text-[10px] font-semibold text-blue-600 uppercase tracking-wider mb-0.5">Rebaixa por Rede</div>
+              <h2 className="font-bold text-slate-900 text-base leading-snug line-clamp-2">{redeSubrede}</h2>
+            </div>
+            <button onClick={onClose} aria-label="Fechar"
+              className="shrink-0 h-9 w-9 rounded-full bg-slate-100 active:bg-slate-200 active:scale-95 transition flex items-center justify-center text-slate-600">
+              <IcoX className="w-5 h-5" />
+            </button>
+          </div>
+        </div>
+
+        {/* Scroll area */}
+        <div className="flex-1 overflow-y-auto px-4 pt-3 pb-4"
+          style={{ WebkitOverflowScrolling: "touch", overscrollBehavior: "contain" }}>
+
+          {/* Resumo da rede */}
+          <div className="mb-3 bg-slate-50 rounded-xl border border-slate-100 px-3 py-2.5 space-y-2">
+            <div className="flex items-center gap-1.5 text-[11px] text-blue-700 font-bold">
+              <IcoUsers className="w-3.5 h-3.5" />
+              {redeSubrede}
+            </div>
+            <div className="text-xs text-slate-600">
+              <span className="font-semibold">{lojas.length}</span> lojas ·{" "}
+              <span className="font-semibold">{totalItens}</span> produto{totalItens !== 1 ? "s" : ""}
+            </div>
+            <div className="space-y-1 pt-1 border-t border-slate-100">
+              {lojas.map((l) => (
+                <div key={l.clienteCodigo} className="text-[11px] text-slate-500 flex justify-between gap-2">
+                  <span className="truncate">{l.clienteNome}</span>
+                  <span className="shrink-0 text-slate-400">{l.itens.length} prod.</span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <form id="form-rede-rebaixa" onSubmit={handleSubmit} className="space-y-2.5">
+            <div>
+              <label className="block text-[10px] font-semibold text-slate-500 uppercase tracking-wide mb-1">Motivo</label>
+              <input
+                className="input"
+                value={motivo}
+                onChange={(e) => setMotivo(e.target.value)}
+                placeholder="Ex: Produtos próximos ao vencimento"
+              />
+            </div>
+            <div className="rounded-xl bg-blue-50 border border-blue-200 p-3 text-xs text-blue-700 flex items-start gap-2">
+              <IcoUsers className="w-4 h-4 shrink-0 mt-0.5" />
+              <span>Será criada <strong>1 solicitação por loja</strong> ({lojas.length} no total). O supervisor define os preços na aprovação.</span>
+            </div>
+            {erro && (
+              <div className="rounded-xl bg-red-50 border border-red-200 p-3 text-sm text-red-700 flex items-center gap-2 animate-fade-in">
+                <IcoAlert className="w-4 h-4 shrink-0" />
+                {erro}
+              </div>
+            )}
+          </form>
+        </div>
+
+        {/* Footer fixo */}
+        <div className="shrink-0 px-4 py-3 border-t border-slate-100 bg-white sm:rounded-b-3xl">
+          <button type="submit" form="form-rede-rebaixa"
+            className="w-full py-3 text-base font-semibold text-white bg-blue-600 rounded-2xl hover:bg-blue-700 active:scale-[0.98] transition disabled:opacity-60"
+            disabled={enviando}>
+            {enviando ? `Enviando ${lojas.length} sol...` : `Solicitar para ${lojas.length} Loja${lojas.length !== 1 ? "s" : ""}`}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function ProdutoCard({ item, onRebaixar }) {
   const c = CLS[item.classificacao] || CLS.ok;
   return (
@@ -293,8 +415,10 @@ export default function EstoquePage() {
   const [itens, setItens] = useState([]);
   const [q, setQ] = useState("");
   const [loading, setLoading] = useState(true);
-  const [expanded, setExpanded] = useState(new Set());
+  const [expanded, setExpanded] = useState(new Set());       // lojas
+  const [expandedRedes, setExpandedRedes] = useState(new Set()); // redes
   const [formItem, setFormItem] = useState(null);
+  const [formRede, setFormRede] = useState(null); // { codigoRede, redeSubrede, lojas }
   const [toast, setToast] = useState("");
 
   const carregar = useCallback(async (search) => {
@@ -312,21 +436,40 @@ export default function EstoquePage() {
 
   useEffect(() => { carregar(""); }, []);
 
-  const grupos = useMemo(() => {
-    const map = new Map();
+  const redeGrupos = useMemo(() => {
+    // 1) Agrupa itens por loja
+    const lojaMap = new Map();
     for (const it of itens) {
       const k = it.clienteCodigo;
-      if (!map.has(k)) map.set(k, { clienteCodigo: k, clienteNome: it.cliente, redeSubrede: it.redeSubrede || null, itens: [] });
-      map.get(k).itens.push(it);
+      if (!lojaMap.has(k)) lojaMap.set(k, {
+        clienteCodigo: k,
+        clienteNome: it.cliente,
+        codigoRede: it.codigoRede || null,
+        redeSubrede: it.redeSubrede || null,
+        itens: [],
+      });
+      lojaMap.get(k).itens.push(it);
     }
-    return Array.from(map.values()).sort((a, b) => {
-      const score = (g) =>
-        g.itens.filter((i) => i.classificacao === "critico").length * 100 +
-        g.itens.filter((i) => i.classificacao === "alerta").length * 10 +
-        g.itens.filter((i) => i.classificacao === "atencao").length;
-      return score(b) - score(a);
-    });
+    // 2) Agrupa lojas por rede
+    const redeMap = new Map();
+    for (const loja of lojaMap.values()) {
+      const redeKey = loja.codigoRede || `__solo__${loja.clienteCodigo}`;
+      if (!redeMap.has(redeKey)) redeMap.set(redeKey, {
+        codigoRede: loja.codigoRede,
+        redeSubrede: loja.redeSubrede,
+        lojas: [],
+      });
+      redeMap.get(redeKey).lojas.push(loja);
+    }
+    // 3) Ordena por criticidade
+    const scoreGrupo = (lojas) => lojas.reduce((s, l) =>
+      s + l.itens.filter((i) => i.classificacao === "critico").length * 100
+        + l.itens.filter((i) => i.classificacao === "alerta").length * 10
+        + l.itens.filter((i) => i.classificacao === "atencao").length, 0);
+    return Array.from(redeMap.values()).sort((a, b) => scoreGrupo(b.lojas) - scoreGrupo(a.lojas));
   }, [itens]);
+
+  const totalLojas = redeGrupos.reduce((s, g) => s + g.lojas.length, 0);
 
   function toggleLoja(cod) {
     setExpanded((prev) => {
@@ -336,8 +479,17 @@ export default function EstoquePage() {
     });
   }
 
-  function handleEnviado() {
-    setToast("Solicitação enviada!");
+  function toggleRede(key) {
+    setExpandedRedes((prev) => {
+      const n = new Set(prev);
+      n.has(key) ? n.delete(key) : n.add(key);
+      return n;
+    });
+  }
+
+  function handleEnviado(count = 1) {
+    const msg = count > 1 ? `${count} solicitações enviadas!` : "Solicitação enviada!";
+    setToast(msg);
     setTimeout(() => setToast(""), 3000);
   }
 
@@ -376,7 +528,7 @@ export default function EstoquePage() {
           <div className="flex items-center justify-center text-brand/70 mb-1">
             <IcoStore className="w-4 h-4" />
           </div>
-          <div className="text-xl sm:text-2xl font-bold text-brand leading-none tabular-nums">{loading ? "…" : grupos.length}</div>
+          <div className="text-xl sm:text-2xl font-bold text-brand leading-none tabular-nums">{loading ? "…" : totalLojas}</div>
           <div className="text-[10px] text-brand/80 font-semibold uppercase tracking-wide mt-1">Lojas</div>
         </div>
       </div>
@@ -416,23 +568,55 @@ export default function EstoquePage() {
         </div>
       ) : (
         <div className="space-y-2">
-          {grupos.map(({ clienteCodigo, clienteNome, redeSubrede, itens: gItens }) => (
-            <LojaCard
-              key={clienteCodigo}
-              clienteCodigo={clienteCodigo}
-              clienteNome={clienteNome}
-              redeSubrede={redeSubrede}
-              itens={gItens}
-              expanded={expanded.has(clienteCodigo)}
-              onToggle={() => toggleLoja(clienteCodigo)}
-              onRebaixar={setFormItem}
-            />
-          ))}
+          {redeGrupos.map((grupo) => {
+            const { codigoRede, redeSubrede, lojas } = grupo;
+            // Rede com múltiplas lojas → RedeCard
+            if (lojas.length > 1 && codigoRede) {
+              return (
+                <RedeCard
+                  key={codigoRede}
+                  codigoRede={codigoRede}
+                  redeSubrede={redeSubrede}
+                  lojas={lojas}
+                  expandedRede={expandedRedes.has(codigoRede)}
+                  expandedLojas={expanded}
+                  onToggleRede={() => toggleRede(codigoRede)}
+                  onToggleLoja={toggleLoja}
+                  onRebaixar={setFormItem}
+                  onSolicitarRede={() => setFormRede({ codigoRede, redeSubrede, lojas })}
+                />
+              );
+            }
+            // Loja solo (sem rede ou rede com apenas 1 loja)
+            const loja = lojas[0];
+            return (
+              <LojaCard
+                key={loja.clienteCodigo}
+                clienteCodigo={loja.clienteCodigo}
+                clienteNome={loja.clienteNome}
+                redeSubrede={loja.redeSubrede}
+                itens={loja.itens}
+                expanded={expanded.has(loja.clienteCodigo)}
+                onToggle={() => toggleLoja(loja.clienteCodigo)}
+                onRebaixar={setFormItem}
+              />
+            );
+          })}
         </div>
       )}
 
       {formItem && (
         <RebaixaModal item={formItem} onClose={() => setFormItem(null)} onEnviado={handleEnviado} />
+      )}
+
+      {formRede && (
+        <RedeRebaixaModal
+          redeSubrede={formRede.redeSubrede}
+          codigoRede={formRede.codigoRede}
+          lojas={formRede.lojas}
+          onClose={() => setFormRede(null)}
+          onEnviado={handleEnviado}
+        />
       )}
 
       {toast && (
