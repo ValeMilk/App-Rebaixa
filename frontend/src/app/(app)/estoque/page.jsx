@@ -411,6 +411,70 @@ function LojaCard({ clienteCodigo, clienteNome, redeSubrede, itens, expanded, on
   );
 }
 
+function RedeCard({ codigoRede, redeSubrede, lojas, expandedRede, expandedLojas, onToggleRede, onToggleLoja, onRebaixar, onSolicitarRede }) {
+  const totalItens    = lojas.reduce((s, l) => s + l.itens.length, 0);
+  const totalCriticos = lojas.reduce((s, l) => s + l.itens.filter((i) => i.classificacao === "critico").length, 0);
+  const totalAlertas  = lojas.reduce((s, l) => s + l.itens.filter((i) => i.classificacao === "alerta").length, 0);
+
+  const borda  = totalCriticos > 0 ? "border-red-200"          : totalAlertas > 0 ? "border-orange-200"        : "border-blue-200";
+  const iconBg = totalCriticos > 0 ? "bg-red-50 text-red-600"  : totalAlertas > 0 ? "bg-orange-50 text-orange-600" : "bg-blue-50 text-blue-600";
+
+  return (
+    <div className={`bg-white rounded-2xl border shadow-sm overflow-hidden ${borda}`}>
+      <button className="w-full flex items-center gap-3 px-3 py-3 text-left active:bg-slate-50 transition-colors" onClick={onToggleRede}>
+        <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${iconBg}`}>
+          <IcoUsers className="w-5 h-5" />
+        </div>
+        <div className="flex-1 min-w-0">
+          <div className="font-bold text-slate-900 truncate text-sm">{redeSubrede}</div>
+          <div className="text-[11px] text-slate-500 mt-1 flex items-center gap-1.5 flex-wrap">
+            <span className="whitespace-nowrap">{lojas.length} lojas · {totalItens} prod.</span>
+            {totalCriticos > 0 && (
+              <span className="inline-flex items-center gap-0.5 bg-red-100 text-red-700 px-1.5 py-0.5 rounded-full font-bold whitespace-nowrap">
+                <span className="w-1 h-1 rounded-full bg-red-500" />{totalCriticos} crít.
+              </span>
+            )}
+            {totalAlertas > 0 && (
+              <span className="inline-flex items-center gap-0.5 bg-orange-100 text-orange-700 px-1.5 py-0.5 rounded-full font-bold whitespace-nowrap">
+                <span className="w-1 h-1 rounded-full bg-orange-500" />{totalAlertas} alerta{totalAlertas !== 1 ? "s" : ""}
+              </span>
+            )}
+          </div>
+        </div>
+        <IcoChevronDown className={`w-5 h-5 text-slate-400 shrink-0 transition-transform duration-200 ${expandedRede ? "rotate-180" : ""}`} />
+      </button>
+
+      {expandedRede && (
+        <div className="border-t border-slate-100 animate-fade-in">
+          <div className="px-3 pt-2.5 pb-2">
+            <button
+              onClick={onSolicitarRede}
+              className="w-full py-2 text-sm font-semibold text-blue-700 border border-blue-200 bg-blue-50 rounded-xl hover:bg-blue-100 active:scale-[0.98] transition flex items-center justify-center gap-2"
+            >
+              <IcoUsers className="w-4 h-4" />
+              Solicitar Rebaixa para toda a Rede
+            </button>
+          </div>
+          <div className="px-3 pb-3 space-y-2">
+            {lojas.map((loja) => (
+              <LojaCard
+                key={loja.clienteCodigo}
+                clienteCodigo={loja.clienteCodigo}
+                clienteNome={loja.clienteNome}
+                redeSubrede={null}
+                itens={loja.itens}
+                expanded={expandedLojas.has(loja.clienteCodigo)}
+                onToggle={() => onToggleLoja(loja.clienteCodigo)}
+                onRebaixar={onRebaixar}
+              />
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function EstoquePage() {
   const [itens, setItens] = useState([]);
   const [q, setQ] = useState("");
