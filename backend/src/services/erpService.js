@@ -126,7 +126,7 @@ const SQL_ULTIMA_COMPRA = `
 WITH UltimaCompra AS (
     SELECT
         m00.M00_ID_A00       AS clienteCodigo,
-        m01.M01_ID_E02       AS produtoCodigo,
+        e02.E02_LIVRE        AS produtoCodigo,
         m01.M01_PRECOU       AS precoUltimaCompra,
         m00.M00_ENTSAI       AS dataUltimaCompra,
         ROW_NUMBER() OVER (
@@ -135,10 +135,11 @@ WITH UltimaCompra AS (
         ) AS rn
     FROM dbo.M01 WITH (NOLOCK)
     INNER JOIN dbo.M00 WITH (NOLOCK) ON m01.M01_ID_M00 = m00.M00_ID
+    INNER JOIN dbo.E02 WITH (NOLOCK) ON m01.M01_ID_E02 = e02.E02_ID
     WHERE m00.M00_ENTSAI IS NOT NULL
       AND m00.M00_STATUS = 'N'
       AND m00.M00_ID_A00 = @clienteCodigo
-      AND m01.M01_ID_E02 = @produtoCodigo
+      AND e02.E02_LIVRE  = @produtoCodigo
 )
 SELECT TOP 1
     clienteCodigo,
