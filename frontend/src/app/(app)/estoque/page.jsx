@@ -16,7 +16,7 @@ const CLS = {
 function Badge({ cls }) {
   const c = CLS[cls] || CLS.ok;
   return (
-    <span className={`inline-flex items-center gap-1.5 text-[11px] font-semibold px-2 py-0.5 rounded-full border ${c.bg} ${c.text} ${c.border}`}>
+    <span className={`inline-flex items-center gap-1 text-[10px] font-semibold px-1.5 py-0.5 rounded-full border shrink-0 whitespace-nowrap ${c.bg} ${c.text} ${c.border}`}>
       <span className={`w-1.5 h-1.5 rounded-full ${c.dot}`} />
       {c.label}
     </span>
@@ -222,13 +222,13 @@ function ProdutoCard({ item, onRebaixar }) {
         <span className={`w-2 h-2 rounded-full shrink-0 mt-1.5 ${c.dot}`} />
         <div className="flex-1 min-w-0">
           <div className="font-semibold text-slate-800 text-sm leading-snug">{item.produto}</div>
-          <div className="text-xs text-slate-500 mt-1 flex gap-3 flex-wrap">
-            <span className="inline-flex items-center gap-1"><IcoPackage className="w-3 h-3" />{item.quantidade} un</span>
-            <span className="inline-flex items-center gap-1"><IcoClock className="w-3 h-3" />{fmtData(item.dataValidade)} · {item.diasParaVencer}d</span>
-            {item.precoTabela && <span className="inline-flex items-center gap-1"><IcoTag className="w-3 h-3" />{fmtBRL(item.precoTabela)}</span>}
+          <div className="text-xs text-slate-500 mt-1 flex gap-x-2 gap-y-1 flex-wrap items-center">
+            <Badge cls={item.classificacao} />
+            <span className="inline-flex items-center gap-1 whitespace-nowrap"><IcoPackage className="w-3 h-3" />{item.quantidade} un</span>
+            <span className="inline-flex items-center gap-1 whitespace-nowrap"><IcoClock className="w-3 h-3" />{fmtData(item.dataValidade)} · {item.diasParaVencer}d</span>
+            {item.precoTabela && <span className="inline-flex items-center gap-1 whitespace-nowrap"><IcoTag className="w-3 h-3" />{fmtBRL(item.precoTabela)}</span>}
           </div>
         </div>
-        <Badge cls={item.classificacao} />
       </div>
       <button
         onClick={() => onRebaixar(item)}
@@ -362,21 +362,21 @@ export default function EstoquePage() {
           <div className="flex items-center justify-center text-red-500 mb-1">
             <IcoAlert className="w-4 h-4" />
           </div>
-          <div className="text-2xl font-bold text-red-700 leading-none">{loading ? "…" : totCritico}</div>
+          <div className="text-xl sm:text-2xl font-bold text-red-700 leading-none tabular-nums">{loading ? "…" : totCritico}</div>
           <div className="text-[10px] text-red-600 font-semibold uppercase tracking-wide mt-1">Críticos</div>
         </div>
         <div className="stat-card bg-orange-50 border-orange-100 min-w-0">
           <div className="flex items-center justify-center text-orange-500 mb-1">
             <IcoClock className="w-4 h-4" />
           </div>
-          <div className="text-2xl font-bold text-orange-700 leading-none">{loading ? "…" : totAlerta}</div>
+          <div className="text-xl sm:text-2xl font-bold text-orange-700 leading-none tabular-nums">{loading ? "…" : totAlerta}</div>
           <div className="text-[10px] text-orange-600 font-semibold uppercase tracking-wide mt-1">Alertas</div>
         </div>
         <div className="stat-card bg-brand/5 border-brand/10 min-w-0">
           <div className="flex items-center justify-center text-brand/70 mb-1">
             <IcoStore className="w-4 h-4" />
           </div>
-          <div className="text-2xl font-bold text-brand leading-none">{loading ? "…" : grupos.length}</div>
+          <div className="text-xl sm:text-2xl font-bold text-brand leading-none tabular-nums">{loading ? "…" : grupos.length}</div>
           <div className="text-[10px] text-brand/80 font-semibold uppercase tracking-wide mt-1">Lojas</div>
         </div>
       </div>
