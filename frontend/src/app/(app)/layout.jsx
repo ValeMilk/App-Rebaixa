@@ -55,7 +55,7 @@ export default function AppLayout({ children }) {
   const initials = (user.nome || "?").split(" ").map(p => p[0]).slice(0, 2).join("").toUpperCase();
 
   return (
-    <div className="flex min-h-screen bg-slate-50">
+    <div className="flex min-h-screen bg-slate-50 w-screen max-w-full overflow-x-clip">
       {/* Sidebar — apenas desktop */}
       <aside className="hidden lg:flex w-64 bg-gradient-to-b from-brand to-brand-700 text-white flex-col shrink-0">
         <div className="px-6 py-5 border-b border-white/10">
@@ -94,7 +94,7 @@ export default function AppLayout({ children }) {
       </aside>
 
       {/* Conteúdo principal */}
-      <div className="flex-1 flex flex-col min-h-screen">
+      <div className="flex-1 min-w-0 flex flex-col min-h-screen overflow-x-clip">
         {/* Top bar — apenas mobile */}
         <header className="lg:hidden sticky top-0 z-40 bg-gradient-to-r from-brand to-brand-600 text-white px-4 pt-3 pb-3 shadow-sm safe-area-pt">
           <div className="flex items-center justify-between gap-3">
@@ -112,8 +112,8 @@ export default function AppLayout({ children }) {
         </header>
 
         {/* Conteúdo */}
-        <main className="flex-1 overflow-y-auto pb-24 lg:pb-0">
-          <div className="max-w-7xl mx-auto px-5 py-4 lg:px-8 lg:py-6 w-full">{children}</div>
+        <main className="flex-1 overflow-y-auto pb-24 lg:pb-0 w-full min-w-0">
+          <div className="max-w-7xl mx-auto px-5 py-4 lg:px-8 lg:py-6 w-full min-w-0">{children}</div>
         </main>
 
         {/* Bottom nav — apenas mobile */}
