@@ -94,48 +94,49 @@ function RebaixaModal({ item, onClose, onEnviado }) {
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex flex-col justify-end animate-fade-in">
-      <div className="absolute inset-0 bg-slate-900/50 backdrop-blur-sm" onClick={onClose} />
+    <div className="fixed inset-0 z-50 flex flex-col sm:items-center sm:justify-center sm:p-6 animate-fade-in">
+      <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={onClose} />
 
-      <div className="relative bg-white rounded-t-3xl shadow-2xl animate-slide-up safe-area-pb flex flex-col"
-        style={{ maxHeight: "92dvh" }}>
+      <div className="relative bg-white shadow-2xl flex flex-col w-full sm:max-w-md sm:rounded-3xl sm:max-h-[90dvh] animate-slide-up safe-area-pb"
+        style={{ height: "100dvh", maxHeight: "100dvh" }}>
 
-        {/* Handle fixo */}
-        <div className="shrink-0 flex justify-center pt-2.5 pb-2">
-          <div className="w-10 h-1 bg-slate-300 rounded-full" />
+        {/* Header fixo */}
+        <div className="shrink-0 px-4 pt-3 pb-2.5 border-b border-slate-100 bg-white sm:rounded-t-3xl safe-area-pt">
+          <div className="flex items-center justify-between gap-3">
+            <div className="min-w-0 flex-1">
+              <div className="text-[10px] font-semibold text-brand uppercase tracking-wider mb-0.5">Nova Rebaixa</div>
+              <h2 className="font-bold text-slate-900 text-base leading-snug line-clamp-2">{item.produto}</h2>
+            </div>
+            <button onClick={onClose} aria-label="Fechar"
+              className="shrink-0 h-9 w-9 rounded-full bg-slate-100 active:bg-slate-200 active:scale-95 transition flex items-center justify-center text-slate-600">
+              <IcoX className="w-5 h-5" />
+            </button>
+          </div>
         </div>
 
         {/* Scroll area */}
-        <div className="flex-1 overflow-y-auto px-4 pb-5" style={{ WebkitOverflowScrolling: "touch", overscrollBehavior: "contain" }}>
+        <div className="flex-1 overflow-y-auto px-4 pt-3 pb-4"
+          style={{ WebkitOverflowScrolling: "touch", overscrollBehavior: "contain" }}>
 
-          {/* Banner rede — compacto */}
-          {item.redeSubrede && (
-            <div className="mb-2.5 flex items-center gap-2 bg-blue-50 border border-blue-200 rounded-xl px-3 py-2">
-              <IcoUsers className="w-3.5 h-3.5 text-blue-600 shrink-0" />
-              <span className="text-xs font-bold text-blue-700 truncate flex-1">{item.redeSubrede}</span>
-              <span className="shrink-0 text-[10px] font-semibold bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full">rede</span>
-            </div>
-          )}
-
-          {/* Header produto */}
-          <div className="flex items-center justify-between gap-2 mb-2.5">
-            <div className="min-w-0 flex-1">
-              <h2 className="font-bold text-slate-900 text-base leading-snug line-clamp-2">{item.produto}</h2>
-              <p className="text-slate-500 text-xs truncate">{item.cliente}</p>
-            </div>
-            <button onClick={onClose} aria-label="Fechar"
-              className="shrink-0 h-8 w-8 rounded-full bg-slate-100 active:bg-slate-200 active:scale-95 transition flex items-center justify-center text-slate-500">
-              <IcoX className="w-4 h-4" />
-            </button>
+          {/* Cliente + Rede */}
+          <div className="mb-3 bg-slate-50 rounded-xl border border-slate-100 px-3 py-2">
+            <div className="text-[10px] font-semibold text-slate-500 uppercase tracking-wide">Cliente</div>
+            <div className="text-sm font-semibold text-slate-800 truncate">{item.cliente}</div>
+            {item.redeSubrede && (
+              <div className="mt-1.5 flex items-center gap-1.5 text-[11px] text-blue-700 font-semibold">
+                <IcoUsers className="w-3 h-3" />
+                <span className="truncate">Rebaixa para toda a rede</span>
+              </div>
+            )}
           </div>
 
           {/* Info strip horizontal */}
           <div className="flex items-stretch rounded-xl border border-slate-100 overflow-hidden mb-3">
-            <div className="flex-1 bg-slate-50 px-2 py-2 text-center">
+            <div className="flex-1 bg-white px-2 py-2 text-center">
               <div className="text-[9px] text-slate-500 font-semibold uppercase tracking-wide">Qtd</div>
               <div className="font-bold text-slate-800 text-lg leading-tight">{item.quantidade}</div>
             </div>
-            <div className="flex-1 bg-slate-50 px-2 py-2 text-center border-x border-slate-100">
+            <div className="flex-1 bg-white px-2 py-2 text-center border-x border-slate-100">
               <div className="text-[9px] text-slate-500 font-semibold uppercase tracking-wide">Vence</div>
               <div className={`font-bold text-lg leading-tight ${item.diasParaVencer <= 15 ? "text-red-600" : "text-slate-800"}`}>
                 {item.diasParaVencer ?? "—"}d
@@ -148,8 +149,7 @@ function RebaixaModal({ item, onClose, onEnviado }) {
             </div>
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-2.5">
-            {/* Preço oferta */}
+          <form id="form-rebaixa" onSubmit={handleSubmit} className="space-y-2.5">
             <div>
               <label className="block text-[10px] font-semibold text-slate-500 uppercase tracking-wide mb-1">Preço da Oferta (R$)</label>
               <input
@@ -162,7 +162,6 @@ function RebaixaModal({ item, onClose, onEnviado }) {
               />
             </div>
 
-            {/* Margem inline */}
             <div className="flex items-center justify-between bg-slate-50 rounded-xl px-3 py-2 border border-slate-100">
               <div>
                 <div className="text-xs font-semibold text-slate-700">Margem Valemilk</div>
@@ -173,7 +172,6 @@ function RebaixaModal({ item, onClose, onEnviado }) {
               <MargemBadge pct={margem} />
             </div>
 
-            {/* Sellout */}
             <div>
               <label className="block text-[10px] font-semibold text-slate-500 uppercase tracking-wide mb-1">Sellout (R$ consumidor)</label>
               <input
@@ -186,7 +184,6 @@ function RebaixaModal({ item, onClose, onEnviado }) {
               />
             </div>
 
-            {/* Motivo */}
             <div>
               <label className="block text-[10px] font-semibold text-slate-500 uppercase tracking-wide mb-1">Motivo</label>
               <input
@@ -203,11 +200,14 @@ function RebaixaModal({ item, onClose, onEnviado }) {
                 {erro}
               </div>
             )}
-
-            <button type="submit" className="btn-primary w-full py-3 text-base" disabled={enviando}>
-              {enviando ? "Enviando..." : "Solicitar Rebaixa"}
-            </button>
           </form>
+        </div>
+
+        {/* Footer fixo com botão */}
+        <div className="shrink-0 px-4 py-3 border-t border-slate-100 bg-white sm:rounded-b-3xl">
+          <button type="submit" form="form-rebaixa" className="btn-primary w-full py-3 text-base" disabled={enviando}>
+            {enviando ? "Enviando..." : "Solicitar Rebaixa"}
+          </button>
         </div>
       </div>
     </div>
@@ -246,6 +246,9 @@ function LojaCard({ clienteCodigo, clienteNome, redeSubrede, itens, expanded, on
   const borda = criticos > 0 ? "border-red-200" : alertas > 0 ? "border-orange-200" : "border-slate-200";
   const iconBg = criticos > 0 ? "bg-red-50 text-red-600" : alertas > 0 ? "bg-orange-50 text-orange-600" : "bg-brand/10 text-brand";
 
+  // Esconde rede quando duplica o nome do cliente (ex.: cliente "COMPREMAX - X" e rede "COMPREMAX")
+  const mostrarRede = redeSubrede && !clienteNome.toUpperCase().startsWith(redeSubrede.toUpperCase());
+
   return (
     <div className={`bg-white rounded-2xl border shadow-sm overflow-hidden ${borda}`}>
       <button className="w-full flex items-center gap-3 px-3 py-3 text-left active:bg-slate-50 transition-colors" onClick={onToggle}>
@@ -255,17 +258,17 @@ function LojaCard({ clienteCodigo, clienteNome, redeSubrede, itens, expanded, on
         <div className="flex-1 min-w-0">
           <div className="font-semibold text-slate-900 truncate text-sm">{clienteNome}</div>
           <div className="text-[11px] text-slate-500 mt-0.5 flex items-center gap-2 flex-wrap">
-            <span>Cód {clienteCodigo} · {itens.length} produto{itens.length !== 1 ? "s" : ""}</span>
-            {redeSubrede && (
+            <span>{itens.length} produto{itens.length !== 1 ? "s" : ""}</span>
+            {mostrarRede && (
               <span className="inline-flex items-center gap-1 text-blue-600 font-semibold">
                 <IcoUsers className="w-3 h-3" />{redeSubrede}
               </span>
             )}
           </div>
         </div>
-        <div className="flex gap-1.5 items-center shrink-0">
-          {criticos > 0 && <span className="text-[10px] font-bold bg-red-100 text-red-700 px-2 py-0.5 rounded-full">{criticos}</span>}
-          {alertas > 0 && <span className="text-[10px] font-bold bg-orange-100 text-orange-700 px-2 py-0.5 rounded-full">{alertas}</span>}
+        <div className="flex gap-1 items-center shrink-0">
+          {criticos > 0 && <span className="text-[10px] font-bold bg-red-100 text-red-700 px-1.5 py-0.5 rounded-full min-w-[20px] text-center">{criticos}</span>}
+          {alertas > 0 && <span className="text-[10px] font-bold bg-orange-100 text-orange-700 px-1.5 py-0.5 rounded-full min-w-[20px] text-center">{alertas}</span>}
           <IcoChevronDown className={`w-5 h-5 text-slate-400 transition-transform duration-200 ${expanded ? "rotate-180" : ""}`} />
         </div>
       </button>
