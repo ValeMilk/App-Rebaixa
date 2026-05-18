@@ -111,7 +111,7 @@ export default function SolicitacoesPage() {
       </div>
 
       {/* Filtro horizontal scroll */}
-      <div className="flex gap-2 overflow-x-auto no-scrollbar pb-1">
+      <div className="flex gap-2 overflow-x-auto no-scrollbar pb-1 w-full" style={{ touchAction: "pan-x pan-y" }}>
         {FILTROS.map(({ v, l }) => (
           <button
             key={v}
