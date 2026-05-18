@@ -92,6 +92,17 @@ function RebaixaModal({ item, onClose, onEnviado }) {
     return ((o - tabelaComSellout) / o) * 100;
   }, [precoOferta, sellout, precoUC]);
 
+  // Sellout sugerido = valor que mantém a mesma margem do PDV na oferta
+  // Derivado de: (Oferta - (UC - Sellout)) / Oferta = margemPDV
+  // => Sellout = UC - Oferta * (1 - margemPDV/100)
+  const selloutSugerido = useMemo(() => {
+    const o = Number(precoOferta);
+    if (!o || o <= 0 || precoUC == null || margemPDV == null) return null;
+    const s = precoUC - o * (1 - margemPDV / 100);
+    if (s <= 0) return null;
+    return Math.round(s * 100) / 100;
+  }, [precoOferta, precoUC, margemPDV]);
+
   async function handleSubmit(e) {
     e.preventDefault();
     setErro("");
@@ -253,6 +264,16 @@ function RebaixaModal({ item, onClose, onEnviado }) {
                 placeholder="0,00"
                 inputMode="decimal"
               />
+              {selloutSugerido != null && String(sellout) !== String(selloutSugerido) && (
+                <button
+                  type="button"
+                  onClick={() => setSellout(String(selloutSugerido))}
+                  className="mt-1.5 flex items-center gap-1.5 text-[11px] text-blue-600 font-semibold hover:text-blue-800 active:opacity-70 transition"
+                >
+                  <span className="inline-block w-3.5 h-3.5 rounded-full bg-blue-100 text-blue-600 text-[10px] font-bold flex items-center justify-center">↑</span>
+                  Sugerido {fmtBRL(selloutSugerido)} — manter margem PDV ({margemPDV?.toFixed(1)}%)
+                </button>
+              )}
             </div>
 
             {/* Margem Oferta */}
