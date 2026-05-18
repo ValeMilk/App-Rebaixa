@@ -51,17 +51,52 @@ function MargemBadge({ pct }) {
 
 function RebaixaModal({ item, onClose, onEnviado }) {
   const [precoOferta, setPrecoOferta] = useState("");
+  const [precoPDV, setPrecoPDV] = useState("");
   const [sellout, setSellout] = useState("");
   const [motivo, setMotivo] = useState("");
   const [enviando, setEnviando] = useState(false);
   const [erro, setErro] = useState("");
 
-  const margem = calcMargem(precoOferta, item.custo);
+  // Última compra: { encontrado, precoUltimaCompra, dataUltimaCompra } | null (loading)
+  const [ultimaCompra, setUltimaCompra] = useState(null);
+  const [loadingUC, setLoadingUC] = useState(true);
+
+  useEffect(() => {
+    let cancelado = false;
+    setLoadingUC(true);
+    api.get("/erp/ultima-compra", {
+      params: { clienteCodigo: item.clienteCodigo, produtoCodigo: item.produtoCodigo },
+    })
+      .then(({ data }) => { if (!cancelado) setUltimaCompra(data); })
+      .catch(() => { if (!cancelado) setUltimaCompra({ encontrado: false }); })
+      .finally(() => { if (!cancelado) setLoadingUC(false); });
+    return () => { cancelado = true; };
+  }, [item.clienteCodigo, item.produtoCodigo]);
+
+  const precoUC = ultimaCompra?.encontrado ? Number(ultimaCompra.precoUltimaCompra) : null;
+  const dataUC  = ultimaCompra?.encontrado ? ultimaCompra.dataUltimaCompra : null;
+
+  // Margem PDV = (PreçoPDV - ÚltimaCompra) / PreçoPDV
+  const margemPDV = useMemo(() => {
+    const p = Number(precoPDV);
+    if (!p || p <= 0 || precoUC == null) return null;
+    return ((p - precoUC) / p) * 100;
+  }, [precoPDV, precoUC]);
+
+  // Margem Oferta = (PreçoOferta - (ÚltimaCompra - Sellout)) / PreçoOferta
+  const margemOferta = useMemo(() => {
+    const o = Number(precoOferta);
+    if (!o || o <= 0 || precoUC == null) return null;
+    const s = Number(sellout) || 0;
+    const tabelaComSellout = precoUC - s;
+    return ((o - tabelaComSellout) / o) * 100;
+  }, [precoOferta, sellout, precoUC]);
 
   async function handleSubmit(e) {
     e.preventDefault();
     setErro("");
     if (!precoOferta) { setErro("Informe o preço da oferta"); return; }
+    if (!precoPDV)    { setErro("Informe o preço PDV"); return; }
     setEnviando(true);
     try {
       await api.post("/solicitacoes", {
@@ -79,8 +114,12 @@ function RebaixaModal({ item, onClose, onEnviado }) {
           diasParaVencer: item.diasParaVencer,
           precoTabela: item.precoTabela,
           precoOferta: Number(precoOferta),
-          sellout: sellout ? Number(sellout) : undefined,
-          margemCalculada: margem != null ? Math.round(margem * 10) / 10 : undefined,
+          precoPDV: Number(precoPDV),
+          sellout: sellout ? Number(sellout) : 0,
+          precoUltimaCompra: precoUC ?? undefined,
+          dataUltimaCompra: dataUC ?? undefined,
+          margemPDV:    margemPDV    != null ? Math.round(margemPDV    * 10) / 10 : undefined,
+          margemOferta: margemOferta != null ? Math.round(margemOferta * 10) / 10 : undefined,
           estoqueRefId: item._id,
         }],
       });
@@ -130,7 +169,7 @@ function RebaixaModal({ item, onClose, onEnviado }) {
             )}
           </div>
 
-          {/* Info strip horizontal */}
+          {/* Info strip horizontal: Qtd · Vence · Última Compra */}
           <div className="flex items-stretch rounded-xl border border-slate-100 overflow-hidden mb-3">
             <div className="flex-1 bg-white px-2 py-2 text-center">
               <div className="text-[9px] text-slate-500 font-semibold uppercase tracking-wide">Qtd</div>
@@ -144,14 +183,54 @@ function RebaixaModal({ item, onClose, onEnviado }) {
               <div className="text-[9px] text-slate-400">{fmtData(item.dataValidade)}</div>
             </div>
             <div className="flex-1 bg-brand/5 px-2 py-2 text-center">
-              <div className="text-[9px] text-brand/70 font-semibold uppercase tracking-wide">Tabela</div>
-              <div className="font-bold text-brand text-sm leading-tight mt-0.5">{fmtBRL(item.precoTabela)}</div>
+              <div className="text-[9px] text-brand/70 font-semibold uppercase tracking-wide">Últ. Compra</div>
+              {loadingUC ? (
+                <div className="text-slate-400 text-xs mt-1">…</div>
+              ) : precoUC != null ? (
+                <>
+                  <div className="font-bold text-brand text-sm leading-tight mt-0.5">{fmtBRL(precoUC)}</div>
+                  <div className="text-[9px] text-slate-400">{fmtData(dataUC)}</div>
+                </>
+              ) : (
+                <div className="text-slate-400 text-xs mt-1">Sem histórico</div>
+              )}
             </div>
           </div>
 
+          {!loadingUC && precoUC == null && (
+            <div className="mb-3 rounded-xl bg-amber-50 border border-amber-200 p-2.5 text-[11px] text-amber-800 flex items-start gap-2">
+              <IcoAlert className="w-3.5 h-3.5 shrink-0 mt-0.5" />
+              <span>Cliente sem histórico de compra deste produto. As margens não poderão ser calculadas.</span>
+            </div>
+          )}
+
           <form id="form-rebaixa" onSubmit={handleSubmit} className="space-y-2.5">
+            {/* Preço PDV */}
             <div>
-              <label className="block text-[10px] font-semibold text-slate-500 uppercase tracking-wide mb-1">Preço da Oferta (R$)</label>
+              <label className="block text-[10px] font-semibold text-slate-500 uppercase tracking-wide mb-1">Preço PDV (R$) *</label>
+              <input
+                type="number" step="0.01" min="0"
+                className="input"
+                value={precoPDV}
+                onChange={(e) => setPrecoPDV(e.target.value)}
+                placeholder="0,00"
+                inputMode="decimal"
+                required
+              />
+            </div>
+
+            {/* Margem PDV */}
+            <div className="flex items-center justify-between bg-slate-50 rounded-xl px-3 py-2 border border-slate-100">
+              <div>
+                <div className="text-xs font-semibold text-slate-700">Margem PDV</div>
+                <div className="text-[10px] text-slate-400">(PDV − Últ. Compra) / PDV</div>
+              </div>
+              <MargemBadge pct={margemPDV} />
+            </div>
+
+            {/* Preço Oferta */}
+            <div>
+              <label className="block text-[10px] font-semibold text-slate-500 uppercase tracking-wide mb-1">Preço da Oferta (R$) *</label>
               <input
                 type="number" step="0.01" min="0"
                 className="input text-2xl font-bold py-2"
@@ -159,21 +238,13 @@ function RebaixaModal({ item, onClose, onEnviado }) {
                 onChange={(e) => setPrecoOferta(e.target.value)}
                 placeholder="0,00"
                 inputMode="decimal"
+                required
               />
             </div>
 
-            <div className="flex items-center justify-between bg-slate-50 rounded-xl px-3 py-2 border border-slate-100">
-              <div>
-                <div className="text-xs font-semibold text-slate-700">Margem Valemilk</div>
-                <div className="text-[10px] text-slate-400">
-                  {item.custo ? `Custo: ${fmtBRL(item.custo)}` : "Custo não disponível"}
-                </div>
-              </div>
-              <MargemBadge pct={margem} />
-            </div>
-
+            {/* Sellout */}
             <div>
-              <label className="block text-[10px] font-semibold text-slate-500 uppercase tracking-wide mb-1">Sellout (R$ consumidor)</label>
+              <label className="block text-[10px] font-semibold text-slate-500 uppercase tracking-wide mb-1">Sellout (R$ desconto sobre últ. compra)</label>
               <input
                 type="number" step="0.01" min="0"
                 className="input"
@@ -184,6 +255,16 @@ function RebaixaModal({ item, onClose, onEnviado }) {
               />
             </div>
 
+            {/* Margem Oferta */}
+            <div className="flex items-center justify-between bg-slate-50 rounded-xl px-3 py-2 border border-slate-100">
+              <div>
+                <div className="text-xs font-semibold text-slate-700">Margem Oferta</div>
+                <div className="text-[10px] text-slate-400">(Oferta − (Últ. Compra − Sellout)) / Oferta</div>
+              </div>
+              <MargemBadge pct={margemOferta} />
+            </div>
+
+            {/* Motivo */}
             <div>
               <label className="block text-[10px] font-semibold text-slate-500 uppercase tracking-wide mb-1">Motivo</label>
               <input

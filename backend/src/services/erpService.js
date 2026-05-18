@@ -118,9 +118,53 @@ async function buscarProdutosDoErp() {
   return query(SQL_PRODUTOS);
 }
 
+// ---------------------------------------------------------------------------
+// Ultima compra (preco e data) de um produto por um cliente
+// ---------------------------------------------------------------------------
+
+const SQL_ULTIMA_COMPRA = `
+WITH UltimaCompra AS (
+    SELECT
+        m00.M00_ID_A00       AS clienteCodigo,
+        m01.M01_ID_E02       AS produtoCodigo,
+        m01.M01_PRECOU       AS precoUltimaCompra,
+        m00.M00_ENTSAI       AS dataUltimaCompra,
+        ROW_NUMBER() OVER (
+            PARTITION BY m00.M00_ID_A00, m01.M01_ID_E02
+            ORDER BY m00.M00_ENTSAI DESC
+        ) AS rn
+    FROM dbo.M01 WITH (NOLOCK)
+    INNER JOIN dbo.M00 WITH (NOLOCK) ON m01.M01_ID_M00 = m00.M00_ID
+    WHERE m00.M00_ENTSAI IS NOT NULL
+      AND m00.M00_STATUS = 'N'
+      AND m00.M00_ID_A00 = @clienteCodigo
+      AND m01.M01_ID_E02 = @produtoCodigo
+)
+SELECT TOP 1
+    clienteCodigo,
+    produtoCodigo,
+    precoUltimaCompra,
+    dataUltimaCompra
+FROM UltimaCompra
+WHERE rn = 1;
+`;
+
+async function buscarUltimaCompra(clienteCodigo, produtoCodigo) {
+  if (!erpConfigurado()) return null;
+  const { getPool } = require("./erpDbService");
+  const sql = require("mssql");
+  const pool = await getPool();
+  const result = await pool.request()
+    .input("clienteCodigo", sql.VarChar(50), String(clienteCodigo))
+    .input("produtoCodigo", sql.VarChar(50), String(produtoCodigo))
+    .query(SQL_ULTIMA_COMPRA);
+  return result.recordset[0] || null;
+}
+
 module.exports = {
   buscarCarteiraDoErp,
   sincronizarCarteira,
   buscarProdutosDoErp,
+  buscarUltimaCompra,
 };
 

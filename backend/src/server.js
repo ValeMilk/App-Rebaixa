@@ -15,6 +15,7 @@ const userRoutes = require("./routes/users");
 const estoqueRoutes = require("./routes/estoque");
 const solicitacaoRoutes = require("./routes/solicitacoes");
 const syncRoutes = require("./routes/sync");
+const erpRoutes = require("./routes/erp");
 
 const app = express();
 const PORT = process.env.PORT || 4000;
@@ -46,6 +47,7 @@ app.use("/api/users", userRoutes);
 app.use("/api/estoque", estoqueRoutes);
 app.use("/api/solicitacoes", solicitacaoRoutes);
 app.use("/api/sync", syncRoutes);
+app.use("/api/erp", erpRoutes);
 
 // Erro
 app.use(errorHandler);

@@ -62,4 +62,4 @@ async function query(sql_str) {
   return result.recordset;
 }
 
-module.exports = { query, erpConfigurado };
+module.exports = { query, erpConfigurado, getPool };
