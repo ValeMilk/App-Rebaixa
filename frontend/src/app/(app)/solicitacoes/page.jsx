@@ -8,21 +8,21 @@ import { useAuth } from "@/lib/auth";
 import { IcoClipboard, IcoChevronRight, IcoCheck, IcoX, IcoSync, IcoClock, IcoUser, IcoAlert } from "@/components/Icons";
 
 const STATUS = {
-  pendente_supervisor: { label: "Aguard. Supervisor", bg: "bg-amber-50",   text: "text-amber-700",  border: "border-amber-200",   dot: "bg-amber-500" },
-  aprovado_supervisor: { label: "Aguard. Diretoria",  bg: "bg-blue-50",    text: "text-blue-700",   border: "border-blue-200",    dot: "bg-blue-500" },
-  aprovado_final:      { label: "Aprovado",           bg: "bg-emerald-50", text: "text-emerald-700",border: "border-emerald-200", dot: "bg-emerald-500" },
-  rejeitado:           { label: "Rejeitado",          bg: "bg-red-50",     text: "text-red-700",    border: "border-red-200",     dot: "bg-red-500" },
-  cancelado:           { label: "Cancelado",          bg: "bg-slate-100",  text: "text-slate-600",  border: "border-slate-200",   dot: "bg-slate-400" },
-  pendente:            { label: "Pendente",           bg: "bg-amber-50",   text: "text-amber-700",  border: "border-amber-200",   dot: "bg-amber-500" },
-  aprovada:            { label: "Aprovada",           bg: "bg-emerald-50", text: "text-emerald-700",border: "border-emerald-200", dot: "bg-emerald-500" },
-  rejeitada:           { label: "Rejeitada",          bg: "bg-red-50",     text: "text-red-700",    border: "border-red-200",     dot: "bg-red-500" },
-  cancelada:           { label: "Cancelada",          bg: "bg-slate-100",  text: "text-slate-600",  border: "border-slate-200",   dot: "bg-slate-400" },
+  pendente_supervisor: { label: "Ag. Sup.",   bg: "bg-amber-50",   text: "text-amber-700",  border: "border-amber-200",   dot: "bg-amber-500" },
+  aprovado_supervisor: { label: "Ag. Dir.",   bg: "bg-blue-50",    text: "text-blue-700",   border: "border-blue-200",    dot: "bg-blue-500" },
+  aprovado_final:      { label: "Aprovado",   bg: "bg-emerald-50", text: "text-emerald-700",border: "border-emerald-200", dot: "bg-emerald-500" },
+  rejeitado:           { label: "Rejeitado",  bg: "bg-red-50",     text: "text-red-700",    border: "border-red-200",     dot: "bg-red-500" },
+  cancelado:           { label: "Cancelado",  bg: "bg-slate-100",  text: "text-slate-600",  border: "border-slate-200",   dot: "bg-slate-400" },
+  pendente:            { label: "Pendente",   bg: "bg-amber-50",   text: "text-amber-700",  border: "border-amber-200",   dot: "bg-amber-500" },
+  aprovada:            { label: "Aprovada",   bg: "bg-emerald-50", text: "text-emerald-700",border: "border-emerald-200", dot: "bg-emerald-500" },
+  rejeitada:           { label: "Rejeitada",  bg: "bg-red-50",     text: "text-red-700",    border: "border-red-200",     dot: "bg-red-500" },
+  cancelada:           { label: "Cancelada",  bg: "bg-slate-100",  text: "text-slate-600",  border: "border-slate-200",   dot: "bg-slate-400" },
 };
 
 function StatusBadge({ s }) {
   const st = STATUS[s] || { label: s, bg: "bg-slate-100", text: "text-slate-600", border: "border-slate-200", dot: "bg-slate-400" };
   return (
-    <span className={`inline-flex items-center gap-1.5 text-[11px] font-semibold px-2.5 py-1 rounded-full border ${st.bg} ${st.text} ${st.border}`}>
+    <span className={`inline-flex items-center gap-1.5 text-[10px] font-semibold px-2 py-0.5 rounded-full border shrink-0 whitespace-nowrap ${st.bg} ${st.text} ${st.border}`}>
       <span className={`w-1.5 h-1.5 rounded-full ${st.dot}`} />
       {st.label}
     </span>
@@ -111,7 +111,7 @@ export default function SolicitacoesPage() {
       </div>
 
       {/* Filtro horizontal scroll */}
-      <div className="flex gap-2 overflow-x-auto no-scrollbar -mx-1 px-1 pb-1">
+      <div className="flex gap-2 overflow-x-auto no-scrollbar pb-1">
         {FILTROS.map(({ v, l }) => (
           <button
             key={v}
