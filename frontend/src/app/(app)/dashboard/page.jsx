@@ -115,7 +115,7 @@ function TabelaCriticos({ itens }) {
     return <p className="text-sm text-slate-400 py-6 text-center">Nenhum item crítico no momento.</p>;
 
   return (
-    <div className="overflow-x-auto -mx-1">
+    <div className="overflow-x-auto w-full">
     <table className="w-full text-sm min-w-[480px]">
       <thead>
         <tr className="border-b border-slate-100 text-xs text-slate-400 uppercase tracking-wider">
@@ -294,16 +294,16 @@ export default function DashboardPage() {
               </div>
 
               {/* 3 métricas */}
-              <div className="grid grid-cols-3 gap-3 pt-4 border-t border-slate-100">
+              <div className="grid grid-cols-3 gap-2 pt-4 border-t border-slate-100">
                 {[
-                  { label: "Ação Imediata",   val: urgente,              sub: "Crítico + Vencido", hex: urgente > 0 ? "#dc2626" : "#94a3b8" },
-                  { label: "Em Alerta",        val: resumo?.alerta ?? 0,  sub: "16 – 30 dias",      hex: (resumo?.alerta ?? 0) > 0 ? "#ea580c" : "#94a3b8" },
-                  { label: "Total Monitorado", val: total,                sub: "todos os itens",    hex: "#0056a6" },
+                  { label: "Imediato",  val: urgente,              sub: "Crít. + Venc.", hex: urgente > 0 ? "#dc2626" : "#94a3b8" },
+                  { label: "Alerta",    val: resumo?.alerta ?? 0,  sub: "16–30 dias",    hex: (resumo?.alerta ?? 0) > 0 ? "#ea580c" : "#94a3b8" },
+                  { label: "Total",     val: total,                sub: "monitorados",   hex: "#0056a6" },
                 ].map((m) => (
-                  <div key={m.label} className="rounded-xl bg-slate-50 p-4">
-                    <p className="text-[10px] uppercase tracking-wider text-slate-400 font-semibold">{m.label}</p>
-                    <p className="text-3xl font-black tabular-nums mt-1" style={{ color: m.hex }}>{m.val.toLocaleString("pt-BR")}</p>
-                    <p className="text-xs text-slate-400 mt-0.5">{m.sub}</p>
+                  <div key={m.label} className="rounded-xl bg-slate-50 p-3 min-w-0 overflow-hidden">
+                    <p className="text-[10px] uppercase tracking-wide text-slate-400 font-semibold truncate">{m.label}</p>
+                    <p className="text-2xl font-black tabular-nums mt-1 leading-none" style={{ color: m.hex }}>{m.val.toLocaleString("pt-BR")}</p>
+                    <p className="text-[10px] text-slate-400 mt-0.5 truncate">{m.sub}</p>
                   </div>
                 ))}
               </div>
