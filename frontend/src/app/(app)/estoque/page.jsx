@@ -257,20 +257,26 @@ function LojaCard({ clienteCodigo, clienteNome, redeSubrede, itens, expanded, on
         </div>
         <div className="flex-1 min-w-0">
           <div className="font-semibold text-slate-900 truncate text-sm">{clienteNome}</div>
-          <div className="text-[11px] text-slate-500 mt-0.5 flex items-center gap-2 flex-wrap">
-            <span>{itens.length} produto{itens.length !== 1 ? "s" : ""}</span>
+          <div className="text-[11px] text-slate-500 mt-1 flex items-center gap-1.5 flex-wrap">
+            <span className="whitespace-nowrap">{itens.length} prod.</span>
+            {criticos > 0 && (
+              <span className="inline-flex items-center gap-0.5 bg-red-100 text-red-700 px-1.5 py-0.5 rounded-full font-bold whitespace-nowrap">
+                <span className="w-1 h-1 rounded-full bg-red-500" />{criticos} crít.
+              </span>
+            )}
+            {alertas > 0 && (
+              <span className="inline-flex items-center gap-0.5 bg-orange-100 text-orange-700 px-1.5 py-0.5 rounded-full font-bold whitespace-nowrap">
+                <span className="w-1 h-1 rounded-full bg-orange-500" />{alertas} alerta{alertas !== 1 ? "s" : ""}
+              </span>
+            )}
             {mostrarRede && (
-              <span className="inline-flex items-center gap-1 text-blue-600 font-semibold">
+              <span className="inline-flex items-center gap-1 text-blue-600 font-semibold whitespace-nowrap">
                 <IcoUsers className="w-3 h-3" />{redeSubrede}
               </span>
             )}
           </div>
         </div>
-        <div className="flex gap-1 items-center shrink-0">
-          {criticos > 0 && <span className="text-[10px] font-bold bg-red-100 text-red-700 px-1.5 py-0.5 rounded-full min-w-[20px] text-center">{criticos}</span>}
-          {alertas > 0 && <span className="text-[10px] font-bold bg-orange-100 text-orange-700 px-1.5 py-0.5 rounded-full min-w-[20px] text-center">{alertas}</span>}
-          <IcoChevronDown className={`w-5 h-5 text-slate-400 transition-transform duration-200 ${expanded ? "rotate-180" : ""}`} />
-        </div>
+        <IcoChevronDown className={`w-5 h-5 text-slate-400 shrink-0 transition-transform duration-200 ${expanded ? "rotate-180" : ""}`} />
       </button>
       {expanded && (
         <div className="px-3 pb-3 space-y-2 border-t border-slate-100 pt-2 animate-fade-in">
