@@ -88,7 +88,7 @@ function KpiCard({ s, valor, total }) {
       </div>
 
       {/* número */}
-      <div className="text-5xl font-black tabular-nums leading-none" style={{ color: s.hex }}>
+      <div className="text-4xl sm:text-5xl font-black tabular-nums leading-none" style={{ color: s.hex }}>
         {valor.toLocaleString("pt-BR")}
       </div>
 
@@ -115,7 +115,8 @@ function TabelaCriticos({ itens }) {
     return <p className="text-sm text-slate-400 py-6 text-center">Nenhum item crítico no momento.</p>;
 
   return (
-    <table className="w-full text-sm">
+    <div className="overflow-x-auto -mx-1">
+    <table className="w-full text-sm min-w-[480px]">
       <thead>
         <tr className="border-b border-slate-100 text-xs text-slate-400 uppercase tracking-wider">
           <th className="text-left pb-2 pr-4 font-medium">Produto</th>
@@ -147,6 +148,7 @@ function TabelaCriticos({ itens }) {
         })}
       </tbody>
     </table>
+    </div>
   );
 }
 
@@ -179,22 +181,22 @@ export default function DashboardPage() {
   return (
     <div>
       {/* ── Header ── */}
-      <div className="flex items-end justify-between mb-6">
+      <div className="flex items-start justify-between gap-3 mb-6 flex-wrap">
         <div>
           <p className="text-xs font-semibold uppercase tracking-widest text-brand mb-1">Valemilk · Controle Comercial</p>
-          <h1 className="text-2xl font-black text-slate-900">Painel de Vencimentos</h1>
-          <p className="text-sm text-slate-400 mt-0.5">Estoque ativo · qtd &gt; 5 · janela 1 – 31 dias</p>
+          <h1 className="text-xl sm:text-2xl font-black text-slate-900">Painel de Vencimentos</h1>
+          <p className="text-xs text-slate-400 mt-0.5">Estoque ativo · qtd &gt; 5 · janela 1 – 31 dias</p>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2">
           {atualizado && (
-            <span className="text-xs text-slate-400">
+            <span className="hidden sm:block text-xs text-slate-400">
               {fmtDataHora(atualizado)}
             </span>
           )}
           <button
             onClick={carregar}
             disabled={loading}
-            className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-50 transition disabled:opacity-40 flex items-center gap-1.5"
+            className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-medium text-slate-600 hover:bg-slate-50 transition disabled:opacity-40 flex items-center gap-1.5"
           >
             <svg className={`h-3.5 w-3.5 ${loading ? "animate-spin" : ""}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
               <path d="M4 4v5h5M20 20v-5h-5M4 9a9 9 0 0 1 15-4.2M20 15a9 9 0 0 1-15 4.2" strokeLinecap="round" />

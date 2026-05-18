@@ -20,6 +20,18 @@ body {
   overscroll-behavior-y: none;
 }
 
+/* Tap targets mínimos e sem delay de 300ms */
+button, a, [role="button"] {
+  touch-action: manipulation;
+}
+
+/* Previne zoom automático do iOS em inputs menores que 16px */
+@media (max-width: 768px) {
+  input, select, textarea {
+    font-size: 16px !important;
+  }
+}
+
 /* iOS safe area */
 .safe-area-pb {
   padding-bottom: env(safe-area-inset-bottom);
@@ -57,7 +69,7 @@ body {
     @apply inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold;
   }
   .chip {
-    @apply inline-flex items-center gap-1.5 shrink-0 text-xs px-3 py-1.5 rounded-full font-medium border bg-white text-slate-600 border-slate-200 transition active:scale-95;
+    @apply inline-flex items-center gap-1.5 shrink-0 text-xs px-3 py-2 rounded-full font-medium border bg-white text-slate-600 border-slate-200 transition active:scale-95;
   }
   .chip-active {
     @apply bg-brand text-white border-brand;

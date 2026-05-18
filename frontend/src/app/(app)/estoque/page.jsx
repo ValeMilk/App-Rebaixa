@@ -167,7 +167,6 @@ function RebaixaModal({ item, onClose, onEnviado }) {
                 onChange={(e) => setPrecoOferta(e.target.value)}
                 placeholder="0,00"
                 inputMode="decimal"
-                autoFocus
               />
             </div>
 
@@ -221,25 +220,25 @@ function RebaixaModal({ item, onClose, onEnviado }) {
 function ProdutoCard({ item, onRebaixar }) {
   const c = CLS[item.classificacao] || CLS.ok;
   return (
-    <div className={`flex items-center gap-3 p-3 rounded-xl border ${c.border} ${c.bg}`}>
-      <span className={`w-2 h-2 rounded-full shrink-0 ${c.dot}`} />
-      <div className="flex-1 min-w-0">
-        <div className="font-medium text-slate-800 text-sm leading-tight truncate">{item.produto}</div>
-        <div className="text-xs text-slate-500 mt-1 flex gap-3 flex-wrap">
-          <span className="inline-flex items-center gap-1"><IcoPackage className="w-3 h-3" />{item.quantidade}</span>
-          <span className="inline-flex items-center gap-1"><IcoClock className="w-3 h-3" />{fmtData(item.dataValidade)}</span>
-          {item.precoTabela && <span className="inline-flex items-center gap-1"><IcoTag className="w-3 h-3" />{fmtBRL(item.precoTabela)}</span>}
+    <div className={`p-3 rounded-xl border ${c.border} ${c.bg}`}>
+      <div className="flex items-start gap-2 mb-2.5">
+        <span className={`w-2 h-2 rounded-full shrink-0 mt-1.5 ${c.dot}`} />
+        <div className="flex-1 min-w-0">
+          <div className="font-semibold text-slate-800 text-sm leading-snug">{item.produto}</div>
+          <div className="text-xs text-slate-500 mt-1 flex gap-3 flex-wrap">
+            <span className="inline-flex items-center gap-1"><IcoPackage className="w-3 h-3" />{item.quantidade} un</span>
+            <span className="inline-flex items-center gap-1"><IcoClock className="w-3 h-3" />{fmtData(item.dataValidade)} · {item.diasParaVencer}d</span>
+            {item.precoTabela && <span className="inline-flex items-center gap-1"><IcoTag className="w-3 h-3" />{fmtBRL(item.precoTabela)}</span>}
+          </div>
         </div>
-      </div>
-      <div className="flex flex-col items-end gap-1.5 shrink-0">
         <Badge cls={item.classificacao} />
-        <button
-          onClick={() => onRebaixar(item)}
-          className="text-xs font-semibold text-brand border border-brand/30 bg-white px-3 py-1 rounded-lg hover:bg-brand/5 active:scale-95 transition"
-        >
-          Rebaixar
-        </button>
       </div>
+      <button
+        onClick={() => onRebaixar(item)}
+        className="w-full py-2 text-sm font-semibold text-brand border border-brand/30 bg-white rounded-xl hover:bg-brand/5 active:scale-[0.98] transition"
+      >
+        Solicitar Rebaixa
+      </button>
     </div>
   );
 }
