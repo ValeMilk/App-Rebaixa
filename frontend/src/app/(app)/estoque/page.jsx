@@ -36,14 +36,14 @@ function calcMargem(precoOferta, custo) {
 }
 
 function MargemBadge({ pct }) {
-  if (pct == null) return <span className="text-slate-300 text-2xl font-bold">—</span>;
+  if (pct == null) return <span className="text-slate-300 text-base font-bold">—</span>;
   const cor = pct >= 20
     ? "text-emerald-700 bg-emerald-50 border-emerald-200"
     : pct >= 10
       ? "text-amber-700 bg-amber-50 border-amber-200"
       : "text-red-700 bg-red-50 border-red-200";
   return (
-    <span className={`inline-block font-bold text-2xl px-4 py-1.5 rounded-xl border ${cor}`}>
+    <span className={`inline-block font-bold text-xl px-3 py-0.5 rounded-xl border ${cor}`}>
       {pct.toFixed(1)}%
     </span>
   );
@@ -96,73 +96,65 @@ function RebaixaModal({ item, onClose, onEnviado }) {
   return (
     <div className="fixed inset-0 z-50 flex flex-col justify-end animate-fade-in">
       <div className="absolute inset-0 bg-slate-900/50 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative bg-white rounded-t-3xl shadow-2xl max-h-[92vh] overflow-y-auto animate-slide-up safe-area-pb">
-        <div className="sticky top-0 bg-white pt-3 pb-2 z-10 rounded-t-3xl">
-          <div className="flex justify-center">
-            <div className="w-10 h-1 bg-slate-300 rounded-full" />
-          </div>
+
+      <div className="relative bg-white rounded-t-3xl shadow-2xl animate-slide-up safe-area-pb flex flex-col"
+        style={{ maxHeight: "92dvh" }}>
+
+        {/* Handle fixo */}
+        <div className="shrink-0 flex justify-center pt-2.5 pb-2">
+          <div className="w-10 h-1 bg-slate-300 rounded-full" />
         </div>
-        <div className="px-5 pb-6">
-          {/* Banner de rede */}
+
+        {/* Scroll area */}
+        <div className="flex-1 overflow-y-auto px-4 pb-5" style={{ WebkitOverflowScrolling: "touch", overscrollBehavior: "contain" }}>
+
+          {/* Banner rede — compacto */}
           {item.redeSubrede && (
-            <div className="mb-4 flex items-center gap-2.5 bg-blue-50 border border-blue-200 rounded-2xl px-3.5 py-2.5">
-              <div className="w-8 h-8 rounded-xl bg-blue-100 text-blue-600 flex items-center justify-center shrink-0">
-                <IcoUsers className="w-4 h-4" />
-              </div>
-              <div className="min-w-0 flex-1">
-                <div className="text-xs font-bold text-blue-700 leading-tight">Rebaixa por Rede</div>
-                <div className="text-[11px] text-blue-600 truncate mt-0.5">{item.redeSubrede}</div>
-              </div>
-              <span className="shrink-0 text-[10px] font-semibold bg-blue-100 text-blue-700 border border-blue-200 px-2 py-0.5 rounded-full">todas as lojas</span>
+            <div className="mb-2.5 flex items-center gap-2 bg-blue-50 border border-blue-200 rounded-xl px-3 py-2">
+              <IcoUsers className="w-3.5 h-3.5 text-blue-600 shrink-0" />
+              <span className="text-xs font-bold text-blue-700 truncate flex-1">{item.redeSubrede}</span>
+              <span className="shrink-0 text-[10px] font-semibold bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full">rede</span>
             </div>
           )}
 
-          <div className="flex items-start justify-between gap-3 mb-4">
-            <div className="flex items-start gap-3 min-w-0 flex-1">
-              <div className="w-10 h-10 rounded-xl bg-brand/10 text-brand flex items-center justify-center shrink-0">
-                <IcoTrendDown className="w-5 h-5" />
-              </div>
-              <div className="min-w-0">
-                <h2 className="font-bold text-slate-900 text-lg leading-tight">{item.produto}</h2>
-                <p className="text-slate-500 text-sm mt-0.5 truncate">{item.cliente}</p>
-              </div>
+          {/* Header produto */}
+          <div className="flex items-center justify-between gap-2 mb-2.5">
+            <div className="min-w-0 flex-1">
+              <h2 className="font-bold text-slate-900 text-base leading-snug line-clamp-2">{item.produto}</h2>
+              <p className="text-slate-500 text-xs truncate">{item.cliente}</p>
             </div>
-            <button onClick={onClose} aria-label="Fechar" className="shrink-0 h-9 w-9 rounded-full bg-slate-100 hover:bg-slate-200 active:scale-95 transition flex items-center justify-center text-slate-600">
-              <IcoX className="w-5 h-5" />
+            <button onClick={onClose} aria-label="Fechar"
+              className="shrink-0 h-8 w-8 rounded-full bg-slate-100 active:bg-slate-200 active:scale-95 transition flex items-center justify-center text-slate-500">
+              <IcoX className="w-4 h-4" />
             </button>
           </div>
 
-          <div className="grid grid-cols-3 gap-2 mb-5">
-            <div className="bg-slate-50 rounded-2xl p-3 text-center">
-              <div className="flex items-center justify-center text-slate-400 mb-1">
-                <IcoPackage className="w-4 h-4" />
-              </div>
-              <div className="text-[10px] text-slate-500 uppercase tracking-wide font-semibold">Qtd</div>
-              <div className="font-bold text-slate-800 text-xl mt-0.5">{item.quantidade}</div>
+          {/* Info strip horizontal */}
+          <div className="flex items-stretch rounded-xl border border-slate-100 overflow-hidden mb-3">
+            <div className="flex-1 bg-slate-50 px-2 py-2 text-center">
+              <div className="text-[9px] text-slate-500 font-semibold uppercase tracking-wide">Qtd</div>
+              <div className="font-bold text-slate-800 text-lg leading-tight">{item.quantidade}</div>
             </div>
-            <div className="bg-slate-50 rounded-2xl p-3 text-center">
-              <div className="flex items-center justify-center text-slate-400 mb-1">
-                <IcoClock className="w-4 h-4" />
+            <div className="flex-1 bg-slate-50 px-2 py-2 text-center border-x border-slate-100">
+              <div className="text-[9px] text-slate-500 font-semibold uppercase tracking-wide">Vence</div>
+              <div className={`font-bold text-lg leading-tight ${item.diasParaVencer <= 15 ? "text-red-600" : "text-slate-800"}`}>
+                {item.diasParaVencer ?? "—"}d
               </div>
-              <div className="text-[10px] text-slate-500 uppercase tracking-wide font-semibold">Vence em</div>
-              <div className={`font-bold text-xl mt-0.5 ${item.diasParaVencer <= 15 ? "text-red-600" : "text-slate-800"}`}>{item.diasParaVencer ?? "—"}d</div>
-              <div className="text-[10px] text-slate-400 mt-0.5">{fmtData(item.dataValidade)}</div>
+              <div className="text-[9px] text-slate-400">{fmtData(item.dataValidade)}</div>
             </div>
-            <div className="bg-brand/5 rounded-2xl p-3 text-center">
-              <div className="flex items-center justify-center text-brand/60 mb-1">
-                <IcoTag className="w-4 h-4" />
-              </div>
-              <div className="text-[10px] text-brand/70 uppercase tracking-wide font-semibold">Tabela</div>
-              <div className="font-bold text-brand text-base mt-0.5">{fmtBRL(item.precoTabela)}</div>
+            <div className="flex-1 bg-brand/5 px-2 py-2 text-center">
+              <div className="text-[9px] text-brand/70 font-semibold uppercase tracking-wide">Tabela</div>
+              <div className="font-bold text-brand text-sm leading-tight mt-0.5">{fmtBRL(item.precoTabela)}</div>
             </div>
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={handleSubmit} className="space-y-2.5">
+            {/* Preço oferta */}
             <div>
-              <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">Preço da Oferta (R$)</label>
+              <label className="block text-[10px] font-semibold text-slate-500 uppercase tracking-wide mb-1">Preço da Oferta (R$)</label>
               <input
                 type="number" step="0.01" min="0"
-                className="input text-2xl font-bold py-3"
+                className="input text-2xl font-bold py-2"
                 value={precoOferta}
                 onChange={(e) => setPrecoOferta(e.target.value)}
                 placeholder="0,00"
@@ -170,8 +162,20 @@ function RebaixaModal({ item, onClose, onEnviado }) {
               />
             </div>
 
+            {/* Margem inline */}
+            <div className="flex items-center justify-between bg-slate-50 rounded-xl px-3 py-2 border border-slate-100">
+              <div>
+                <div className="text-xs font-semibold text-slate-700">Margem Valemilk</div>
+                <div className="text-[10px] text-slate-400">
+                  {item.custo ? `Custo: ${fmtBRL(item.custo)}` : "Custo não disponível"}
+                </div>
+              </div>
+              <MargemBadge pct={margem} />
+            </div>
+
+            {/* Sellout */}
             <div>
-              <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">Sellout (R$ ao consumidor)</label>
+              <label className="block text-[10px] font-semibold text-slate-500 uppercase tracking-wide mb-1">Sellout (R$ consumidor)</label>
               <input
                 type="number" step="0.01" min="0"
                 className="input"
@@ -182,16 +186,9 @@ function RebaixaModal({ item, onClose, onEnviado }) {
               />
             </div>
 
-            <div className="bg-gradient-to-br from-slate-50 to-slate-100/50 rounded-2xl p-4 flex items-center justify-between border border-slate-200">
-              <div>
-                <div className="text-sm font-semibold text-slate-700 mb-0.5">Margem Valemilk</div>
-                <div className="text-xs text-slate-400">{item.custo ? `Custo: ${fmtBRL(item.custo)}` : "Custo não disponível"}</div>
-              </div>
-              <MargemBadge pct={margem} />
-            </div>
-
+            {/* Motivo */}
             <div>
-              <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">Motivo</label>
+              <label className="block text-[10px] font-semibold text-slate-500 uppercase tracking-wide mb-1">Motivo</label>
               <input
                 className="input"
                 value={motivo}
@@ -201,13 +198,13 @@ function RebaixaModal({ item, onClose, onEnviado }) {
             </div>
 
             {erro && (
-              <div className="rounded-xl bg-red-50 border border-red-200 p-3.5 text-sm text-red-700 flex items-center gap-2 animate-fade-in">
+              <div className="rounded-xl bg-red-50 border border-red-200 p-3 text-sm text-red-700 flex items-center gap-2 animate-fade-in">
                 <IcoAlert className="w-4 h-4 shrink-0" />
                 {erro}
               </div>
             )}
 
-            <button type="submit" className="btn-primary w-full py-3.5 text-base" disabled={enviando}>
+            <button type="submit" className="btn-primary w-full py-3 text-base" disabled={enviando}>
               {enviando ? "Enviando..." : "Solicitar Rebaixa"}
             </button>
           </form>
