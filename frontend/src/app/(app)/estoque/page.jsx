@@ -351,22 +351,22 @@ export default function EstoquePage() {
       </div>
 
       {/* Cards de resumo */}
-      <div className="grid grid-cols-3 gap-2">
-        <div className="stat-card bg-red-50 border-red-100">
+      <div className="grid grid-cols-3 gap-2 overflow-hidden">
+        <div className="stat-card bg-red-50 border-red-100 min-w-0">
           <div className="flex items-center justify-center text-red-500 mb-1">
             <IcoAlert className="w-4 h-4" />
           </div>
           <div className="text-2xl font-bold text-red-700 leading-none">{loading ? "…" : totCritico}</div>
           <div className="text-[10px] text-red-600 font-semibold uppercase tracking-wide mt-1">Críticos</div>
         </div>
-        <div className="stat-card bg-orange-50 border-orange-100">
+        <div className="stat-card bg-orange-50 border-orange-100 min-w-0">
           <div className="flex items-center justify-center text-orange-500 mb-1">
             <IcoClock className="w-4 h-4" />
           </div>
           <div className="text-2xl font-bold text-orange-700 leading-none">{loading ? "…" : totAlerta}</div>
           <div className="text-[10px] text-orange-600 font-semibold uppercase tracking-wide mt-1">Alertas</div>
         </div>
-        <div className="stat-card bg-brand/5 border-brand/10">
+        <div className="stat-card bg-brand/5 border-brand/10 min-w-0">
           <div className="flex items-center justify-center text-brand/70 mb-1">
             <IcoStore className="w-4 h-4" />
           </div>

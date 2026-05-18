@@ -77,7 +77,7 @@ button, a, [role="button"] {
     @apply bg-brand text-white border-brand;
   }
   .stat-card {
-    @apply flex-1 rounded-2xl p-3 text-center border;
+    @apply rounded-2xl p-3 text-center border min-w-0 overflow-hidden;
   }
 }
 
