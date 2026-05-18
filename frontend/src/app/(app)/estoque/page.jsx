@@ -558,7 +558,7 @@ export default function EstoquePage() {
           <div className="w-9 h-9 rounded-full border-4 border-slate-200 border-t-brand animate-spin" />
           <p className="text-sm text-slate-400">Carregando...</p>
         </div>
-      ) : grupos.length === 0 ? (
+      ) : redeGrupos.length === 0 ? (
         <div className="text-center py-16 px-6">
           <div className="w-14 h-14 mx-auto rounded-2xl bg-slate-100 text-slate-400 flex items-center justify-center mb-3">
             <IcoStore className="w-7 h-7" />
