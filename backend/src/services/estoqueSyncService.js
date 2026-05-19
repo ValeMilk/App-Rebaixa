@@ -14,9 +14,9 @@ async function sincronizarEstoque() {
   const hoje = new Date();
   hoje.setHours(0, 0, 0, 0);
 
-  // Janela de busca na ATIVMOB: hoje-8 ate hoje
+  // Janela de busca na ATIVMOB: hoje-10 ate hoje
   const desde = new Date(hoje);
-  desde.setDate(desde.getDate() - 8);
+  desde.setDate(desde.getDate() - 10);
 
   const ate = new Date(hoje);
   ate.setDate(ate.getDate() + 1); // inclui o dia de hoje inteiro
