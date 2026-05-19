@@ -316,40 +316,93 @@ function RebaixaModal({ item, onClose, onEnviado }) {
   );
 }
 
-function RedeRebaixaModal({ redeSubrede, codigoRede, lojas, onClose, onEnviado }) {
+function RedeRebaixaModal({ redeSubrede, codigoRede, produto, onClose, onEnviado }) {
+  const [precoOferta, setPrecoOferta] = useState("");
+  const [precoPDV, setPrecoPDV] = useState("");
+  const [sellout, setSellout] = useState("");
   const [motivo, setMotivo] = useState("");
   const [enviando, setEnviando] = useState(false);
   const [erro, setErro] = useState("");
 
-  const totalItens = lojas.reduce((s, l) => s + l.itens.length, 0);
+  const [ultimaCompra, setUltimaCompra] = useState(null);
+  const [loadingUC, setLoadingUC] = useState(true);
+
+  useEffect(() => {
+    let cancelado = false;
+    setLoadingUC(true);
+    api.post("/erp/ultima-compra-rede", {
+      clientesCodigos: produto.lojas.map((l) => l.clienteCodigo),
+      produtoCodigo: produto.produtoCodigo,
+    })
+      .then(({ data }) => { if (!cancelado) setUltimaCompra(data); })
+      .catch(() => { if (!cancelado) setUltimaCompra({ encontrado: false }); })
+      .finally(() => { if (!cancelado) setLoadingUC(false); });
+    return () => { cancelado = true; };
+  }, [produto.produtoCodigo]);
+
+  const precoUC = ultimaCompra?.encontrado ? Number(ultimaCompra.precoUltimaCompra) : null;
+  const dataUC  = ultimaCompra?.encontrado ? ultimaCompra.dataUltimaCompra : null;
+
+  const margemPDV = useMemo(() => {
+    const p = Number(precoPDV);
+    if (!p || p <= 0 || precoUC == null) return null;
+    return ((p - precoUC) / p) * 100;
+  }, [precoPDV, precoUC]);
+
+  const margemOferta = useMemo(() => {
+    const o = Number(precoOferta);
+    if (!o || o <= 0 || precoUC == null) return null;
+    const s = Number(sellout) || 0;
+    return ((o - (precoUC - s)) / o) * 100;
+  }, [precoOferta, sellout, precoUC]);
+
+  const selloutSugerido = useMemo(() => {
+    const o = Number(precoOferta);
+    if (!o || o <= 0 || precoUC == null || margemPDV == null) return null;
+    const s = precoUC - o * (1 - margemPDV / 100);
+    if (s <= 0) return null;
+    return Math.round(s * 100) / 100;
+  }, [precoOferta, precoUC, margemPDV]);
 
   async function handleSubmit(e) {
     e.preventDefault();
     setErro("");
+    if (!precoOferta) { setErro("Informe o preço da oferta"); return; }
+    if (!precoPDV)    { setErro("Informe o preço PDV"); return; }
     setEnviando(true);
     try {
+      const payloadComum = {
+        tipo: "rebaixa",
+        codigoRede,
+        redeSubrede,
+        motivo,
+      };
       await Promise.all(
-        lojas.map((loja) =>
+        produto.lojas.map((loja) =>
           api.post("/solicitacoes", {
-            tipo: "rebaixa",
+            ...payloadComum,
             cliente: loja.clienteNome,
             clienteCodigo: loja.clienteCodigo,
-            codigoRede,
-            redeSubrede,
-            motivo,
-            itens: loja.itens.map((item) => ({
-              produto: item.produto,
-              produtoCodigo: item.produtoCodigo,
-              quantidade: item.quantidade,
-              dataValidade: item.dataValidade,
-              diasParaVencer: item.diasParaVencer,
-              precoTabela: item.precoTabela,
-              estoqueRefId: item._id,
-            })),
+            itens: [{
+              produto: produto.produto,
+              produtoCodigo: produto.produtoCodigo,
+              quantidade: loja.quantidade,
+              dataValidade: loja.dataValidade,
+              diasParaVencer: loja.diasParaVencer,
+              precoTabela: produto.precoTabela,
+              precoOferta: Number(precoOferta),
+              precoPDV: Number(precoPDV),
+              sellout: sellout ? Number(sellout) : 0,
+              precoUltimaCompra: precoUC ?? undefined,
+              dataUltimaCompra: dataUC ?? undefined,
+              margemPDV:    margemPDV    != null ? Math.round(margemPDV    * 10) / 10 : undefined,
+              margemOferta: margemOferta != null ? Math.round(margemOferta * 10) / 10 : undefined,
+              estoqueRefId: loja.estoqueRefId,
+            }],
           })
         )
       );
-      onEnviado(lojas.length);
+      onEnviado(produto.lojas.length);
       onClose();
     } catch (err) {
       setErro(err.response?.data?.error || "Erro ao criar solicitações");
@@ -358,18 +411,19 @@ function RedeRebaixaModal({ redeSubrede, codigoRede, lojas, onClose, onEnviado }
     }
   }
 
+  const qtdTotal = produto.lojas.reduce((s, l) => s + (Number(l.quantidade) || 0), 0);
+
   return (
     <div className="fixed inset-0 z-50 flex flex-col sm:items-center sm:justify-center sm:p-6 animate-fade-in">
       <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={onClose} />
       <div className="relative bg-white shadow-2xl flex flex-col w-full sm:max-w-md sm:rounded-3xl sm:max-h-[90dvh] animate-slide-up safe-area-pb"
         style={{ height: "100dvh", maxHeight: "100dvh" }}>
 
-        {/* Header fixo */}
         <div className="shrink-0 px-4 pt-3 pb-2.5 border-b border-slate-100 bg-white sm:rounded-t-3xl safe-area-pt">
           <div className="flex items-center justify-between gap-3">
             <div className="min-w-0 flex-1">
               <div className="text-[10px] font-semibold text-blue-600 uppercase tracking-wider mb-0.5">Rebaixa por Rede</div>
-              <h2 className="font-bold text-slate-900 text-base leading-snug line-clamp-2">{redeSubrede}</h2>
+              <h2 className="font-bold text-slate-900 text-base leading-snug line-clamp-2">{produto.produto}</h2>
             </div>
             <button onClick={onClose} aria-label="Fechar"
               className="shrink-0 h-9 w-9 rounded-full bg-slate-100 active:bg-slate-200 active:scale-95 transition flex items-center justify-center text-slate-600">
@@ -378,31 +432,118 @@ function RedeRebaixaModal({ redeSubrede, codigoRede, lojas, onClose, onEnviado }
           </div>
         </div>
 
-        {/* Scroll area */}
         <div className="flex-1 overflow-y-auto px-4 pt-3 pb-4"
           style={{ WebkitOverflowScrolling: "touch", overscrollBehavior: "contain" }}>
 
-          {/* Resumo da rede */}
-          <div className="mb-3 bg-slate-50 rounded-xl border border-slate-100 px-3 py-2.5 space-y-2">
-            <div className="flex items-center gap-1.5 text-[11px] text-blue-700 font-bold">
+          <div className="mb-3 bg-blue-50 rounded-xl border border-blue-100 px-3 py-2.5">
+            <div className="flex items-center gap-1.5 text-[11px] text-blue-700 font-bold mb-1">
               <IcoUsers className="w-3.5 h-3.5" />
               {redeSubrede}
             </div>
             <div className="text-xs text-slate-600">
-              <span className="font-semibold">{lojas.length}</span> lojas ·{" "}
-              <span className="font-semibold">{totalItens}</span> produto{totalItens !== 1 ? "s" : ""}
-            </div>
-            <div className="space-y-1 pt-1 border-t border-slate-100">
-              {lojas.map((l) => (
-                <div key={l.clienteCodigo} className="text-[11px] text-slate-500 flex justify-between gap-2">
-                  <span className="truncate">{l.clienteNome}</span>
-                  <span className="shrink-0 text-slate-400">{l.itens.length} prod.</span>
-                </div>
-              ))}
+              <span className="font-semibold">{produto.lojas.length}</span> loja{produto.lojas.length !== 1 ? "s" : ""}
             </div>
           </div>
 
+          <div className="flex items-stretch rounded-xl border border-slate-100 overflow-hidden mb-3">
+            <div className="flex-1 bg-white px-2 py-2 text-center">
+              <div className="text-[9px] text-slate-500 font-semibold uppercase tracking-wide">Qtd Total</div>
+              <div className="font-bold text-slate-800 text-lg leading-tight">{qtdTotal}</div>
+            </div>
+            <div className="flex-1 bg-white px-2 py-2 text-center border-x border-slate-100">
+              <div className="text-[9px] text-slate-500 font-semibold uppercase tracking-wide">Min. Vence</div>
+              <div className={`font-bold text-lg leading-tight ${produto.menorDiasParaVencer <= 15 ? "text-red-600" : "text-slate-800"}`}>
+                {produto.menorDiasParaVencer ?? "—"}d
+              </div>
+              <div className="text-[9px] text-slate-400">{fmtData(produto.menorDataValidade)}</div>
+            </div>
+            <div className="flex-1 bg-brand/5 px-2 py-2 text-center">
+              <div className="text-[9px] text-brand/70 font-semibold uppercase tracking-wide">Últ. Compra</div>
+              {loadingUC ? (
+                <div className="text-slate-400 text-xs mt-1">…</div>
+              ) : precoUC != null ? (
+                <>
+                  <div className="font-bold text-brand text-sm leading-tight mt-0.5">{fmtBRL(precoUC)}</div>
+                  <div className="text-[9px] text-slate-400">{fmtData(dataUC)}</div>
+                </>
+              ) : (
+                <div className="text-slate-400 text-xs mt-1">Sem histórico</div>
+              )}
+            </div>
+          </div>
+
+          {!loadingUC && precoUC == null && (
+            <div className="mb-3 rounded-xl bg-amber-50 border border-amber-200 p-2.5 text-[11px] text-amber-800 flex items-start gap-2">
+              <IcoAlert className="w-3.5 h-3.5 shrink-0 mt-0.5" />
+              <span>Rede sem histórico de compra deste produto. As margens não poderão ser calculadas.</span>
+            </div>
+          )}
+
           <form id="form-rede-rebaixa" onSubmit={handleSubmit} className="space-y-2.5">
+            <div>
+              <label className="block text-[10px] font-semibold text-slate-500 uppercase tracking-wide mb-1">Preço PDV (R$) *</label>
+              <input
+                type="number" step="0.01" min="0"
+                className="input"
+                value={precoPDV}
+                onChange={(e) => setPrecoPDV(e.target.value)}
+                placeholder="0,00"
+                inputMode="decimal"
+                required
+              />
+            </div>
+
+            <div className="flex items-center justify-between bg-slate-50 rounded-xl px-3 py-2 border border-slate-100">
+              <div>
+                <div className="text-xs font-semibold text-slate-700">Margem PDV</div>
+                <div className="text-[10px] text-slate-400">(PDV − Últ. Compra) / PDV</div>
+              </div>
+              <MargemBadge pct={margemPDV} />
+            </div>
+
+            <div>
+              <label className="block text-[10px] font-semibold text-slate-500 uppercase tracking-wide mb-1">Preço da Oferta (R$) *</label>
+              <input
+                type="number" step="0.01" min="0"
+                className="input text-2xl font-bold py-2"
+                value={precoOferta}
+                onChange={(e) => setPrecoOferta(e.target.value)}
+                placeholder="0,00"
+                inputMode="decimal"
+                required
+              />
+            </div>
+
+            <div>
+              <label className="block text-[10px] font-semibold text-slate-500 uppercase tracking-wide mb-1">Sellout (R$ desconto sobre últ. compra)</label>
+              <input
+                type="number" step="0.01" min="0"
+                className="input"
+                value={sellout}
+                onChange={(e) => setSellout(e.target.value)}
+                placeholder="0,00"
+                inputMode="decimal"
+              />
+              {selloutSugerido != null && String(sellout) !== String(selloutSugerido) && (
+                <button
+                  type="button"
+                  onClick={() => setSellout(String(selloutSugerido))}
+                  className="mt-1.5 flex items-center gap-1.5 text-[11px] text-blue-600 font-semibold hover:text-blue-800 active:opacity-70 transition"
+                >
+                  <span className="inline-block w-3.5 h-3.5 rounded-full bg-blue-100 text-blue-600 text-[10px] font-bold flex items-center justify-center">↑</span>
+                  Sugerido {fmtBRL(selloutSugerido)} — manter margem PDV ({margemPDV?.toFixed(1)}%)
+                </button>
+              )}
+            </div>
+
+            <div className="flex items-center justify-between bg-slate-50 rounded-xl px-3 py-2 border border-slate-100">
+              <div>
+                <div className="text-xs font-semibold text-slate-700">Margem Oferta</div>
+                <div className="text-[10px] text-slate-400">(Oferta − (Últ. Compra − Sellout)) / Oferta</div>
+              </div>
+              <MargemBadge pct={margemOferta} />
+            </div>
+
             <div>
               <label className="block text-[10px] font-semibold text-slate-500 uppercase tracking-wide mb-1">Motivo</label>
               <input
@@ -412,10 +553,24 @@ function RedeRebaixaModal({ redeSubrede, codigoRede, lojas, onClose, onEnviado }
                 placeholder="Ex: Produtos próximos ao vencimento"
               />
             </div>
+
             <div className="rounded-xl bg-blue-50 border border-blue-200 p-3 text-xs text-blue-700 flex items-start gap-2">
               <IcoUsers className="w-4 h-4 shrink-0 mt-0.5" />
-              <span>Será criada <strong>1 solicitação por loja</strong> ({lojas.length} no total). O supervisor define os preços na aprovação.</span>
+              <span>Será criada <strong>1 solicitação por loja</strong> ({produto.lojas.length} no total) com os mesmos preços e margens.</span>
             </div>
+
+            <details className="rounded-xl bg-slate-50 border border-slate-100 px-3 py-2 text-xs">
+              <summary className="cursor-pointer font-semibold text-slate-700">Ver lojas ({produto.lojas.length})</summary>
+              <div className="mt-2 space-y-1 pt-2 border-t border-slate-200">
+                {produto.lojas.map((l) => (
+                  <div key={l.clienteCodigo} className="flex justify-between gap-2 text-[11px] text-slate-600">
+                    <span className="truncate">{l.clienteNome}</span>
+                    <span className="shrink-0 text-slate-400">{l.quantidade}un · {l.diasParaVencer}d</span>
+                  </div>
+                ))}
+              </div>
+            </details>
+
             {erro && (
               <div className="rounded-xl bg-red-50 border border-red-200 p-3 text-sm text-red-700 flex items-center gap-2 animate-fade-in">
                 <IcoAlert className="w-4 h-4 shrink-0" />
@@ -425,12 +580,11 @@ function RedeRebaixaModal({ redeSubrede, codigoRede, lojas, onClose, onEnviado }
           </form>
         </div>
 
-        {/* Footer fixo */}
         <div className="shrink-0 px-4 py-3 border-t border-slate-100 bg-white sm:rounded-b-3xl">
           <button type="submit" form="form-rede-rebaixa"
             className="w-full py-3 text-base font-semibold text-white bg-blue-600 rounded-2xl hover:bg-blue-700 active:scale-[0.98] transition disabled:opacity-60"
             disabled={enviando}>
-            {enviando ? `Enviando ${lojas.length} sol...` : `Solicitar para ${lojas.length} Loja${lojas.length !== 1 ? "s" : ""}`}
+            {enviando ? `Enviando ${produto.lojas.length} sol...` : `Solicitar para ${produto.lojas.length} Loja${produto.lojas.length !== 1 ? "s" : ""}`}
           </button>
         </div>
       </div>
@@ -513,10 +667,9 @@ function LojaCard({ clienteCodigo, clienteNome, redeSubrede, itens, expanded, on
   );
 }
 
-function RedeCard({ codigoRede, redeSubrede, lojas, expandedRede, expandedLojas, onToggleRede, onToggleLoja, onRebaixar, onSolicitarRede }) {
-  const totalItens    = lojas.reduce((s, l) => s + l.itens.length, 0);
-  const totalCriticos = lojas.reduce((s, l) => s + l.itens.filter((i) => i.classificacao === "critico").length, 0);
-  const totalAlertas  = lojas.reduce((s, l) => s + l.itens.filter((i) => i.classificacao === "alerta").length, 0);
+function RedeCard({ codigoRede, redeSubrede, lojas, produtos, expandedRede, onToggleRede, onRebaixarRede }) {
+  const totalCriticos = produtos.filter((p) => p.piorClassificacao === "critico").length;
+  const totalAlertas  = produtos.filter((p) => p.piorClassificacao === "alerta").length;
 
   const borda  = totalCriticos > 0 ? "border-red-200"          : totalAlertas > 0 ? "border-orange-200"        : "border-blue-200";
   const iconBg = totalCriticos > 0 ? "bg-red-50 text-red-600"  : totalAlertas > 0 ? "bg-orange-50 text-orange-600" : "bg-blue-50 text-blue-600";
@@ -530,7 +683,7 @@ function RedeCard({ codigoRede, redeSubrede, lojas, expandedRede, expandedLojas,
         <div className="flex-1 min-w-0">
           <div className="font-bold text-slate-900 truncate text-sm">{redeSubrede}</div>
           <div className="text-[11px] text-slate-500 mt-1 flex items-center gap-1.5 flex-wrap">
-            <span className="whitespace-nowrap">{lojas.length} lojas · {totalItens} prod.</span>
+            <span className="whitespace-nowrap">{lojas.length} lojas · {produtos.length} prod.</span>
             {totalCriticos > 0 && (
               <span className="inline-flex items-center gap-0.5 bg-red-100 text-red-700 px-1.5 py-0.5 rounded-full font-bold whitespace-nowrap">
                 <span className="w-1 h-1 rounded-full bg-red-500" />{totalCriticos} crít.
@@ -547,32 +700,42 @@ function RedeCard({ codigoRede, redeSubrede, lojas, expandedRede, expandedLojas,
       </button>
 
       {expandedRede && (
-        <div className="border-t border-slate-100 animate-fade-in">
-          <div className="px-3 pt-2.5 pb-2">
-            <button
-              onClick={onSolicitarRede}
-              className="w-full py-2 text-sm font-semibold text-blue-700 border border-blue-200 bg-blue-50 rounded-xl hover:bg-blue-100 active:scale-[0.98] transition flex items-center justify-center gap-2"
-            >
-              <IcoUsers className="w-4 h-4" />
-              Solicitar Rebaixa para toda a Rede
-            </button>
-          </div>
-          <div className="px-3 pb-3 space-y-2">
-            {lojas.map((loja) => (
-              <LojaCard
-                key={loja.clienteCodigo}
-                clienteCodigo={loja.clienteCodigo}
-                clienteNome={loja.clienteNome}
-                redeSubrede={null}
-                itens={loja.itens}
-                expanded={expandedLojas.has(loja.clienteCodigo)}
-                onToggle={() => onToggleLoja(loja.clienteCodigo)}
-                onRebaixar={onRebaixar}
-              />
-            ))}
-          </div>
+        <div className="border-t border-slate-100 animate-fade-in px-3 pb-3 pt-2 space-y-2">
+          {produtos.map((prod) => (
+            <ProdutoRedeCard
+              key={prod.produtoCodigo || prod.produto}
+              produto={prod}
+              onRebaixar={() => onRebaixarRede(prod)}
+            />
+          ))}
         </div>
       )}
+    </div>
+  );
+}
+
+function ProdutoRedeCard({ produto, onRebaixar }) {
+  const c = CLS[produto.piorClassificacao] || CLS.ok;
+  return (
+    <div className={`p-3 rounded-xl border ${c.border} ${c.bg}`}>
+      <div className="flex items-start gap-2 mb-2.5">
+        <span className={`w-2 h-2 rounded-full shrink-0 mt-1.5 ${c.dot}`} />
+        <div className="flex-1 min-w-0">
+          <div className="font-semibold text-slate-800 text-sm leading-snug">{produto.produto}</div>
+          <div className="text-xs text-slate-500 mt-1 flex gap-x-2 gap-y-1 flex-wrap items-center">
+            <Badge cls={produto.piorClassificacao} />
+            <span className="inline-flex items-center gap-1 whitespace-nowrap"><IcoStore className="w-3 h-3" />{produto.lojas.length} loja{produto.lojas.length !== 1 ? "s" : ""}</span>
+            <span className="inline-flex items-center gap-1 whitespace-nowrap"><IcoPackage className="w-3 h-3" />{produto.quantidadeTotal} un</span>
+            <span className="inline-flex items-center gap-1 whitespace-nowrap"><IcoClock className="w-3 h-3" />min {produto.menorDiasParaVencer}d · {fmtData(produto.menorDataValidade)}</span>
+          </div>
+        </div>
+      </div>
+      <button
+        onClick={onRebaixar}
+        className="w-full py-2 text-sm font-semibold text-blue-700 border border-blue-200 bg-white rounded-xl hover:bg-blue-50 active:scale-[0.98] transition"
+      >
+        Solicitar Rebaixa ({produto.lojas.length} loja{produto.lojas.length !== 1 ? "s" : ""})
+      </button>
     </div>
   );
 }
@@ -584,7 +747,7 @@ export default function EstoquePage() {
   const [expanded, setExpanded] = useState(new Set());       // lojas
   const [expandedRedes, setExpandedRedes] = useState(new Set()); // redes
   const [formItem, setFormItem] = useState(null);
-  const [formRede, setFormRede] = useState(null); // { codigoRede, redeSubrede, lojas }
+  const [formRedeProduto, setFormRedeProduto] = useState(null); // { codigoRede, redeSubrede, produto }
   const [toast, setToast] = useState("");
 
   const carregar = useCallback(async (search) => {
@@ -627,7 +790,54 @@ export default function EstoquePage() {
       });
       redeMap.get(redeKey).lojas.push(loja);
     }
-    // 3) Ordena por criticidade
+    // 3) Para redes com >1 loja, consolida PRODUTOS (visao por produto da rede)
+    const piorClass = (a, b) => {
+      const ordem = { vencido: 5, critico: 4, alerta: 3, atencao: 2, ok: 1 };
+      return (ordem[a] || 0) >= (ordem[b] || 0) ? a : b;
+    };
+    for (const rede of redeMap.values()) {
+      if (rede.lojas.length > 1 && rede.codigoRede) {
+        const prodMap = new Map();
+        for (const loja of rede.lojas) {
+          for (const it of loja.itens) {
+            const k = it.produtoCodigo || it.produto;
+            if (!prodMap.has(k)) prodMap.set(k, {
+              produto: it.produto,
+              produtoCodigo: it.produtoCodigo,
+              precoTabela: it.precoTabela,
+              quantidadeTotal: 0,
+              menorDiasParaVencer: it.diasParaVencer,
+              menorDataValidade: it.dataValidade,
+              piorClassificacao: it.classificacao,
+              lojas: [],
+            });
+            const p = prodMap.get(k);
+            p.quantidadeTotal += Number(it.quantidade) || 0;
+            if (it.diasParaVencer != null && (p.menorDiasParaVencer == null || it.diasParaVencer < p.menorDiasParaVencer)) {
+              p.menorDiasParaVencer = it.diasParaVencer;
+              p.menorDataValidade = it.dataValidade;
+            }
+            p.piorClassificacao = piorClass(p.piorClassificacao, it.classificacao);
+            p.lojas.push({
+              clienteCodigo: loja.clienteCodigo,
+              clienteNome: loja.clienteNome,
+              quantidade: it.quantidade,
+              dataValidade: it.dataValidade,
+              diasParaVencer: it.diasParaVencer,
+              classificacao: it.classificacao,
+              estoqueRefId: it._id,
+            });
+          }
+        }
+        // Ordena produtos por criticidade
+        const score = (cls) => ({ vencido: 5, critico: 4, alerta: 3, atencao: 2, ok: 1 }[cls] || 0);
+        rede.produtos = Array.from(prodMap.values()).sort(
+          (a, b) => score(b.piorClassificacao) - score(a.piorClassificacao)
+            || (a.menorDiasParaVencer ?? 999) - (b.menorDiasParaVencer ?? 999),
+        );
+      }
+    }
+    // 4) Ordena redes por criticidade
     const scoreGrupo = (lojas) => lojas.reduce((s, l) =>
       s + l.itens.filter((i) => i.classificacao === "critico").length * 100
         + l.itens.filter((i) => i.classificacao === "alerta").length * 10
@@ -744,12 +954,10 @@ export default function EstoquePage() {
                   codigoRede={codigoRede}
                   redeSubrede={redeSubrede}
                   lojas={lojas}
+                  produtos={grupo.produtos || []}
                   expandedRede={expandedRedes.has(codigoRede)}
-                  expandedLojas={expanded}
                   onToggleRede={() => toggleRede(codigoRede)}
-                  onToggleLoja={toggleLoja}
-                  onRebaixar={setFormItem}
-                  onSolicitarRede={() => setFormRede({ codigoRede, redeSubrede, lojas })}
+                  onRebaixarRede={(produto) => setFormRedeProduto({ codigoRede, redeSubrede, produto })}
                 />
               );
             }
@@ -775,12 +983,12 @@ export default function EstoquePage() {
         <RebaixaModal item={formItem} onClose={() => setFormItem(null)} onEnviado={handleEnviado} />
       )}
 
-      {formRede && (
+      {formRedeProduto && (
         <RedeRebaixaModal
-          redeSubrede={formRede.redeSubrede}
-          codigoRede={formRede.codigoRede}
-          lojas={formRede.lojas}
-          onClose={() => setFormRede(null)}
+          redeSubrede={formRedeProduto.redeSubrede}
+          codigoRede={formRedeProduto.codigoRede}
+          produto={formRedeProduto.produto}
+          onClose={() => setFormRedeProduto(null)}
           onEnviado={handleEnviado}
         />
       )}
