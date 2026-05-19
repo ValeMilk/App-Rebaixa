@@ -16,11 +16,11 @@ function hojeMidnight() {
 async function listar(req, res) {
   const { classificacao, clienteCodigo, produto, q, limit = 500 } = req.query;
   const hoje = hojeMidnight();
-  // Janela de validade fixa: hoje+5 ate hoje+40 dias.
+  // Janela de validade fixa: hoje+3 ate hoje+40 dias.
   // Pega sempre o registro mais recente por (cliente, produto) — mesmo que a contagem
   // tenha sido feita semana retrasada, o item aparece se a validade cair nessa janela.
   const inicioValidade = new Date(hoje);
-  inicioValidade.setDate(inicioValidade.getDate() + 5);
+  inicioValidade.setDate(inicioValidade.getDate() + 3);
   const fimValidade = new Date(hoje);
   fimValidade.setDate(fimValidade.getDate() + 40);
 
@@ -110,9 +110,9 @@ async function listar(req, res) {
 
 async function resumo(req, res) {
   const hoje = hojeMidnight();
-  // Janela de validade fixa: hoje+5 ate hoje+40 dias.
+  // Janela de validade fixa: hoje+3 ate hoje+40 dias.
   const inicioValidade = new Date(hoje);
-  inicioValidade.setDate(inicioValidade.getDate() + 5);
+  inicioValidade.setDate(inicioValidade.getDate() + 3);
   const fimValidade = new Date(hoje);
   fimValidade.setDate(fimValidade.getDate() + 40);
 
