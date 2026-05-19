@@ -83,7 +83,8 @@ export default function DetalheSolicitacao() {
   if (!s) return <p className="text-slate-500">Solicitacao nao encontrada.</p>;
 
   const podeDecidir =
-    (user?.role === "supervisor" && s.status === "pendente_supervisor") ||
+    (user?.role === "supervisor" && s.status === "pendente_supervisor" &&
+      (s.podeDecidirSupervisor !== undefined ? !!s.podeDecidirSupervisor : true)) ||
     ((user?.role === "diretoria" || user?.role === "admin") &&
       (s.status === "pendente_supervisor" || s.status === "aprovado_supervisor"));
 

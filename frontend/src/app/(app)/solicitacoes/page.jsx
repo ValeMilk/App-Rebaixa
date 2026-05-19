@@ -292,7 +292,12 @@ export default function SolicitacoesPage() {
   }
 
   function podeDecidir(sol) {
-    if (user?.role === "supervisor") return sol.status === "pendente_supervisor";
+    if (user?.role === "supervisor") {
+      // Backend já calcula `podeDecidirSupervisor` considerando override de rede;
+      // se a flag vier definida, respeita; caso contrário fallback p/ regra antiga.
+      if (sol.status !== "pendente_supervisor") return false;
+      return sol.podeDecidirSupervisor !== undefined ? !!sol.podeDecidirSupervisor : true;
+    }
     if (user?.role === "diretoria" || user?.role === "admin")
       return sol.status === "pendente_supervisor" || sol.status === "aprovado_supervisor";
     return false;

@@ -1,6 +1,7 @@
 const Solicitacao = require("../models/Solicitacao");
 const Carteira = require("../models/Carteira");
 const User = require("../models/User");
+const ResponsavelRede = require("../models/ResponsavelRede");
 
 // Status inicial conforme role de quem cria
 function statusInicial(role) {
@@ -99,32 +100,98 @@ async function listar(req, res) {
   if (tipo) filtro.tipo = tipo;
 
   const { role, id, codigo } = req.user;
+
+  // Carrega overrides de responsabilidade por rede (coleção pequena)
+  const overrides = await ResponsavelRede.find().select("codigoRede supervisorCodigo").lean();
+  const redesComResponsavel = overrides.map((o) => o.codigoRede); // todas que têm override
+  const redesQuesouResp = overrides
+    .filter((o) => o.supervisorCodigo === codigo)
+    .map((o) => o.codigoRede); // redes em que ESTE supervisor é o responsável
+
   if (role === "vendedor") {
-    // Vendedor vê apenas as próprias
     filtro.criadoPorId = id;
   } else if (role === "supervisor") {
-    // Supervisor vê: pendente_supervisor de seus vendedores + as próprias
-    const carteiraVendedores = await Carteira.distinct("vendedorCodigo", { supervisorCodigo: codigo });
+    // Regra padrão (carteira) ainda vale, MAS para redes que têm responsável (override)
+    // somente o responsável vê via override; os demais continuam vendo as próprias lojas
+    // (carteira) em modo leitura. O modo leitura é controlado por `podeDecidirSupervisor`.
     filtro.$or = [
-      { criadoPorId: id },
+      { criadoPorId: id }, // próprias
+      // Carteira: vê pendentes onde a solicitação aponta para ele como supervisor
       { status: "pendente_supervisor", supervisorCodigo: codigo },
       { status: "pendente_supervisor", supervisorId: id },
+      // Override: vê TODAS as solicitações das redes em que ele é responsável
+      ...(redesQuesouResp.length > 0
+        ? [{ codigoRede: { $in: redesQuesouResp } }]
+        : []),
     ];
   }
   // diretoria/admin veem tudo
 
-  const solicitacoes = await Solicitacao.find(filtro).sort({ createdAt: -1 }).limit(500);
-  res.json({ solicitacoes });
+  const docs = await Solicitacao.find(filtro).sort({ createdAt: -1 }).limit(500).lean();
+
+  // Enriquecer com flag podeDecidirSupervisor (somente p/ supervisor)
+  let enriched = docs;
+  if (role === "supervisor") {
+    const setRedesResp = new Set(redesQuesouResp);
+    const setRedesComResp = new Set(redesComResponsavel);
+    enriched = docs.map((s) => {
+      let podeDecidirSupervisor = false;
+      if (s.status === "pendente_supervisor") {
+        const rede = s.codigoRede;
+        if (rede && setRedesComResp.has(rede)) {
+     Override de responsabilidade por rede:
+  // se a rede da solicitação tem responsável definido e o usuário NÃO é o responsável,
+  // bloqueia a decisão na etapa de supervisor (diretoria/admin segue normal).
+  if (role === "supervisor" && sol.codigoRede) {
+    const override = await ResponsavelRede.findOne({ codigoRede: sol.codigoRede }).lean();
+    if (override && override.supervisorCodigo !== req.user.codigo) {
+      return res.status(403).json({
+        error: `Esta rede tem responsável definido (${override.supervisorNome}). Apenas ele pode decidir.`,
+      });
+    }
+  }
+
+  //      // Rede tem override: só o responsável decide
+          podeDecidirSupervisor = setRedesResp.has(rede);
+        } else {
+          // Rede sem override: regra carteira (a própria query já garantiu visibilidade)
+          podeDecidirSupervisor =
+            s.supervisorCodigo === codigo || String(s.supervisorId) === id;
+        }
+      }
+      return { ...s, podeDecidirSupervisor };
+    });
+  }
+
+  res.json({ solicitacoes: enriched });
 }
 
 async function obter(req, res) {
-  const sol = await Solicitacao.findById(req.params.id);
+  const sol = await Solicitacao.findById(req.params.id).lean();
   if (!sol) return res.status(404).json({ error: "Nao encontrada" });
   // Vendedor só vê as próprias
   if (req.user.role === "vendedor" && String(sol.criadoPorId) !== req.user.id) {
     return res.status(403).json({ error: "Acesso negado" });
   }
-  res.json({ solicitacao: sol });
+
+  // Calcula podeDecidirSupervisor para o detalhe (mesma regra do listar)
+  let podeDecidirSupervisor = false;
+  if (req.user.role === "supervisor" && sol.status === "pendente_supervisor") {
+    if (sol.codigoRede) {
+      const override = await ResponsavelRede.findOne({ codigoRede: sol.codigoRede }).lean();
+      if (override) {
+        podeDecidirSupervisor = override.supervisorCodigo === req.user.codigo;
+      } else {
+        podeDecidirSupervisor =
+          sol.supervisorCodigo === req.user.codigo || String(sol.supervisorId) === req.user.id;
+      }
+    } else {
+      podeDecidirSupervisor =
+        sol.supervisorCodigo === req.user.codigo || String(sol.supervisorId) === req.user.id;
+    }
+  }
+
+  res.json({ solicitacao: { ...sol, podeDecidirSupervisor } });
 }
 
 async function decidir(req, res) {

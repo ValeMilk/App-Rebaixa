@@ -12,6 +12,7 @@ const NAV_SIDEBAR = [
   { href: "/estoque", label: "Lojas", Icon: IcoStore, roles: ["vendedor", "supervisor", "diretoria", "admin"] },
   { href: "/solicitacoes", label: "Solicitações", Icon: IcoClipboard, roles: ["vendedor", "supervisor", "diretoria", "admin"] },
   { href: "/admin/usuarios", label: "Usuários", Icon: IcoUsers, roles: ["admin"] },
+  { href: "/admin/responsabilidades", label: "Resp. Rede", Icon: IcoUsers, roles: ["admin"] },
   { href: "/admin/sync", label: "Sincronização", Icon: IcoSync, roles: ["admin", "diretoria"] },
 ];
 
