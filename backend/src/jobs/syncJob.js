@@ -15,7 +15,7 @@ function startSyncJob() {
     if (rodando) return;
     rodando = true;
     try {
-      console.log("[cron] iniciando sync estoque (hoje + 30 dias)...");
+      console.log("[cron] iniciando sync estoque (ultimos 8 dias)...");
       const r = await sincronizarEstoque();
       console.log("[cron] sync estoque ok:", r);
 

@@ -16,15 +16,18 @@ function hojeMidnight() {
 async function listar(req, res) {
   const { classificacao, clienteCodigo, produto, q, limit = 500 } = req.query;
   const hoje = hojeMidnight();
-  const amanha = new Date(hoje);
-  amanha.setDate(amanha.getDate() + 1);
-  const limite30 = new Date(amanha);
-  limite30.setDate(limite30.getDate() + 30);
+  // Janela de validade fixa: hoje+5 ate hoje+40 dias.
+  // Pega sempre o registro mais recente por (cliente, produto) — mesmo que a contagem
+  // tenha sido feita semana retrasada, o item aparece se a validade cair nessa janela.
+  const inicioValidade = new Date(hoje);
+  inicioValidade.setDate(inicioValidade.getDate() + 5);
+  const fimValidade = new Date(hoje);
+  fimValidade.setDate(fimValidade.getDate() + 40);
 
   // Filtra por dataValidade dinamicamente (ignora diasParaVencer stale)
   const match = {
     quantidade: { $gt: 10 },
-    dataValidade: { $gte: amanha, $lte: limite30 },
+    dataValidade: { $gte: inicioValidade, $lte: fimValidade },
   };
 
   if (classificacao) match.classificacao = classificacao;
@@ -107,14 +110,15 @@ async function listar(req, res) {
 
 async function resumo(req, res) {
   const hoje = hojeMidnight();
-  const amanha = new Date(hoje);
-  amanha.setDate(amanha.getDate() + 1);
-  const limite30 = new Date(amanha);
-  limite30.setDate(limite30.getDate() + 30);
+  // Janela de validade fixa: hoje+5 ate hoje+40 dias.
+  const inicioValidade = new Date(hoje);
+  inicioValidade.setDate(inicioValidade.getDate() + 5);
+  const fimValidade = new Date(hoje);
+  fimValidade.setDate(fimValidade.getDate() + 40);
 
   const match = {
     quantidade: { $gt: 10 },
-    dataValidade: { $gte: amanha, $lte: limite30 },
+    dataValidade: { $gte: inicioValidade, $lte: fimValidade },
   };
   if (req.user.role === "vendedor") {
     const carteira = await Carteira.find({ vendedorCodigo: req.user.codigo }, "clienteCodigo");
