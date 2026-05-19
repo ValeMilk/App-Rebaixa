@@ -49,6 +49,26 @@ function MargemBadge({ pct }) {
   );
 }
 
+function AcaoAtivaBadge({ ativa }) {
+  if (!ativa) return null;
+  const isOferta = ativa.tipo === "oferta_interna";
+  const label = isOferta ? "Em oferta" : "Em rebaixa";
+  const cls = isOferta
+    ? "bg-blue-100 text-blue-700 border-blue-200"
+    : "bg-purple-100 text-purple-700 border-purple-200";
+  return (
+    <span className={`inline-flex items-center gap-1 text-[10px] font-bold px-1.5 py-0.5 rounded-full border whitespace-nowrap ${cls}`} title={ativa.fimAcao ? `Até ${new Date(ativa.fimAcao).toLocaleDateString("pt-BR")}` : ""}>
+      <span className={`w-1 h-1 rounded-full ${isOferta ? "bg-blue-500" : "bg-purple-500"}`} />
+      {label}
+    </span>
+  );
+}
+
+function rankStatus(s) {
+  // aprovado_final > aprovado_supervisor > pendente_supervisor
+  return { aprovado_final: 3, aprovado_supervisor: 2, pendente_supervisor: 1 }[s] || 0;
+}
+
 function RebaixaModal({ item, onClose, onEnviado }) {
   const [precoOferta, setPrecoOferta] = useState("");
   const [precoPDV, setPrecoPDV] = useState("");
@@ -640,7 +660,7 @@ function RedeRebaixaModal({ redeSubrede, codigoRede, produto, onClose, onEnviado
   );
 }
 
-function ProdutoCard({ item, onRebaixar }) {
+function ProdutoCard({ item, onRebaixar, acaoAtiva }) {
   const c = CLS[item.classificacao] || CLS.ok;
   return (
     <div className={`p-3 rounded-xl border ${c.border} ${c.bg}`}>
@@ -650,6 +670,7 @@ function ProdutoCard({ item, onRebaixar }) {
           <div className="font-semibold text-slate-800 text-sm leading-snug">{item.produto}</div>
           <div className="text-xs text-slate-500 mt-1 flex gap-x-2 gap-y-1 flex-wrap items-center">
             <Badge cls={item.classificacao} />
+            {acaoAtiva && <AcaoAtivaBadge ativa={acaoAtiva} />}
             <span className="inline-flex items-center gap-1 whitespace-nowrap"><IcoPackage className="w-3 h-3" />{item.quantidade} un</span>
             <span className="inline-flex items-center gap-1 whitespace-nowrap"><IcoClock className="w-3 h-3" />{fmtData(item.dataValidade)} · {item.diasParaVencer}d</span>
             {item.precoTabela && <span className="inline-flex items-center gap-1 whitespace-nowrap"><IcoTag className="w-3 h-3" />{fmtBRL(item.precoTabela)}</span>}
@@ -658,15 +679,15 @@ function ProdutoCard({ item, onRebaixar }) {
       </div>
       <button
         onClick={() => onRebaixar(item)}
-        className="w-full py-2 text-sm font-semibold text-brand border border-brand/30 bg-white rounded-xl hover:bg-brand/5 active:scale-[0.98] transition"
+        className={`w-full py-2 text-sm font-semibold rounded-xl active:scale-[0.98] transition ${acaoAtiva ? "text-slate-500 border border-slate-200 bg-slate-50 hover:bg-slate-100" : "text-brand border border-brand/30 bg-white hover:bg-brand/5"}`}
       >
-        Solicitar Rebaixa
+        {acaoAtiva ? "Nova rebaixa (já existe ação)" : "Solicitar Rebaixa"}
       </button>
     </div>
   );
 }
 
-function LojaCard({ clienteCodigo, clienteNome, redeSubrede, itens, expanded, onToggle, onRebaixar }) {
+function LojaCard({ clienteCodigo, clienteNome, redeSubrede, itens, expanded, onToggle, onRebaixar, getAcaoAtiva }) {
   const criticos = itens.filter((i) => i.classificacao === "critico").length;
   const alertas  = itens.filter((i) => i.classificacao === "alerta").length;
   const borda = criticos > 0 ? "border-red-200" : alertas > 0 ? "border-orange-200" : "border-slate-200";
@@ -707,7 +728,7 @@ function LojaCard({ clienteCodigo, clienteNome, redeSubrede, itens, expanded, on
       {expanded && (
         <div className="px-3 pb-3 space-y-2 border-t border-slate-100 pt-2 animate-fade-in">
           {itens.map((item) => (
-            <ProdutoCard key={item._id} item={item} onRebaixar={onRebaixar} />
+            <ProdutoCard key={item._id} item={item} onRebaixar={onRebaixar} acaoAtiva={getAcaoAtiva && getAcaoAtiva(item)} />
           ))}
         </div>
       )}
@@ -715,7 +736,7 @@ function LojaCard({ clienteCodigo, clienteNome, redeSubrede, itens, expanded, on
   );
 }
 
-function RedeCard({ codigoRede, redeSubrede, lojas, produtos, expandedRede, onToggleRede, onRebaixarRede }) {
+function RedeCard({ codigoRede, redeSubrede, lojas, produtos, expandedRede, onToggleRede, onRebaixarRede, getAcaoAtivaRede }) {
   const totalCriticos = produtos.filter((p) => p.piorClassificacao === "critico").length;
   const totalAlertas  = produtos.filter((p) => p.piorClassificacao === "alerta").length;
 
@@ -753,6 +774,7 @@ function RedeCard({ codigoRede, redeSubrede, lojas, produtos, expandedRede, onTo
             <ProdutoRedeCard
               key={prod.produtoCodigo || prod.produto}
               produto={prod}
+              acaoAtiva={getAcaoAtivaRede && getAcaoAtivaRede(codigoRede, prod.produtoCodigo)}
               onRebaixar={() => onRebaixarRede(prod)}
             />
           ))}
@@ -762,7 +784,7 @@ function RedeCard({ codigoRede, redeSubrede, lojas, produtos, expandedRede, onTo
   );
 }
 
-function ProdutoRedeCard({ produto, onRebaixar }) {
+function ProdutoRedeCard({ produto, onRebaixar, acaoAtiva }) {
   const c = CLS[produto.piorClassificacao] || CLS.ok;
   return (
     <div className={`p-3 rounded-xl border ${c.border} ${c.bg}`}>
@@ -772,6 +794,7 @@ function ProdutoRedeCard({ produto, onRebaixar }) {
           <div className="font-semibold text-slate-800 text-sm leading-snug">{produto.produto}</div>
           <div className="text-xs text-slate-500 mt-1 flex gap-x-2 gap-y-1 flex-wrap items-center">
             <Badge cls={produto.piorClassificacao} />
+            {acaoAtiva && <AcaoAtivaBadge ativa={acaoAtiva} />}
             <span className="inline-flex items-center gap-1 whitespace-nowrap"><IcoStore className="w-3 h-3" />{produto.lojas.length} loja{produto.lojas.length !== 1 ? "s" : ""}</span>
             <span className="inline-flex items-center gap-1 whitespace-nowrap"><IcoPackage className="w-3 h-3" />{produto.quantidadeTotal} un</span>
             <span className="inline-flex items-center gap-1 whitespace-nowrap"><IcoClock className="w-3 h-3" />min {produto.menorDiasParaVencer}d · {fmtData(produto.menorDataValidade)}</span>
@@ -780,9 +803,9 @@ function ProdutoRedeCard({ produto, onRebaixar }) {
       </div>
       <button
         onClick={onRebaixar}
-        className="w-full py-2 text-sm font-semibold text-blue-700 border border-blue-200 bg-white rounded-xl hover:bg-blue-50 active:scale-[0.98] transition"
+        className={`w-full py-2 text-sm font-semibold rounded-xl active:scale-[0.98] transition ${acaoAtiva ? "text-slate-500 border border-slate-200 bg-slate-50 hover:bg-slate-100" : "text-blue-700 border border-blue-200 bg-white hover:bg-blue-50"}`}
       >
-        Solicitar Rebaixa ({produto.lojas.length} loja{produto.lojas.length !== 1 ? "s" : ""})
+        {acaoAtiva ? `Nova ação (já existe ${acaoAtiva.tipo === "oferta_interna" ? "oferta" : "rebaixa"})` : `Solicitar Ação (${produto.lojas.length} loja${produto.lojas.length !== 1 ? "s" : ""})`}
       </button>
     </div>
   );
@@ -797,6 +820,16 @@ export default function EstoquePage() {
   const [formItem, setFormItem] = useState(null);
   const [formRedeProduto, setFormRedeProduto] = useState(null); // { codigoRede, redeSubrede, produto }
   const [toast, setToast] = useState("");
+  const [acoesAtivas, setAcoesAtivas] = useState([]);
+
+  const carregarAtivas = useCallback(async () => {
+    try {
+      const { data } = await api.get("/solicitacoes/ativas");
+      setAcoesAtivas(data.ativas || []);
+    } catch {
+      setAcoesAtivas([]);
+    }
+  }, []);
 
   const carregar = useCallback(async (search) => {
     setLoading(true);
@@ -811,7 +844,48 @@ export default function EstoquePage() {
     }
   }, [q]);
 
-  useEffect(() => { carregar(""); }, []);
+  useEffect(() => { carregar(""); carregarAtivas(); }, []);
+
+  // Index das ações ativas para lookup O(1)
+  const ativasIdx = useMemo(() => {
+    const porLojaProd = new Map();  // `${cli}__${prod}` -> ativa
+    const porRedeProd = new Map();  // `${rede}__${prod}` -> ativa
+    for (const a of acoesAtivas) {
+      const prod = String(a.produtoCodigo);
+      if (a.clienteCodigo) {
+        const k = `${a.clienteCodigo}__${prod}`;
+        const prev = porLojaProd.get(k);
+        if (!prev || rankStatus(a.status) > rankStatus(prev.status)) porLojaProd.set(k, a);
+      }
+      if (a.codigoRede) {
+        const k = `${a.codigoRede}__${prod}`;
+        const prev = porRedeProd.get(k);
+        if (!prev || rankStatus(a.status) > rankStatus(prev.status)) porRedeProd.set(k, a);
+      }
+    }
+    return { porLojaProd, porRedeProd };
+  }, [acoesAtivas]);
+
+  const getAcaoAtiva = useCallback((item) => {
+    if (!item) return null;
+    const prod = item.produtoCodigo ? String(item.produtoCodigo) : null;
+    if (!prod) return null;
+    // Prefere correspondência por loja+produto; fallback para rede+produto
+    if (item.clienteCodigo) {
+      const v = ativasIdx.porLojaProd.get(`${item.clienteCodigo}__${prod}`);
+      if (v) return v;
+    }
+    if (item.codigoRede) {
+      const v = ativasIdx.porRedeProd.get(`${item.codigoRede}__${prod}`);
+      if (v) return v;
+    }
+    return null;
+  }, [ativasIdx]);
+
+  const getAcaoAtivaRede = useCallback((codigoRede, produtoCodigo) => {
+    if (!codigoRede || !produtoCodigo) return null;
+    return ativasIdx.porRedeProd.get(`${codigoRede}__${String(produtoCodigo)}`) || null;
+  }, [ativasIdx]);
 
   const redeGrupos = useMemo(() => {
     // 1) Agrupa itens por loja
@@ -915,6 +989,7 @@ export default function EstoquePage() {
     const msg = count > 1 ? `${count} solicitações enviadas!` : "Solicitação enviada!";
     setToast(msg);
     setTimeout(() => setToast(""), 3000);
+    carregarAtivas();
   }
 
   const totCritico = itens.filter((i) => i.classificacao === "critico").length;
@@ -1006,6 +1081,7 @@ export default function EstoquePage() {
                   expandedRede={expandedRedes.has(codigoRede)}
                   onToggleRede={() => toggleRede(codigoRede)}
                   onRebaixarRede={(produto) => setFormRedeProduto({ codigoRede, redeSubrede, produto })}
+                  getAcaoAtivaRede={getAcaoAtivaRede}
                 />
               );
             }
@@ -1021,6 +1097,7 @@ export default function EstoquePage() {
                 expanded={expanded.has(loja.clienteCodigo)}
                 onToggle={() => toggleLoja(loja.clienteCodigo)}
                 onRebaixar={setFormItem}
+                getAcaoAtiva={getAcaoAtiva}
               />
             );
           })}

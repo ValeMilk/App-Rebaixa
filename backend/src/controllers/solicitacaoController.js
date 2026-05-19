@@ -188,4 +188,41 @@ async function cancelar(req, res) {
   res.json({ solicitacao: sol });
 }
 
-module.exports = { criar, listar, obter, decidir, cancelar };
+module.exports = { criar, listar, obter, decidir, cancelar, listarAtivas };
+
+// Lista resumida de solicitacoes ATIVAS (pendentes ou aprovadas com fimAcao >= hoje)
+// Usada pela tela de estoque para marcar produtos que ja tem rebaixa/oferta em andamento.
+async function listarAtivas(req, res) {
+  const hoje = new Date();
+  hoje.setHours(0, 0, 0, 0);
+
+  const filtro = {
+    status: { $in: ["pendente_supervisor", "aprovado_supervisor", "aprovado_final"] },
+    $or: [
+      { fimAcao: { $gte: hoje } },
+      { fimAcao: { $exists: false } }, // legados sem periodo
+      { fimAcao: null },
+    ],
+  };
+
+  const docs = await Solicitacao.find(filtro)
+    .select("_id tipo status clienteCodigo codigoRede inicioAcao fimAcao itens.produtoCodigo")
+    .lean();
+
+  const ativas = [];
+  for (const d of docs) {
+    const produtoCodigo = d.itens?.[0]?.produtoCodigo;
+    if (!produtoCodigo) continue;
+    ativas.push({
+      _id: d._id,
+      tipo: d.tipo,
+      status: d.status,
+      clienteCodigo: d.clienteCodigo || null,
+      codigoRede: d.codigoRede || null,
+      produtoCodigo: String(produtoCodigo),
+      inicioAcao: d.inicioAcao,
+      fimAcao: d.fimAcao,
+    });
+  }
+  res.json({ ativas });
+}

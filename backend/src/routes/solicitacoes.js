@@ -5,6 +5,7 @@ const {
   obter,
   decidir,
   cancelar,
+  listarAtivas,
 } = require("../controllers/solicitacaoController");
 const { auth, requireRole } = require("../middlewares/auth");
 
@@ -13,6 +14,7 @@ const router = express.Router();
 router.use(auth);
 
 router.get("/", listar);
+router.get("/ativas", listarAtivas);
 router.post("/", criar);
 router.get("/:id", obter);
 router.post("/:id/decidir", requireRole("diretoria", "admin"), decidir);
