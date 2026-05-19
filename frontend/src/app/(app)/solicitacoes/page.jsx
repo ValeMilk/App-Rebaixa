@@ -30,7 +30,7 @@ function fmtBRL(v) {
   return Number(v).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 }
 
-// Card individual (loja solo ou rede filtrada individualmente)
+// Card individual (loja solo)
 function SolCard({ s, podeDecidir, decidindo, setDecidindo, motivoDecisao, setMotivoDecisao, onDecisao }) {
   const pode = podeDecidir(s);
   return (
@@ -87,40 +87,35 @@ function SolCard({ s, podeDecidir, decidindo, setDecidindo, motivoDecisao, setMo
   );
 }
 
-// Card agrupado rede+produto
-function RedeGrupoCard({ grupo, podeDecidir, decidindo, setDecidindo, motivoDecisao, setMotivoDecisao, onDecisao, onDecisaoGrupo }) {
+// Card de produto dentro de uma rede (sem header de rede — usado dentro de RedeCard)
+function ProdutoGrupoCard({ prodGrupo, redeKey, podeDecidir, decidindo, setDecidindo, motivoDecisao, setMotivoDecisao, onDecisao, onDecisaoGrupo }) {
   const [expanded, setExpanded] = useState(false);
-  const { rede, produto, sols } = grupo;
+  const { produto, sols } = prodGrupo;
+  const idGrupo = `${redeKey}__${produto}`;
 
-  // Status representativo do grupo: mais urgente
   const ordemStatus = { pendente_supervisor: 4, aprovado_supervisor: 3, aprovado_final: 2, rejeitado: 1, cancelado: 0 };
   const statusRep = sols.reduce((a, s) => (ordemStatus[s.status] ?? 0) > (ordemStatus[a] ?? 0) ? s.status : a, sols[0].status);
   const podeDecidirAlgum = sols.some(podeDecidir);
-  const qtdTotal = sols.reduce((s, sol) => s + (sol.itens?.[0]?.quantidade || 0), 0);
+  const qtdTotal = sols.reduce((acc, s) => acc + (s.itens?.[0]?.quantidade || 0), 0);
   const precoOferta = sols[0]?.itens?.[0]?.precoOferta;
   const margemOferta = sols[0]?.itens?.[0]?.margemOferta;
   const motivo = sols[0]?.motivo;
   const criadoPorNome = sols[0]?.criadoPorNome;
   const criadoEm = sols[0]?.createdAt;
-  const idGrupo = `${rede}__${produto}`;
 
   return (
-    <div className={`bg-white rounded-2xl border shadow-sm overflow-hidden transition ${podeDecidirAlgum ? "border-amber-200 ring-1 ring-amber-100" : "border-slate-200"}`}>
-      <div className="px-4 pt-3.5 pb-3">
-        <div className="flex items-start justify-between gap-2 mb-1.5">
+    <div className={`rounded-xl border overflow-hidden ${podeDecidirAlgum ? "border-amber-200 bg-amber-50/20" : "border-slate-200 bg-white"}`}>
+      <div className="px-3 pt-3 pb-2">
+        <div className="flex items-start justify-between gap-2">
           <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-1.5 mb-0.5">
-              <IcoUsers className="w-3.5 h-3.5 text-blue-500 shrink-0" />
-              <span className="text-[11px] font-bold text-blue-600 truncate">{rede}</span>
-            </div>
-            <div className="font-semibold text-slate-900 leading-snug">{produto}</div>
+            <div className="font-semibold text-slate-900 text-sm leading-snug">{produto}</div>
             <div className="text-xs text-slate-500 mt-1 flex flex-wrap items-center gap-x-3 gap-y-0.5">
               <span className="inline-flex items-center gap-1"><IcoStore className="w-3 h-3" />{sols.length} loja{sols.length !== 1 ? "s" : ""} · {qtdTotal} un</span>
               <span className="inline-flex items-center gap-1"><IcoUser className="w-3 h-3" />{criadoPorNome || "—"}</span>
               <span className="inline-flex items-center gap-1"><IcoClock className="w-3 h-3" />{fmtDataHora(criadoEm)}</span>
             </div>
           </div>
-          <div className="flex flex-col items-end gap-1.5 shrink-0">
+          <div className="flex flex-col items-end gap-1 shrink-0">
             <StatusBadge s={statusRep} />
             {precoOferta != null && (
               <div className="flex items-center gap-1.5">
@@ -137,17 +132,16 @@ function RedeGrupoCard({ grupo, podeDecidir, decidindo, setDecidindo, motivoDeci
         {motivo && <div className="mt-2 text-xs text-slate-500 italic bg-slate-50 rounded-lg px-2.5 py-1.5">"{motivo}"</div>}
       </div>
 
-      {/* Lojas expandidas */}
       <button
         onClick={() => setExpanded((v) => !v)}
-        className="w-full border-t border-slate-100 px-4 py-2 flex items-center justify-between text-xs text-slate-500 hover:bg-slate-50 transition"
+        className="w-full border-t border-slate-100 px-3 py-2 flex items-center justify-between text-xs text-slate-500 hover:bg-slate-50 transition"
       >
         <span className="font-semibold">{expanded ? "Ocultar lojas" : `Ver ${sols.length} lojas`}</span>
         <IcoChevronDown className={`w-3.5 h-3.5 transition-transform ${expanded ? "rotate-180" : ""}`} />
       </button>
 
       {expanded && (
-        <div className="border-t border-slate-100 px-3 pb-3 pt-2 space-y-1.5 bg-slate-50/50">
+        <div className="border-t border-slate-100 px-2.5 pb-2.5 pt-1.5 space-y-1.5 bg-slate-50/50">
           {sols.map((s) => {
             const pode = podeDecidir(s);
             return (
@@ -160,9 +154,7 @@ function RedeGrupoCard({ grupo, podeDecidir, decidindo, setDecidindo, motivoDeci
                   </div>
                 </div>
                 <div className="flex items-center gap-1.5 shrink-0">
-                  <Link href={`/solicitacoes/${s._id}`} className="text-[10px] text-brand font-semibold whitespace-nowrap">
-                    Ver
-                  </Link>
+                  <Link href={`/solicitacoes/${s._id}`} className="text-[10px] text-brand font-semibold whitespace-nowrap">Ver</Link>
                   {pode && (
                     decidindo === s._id ? (
                       <>
@@ -172,9 +164,7 @@ function RedeGrupoCard({ grupo, podeDecidir, decidindo, setDecidindo, motivoDeci
                         <button onClick={() => { setDecidindo(null); setMotivoDecisao(""); }} className="h-7 w-7 text-slate-400 rounded-lg flex items-center justify-center"><IcoX className="w-3.5 h-3.5" /></button>
                       </>
                     ) : (
-                      <button onClick={() => setDecidindo(s._id)} className="text-[10px] bg-amber-500 text-white px-2 py-1 rounded-lg font-semibold whitespace-nowrap">
-                        Decidir
-                      </button>
+                      <button onClick={() => setDecidindo(s._id)} className="text-[10px] bg-amber-500 text-white px-2 py-1 rounded-lg font-semibold whitespace-nowrap">Decidir</button>
                     )
                   )}
                 </div>
@@ -184,9 +174,8 @@ function RedeGrupoCard({ grupo, podeDecidir, decidindo, setDecidindo, motivoDeci
         </div>
       )}
 
-      {/* Rodapé: aprovar/rejeitar todos de uma vez */}
       {podeDecidirAlgum && (
-        <div className="border-t border-slate-100 px-4 py-2.5 flex items-center justify-between gap-2 bg-slate-50/50">
+        <div className="border-t border-slate-100 px-3 py-2.5 flex items-center justify-between gap-2 bg-slate-50/50">
           <span className="text-xs text-slate-500 font-medium">{sols.filter(podeDecidir).length} aguardando decisão</span>
           {decidindo === idGrupo ? (
             <div className="flex items-center gap-1.5">
@@ -202,6 +191,59 @@ function RedeGrupoCard({ grupo, podeDecidir, decidindo, setDecidindo, motivoDeci
               <IcoCheck className="w-3.5 h-3.5" /> Decidir todas ({sols.filter(podeDecidir).length})
             </button>
           )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// Card de rede (nível superior) — expande para mostrar os produtos
+function RedeCard({ redeGrupo, podeDecidir, decidindo, setDecidindo, motivoDecisao, setMotivoDecisao, onDecisao, onDecisaoGrupo }) {
+  const [expanded, setExpanded] = useState(false);
+  const { redeNome, codigoRede, produtos } = redeGrupo;
+
+  const totalLojas = produtos.reduce((t, p) => t + p.sols.length, 0);
+  const totalPendentes = produtos.reduce((t, p) => t + p.sols.filter(podeDecidir).length, 0);
+  const podeDecidirAlguma = totalPendentes > 0;
+
+  return (
+    <div className={`bg-white rounded-2xl border shadow-sm overflow-hidden transition ${podeDecidirAlguma ? "border-amber-200 ring-1 ring-amber-100" : "border-slate-200"}`}>
+      <button
+        onClick={() => setExpanded((v) => !v)}
+        className="w-full px-4 pt-3.5 pb-3 flex items-center justify-between gap-2 text-left"
+      >
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-1.5 mb-0.5">
+            <IcoUsers className="w-4 h-4 text-blue-500 shrink-0" />
+            <span className="text-sm font-bold text-blue-600 truncate">{redeNome}</span>
+          </div>
+          <div className="text-xs text-slate-500 flex flex-wrap items-center gap-x-3 gap-y-0.5">
+            <span>{produtos.length} produto{produtos.length !== 1 ? "s" : ""}</span>
+            <span>{totalLojas} loja{totalLojas !== 1 ? "s" : ""}</span>
+            {podeDecidirAlguma && (
+              <span className="text-amber-600 font-semibold">{totalPendentes} p/ decidir</span>
+            )}
+          </div>
+        </div>
+        <IcoChevronDown className={`w-4 h-4 text-slate-400 transition-transform shrink-0 ${expanded ? "rotate-180" : ""}`} />
+      </button>
+
+      {expanded && (
+        <div className="border-t border-slate-100 px-3 pb-3 pt-2.5 space-y-2.5 bg-slate-50/30">
+          {produtos.map((pg, i) => (
+            <ProdutoGrupoCard
+              key={`${codigoRede}__${pg.produto}__${i}`}
+              prodGrupo={pg}
+              redeKey={codigoRede}
+              podeDecidir={podeDecidir}
+              decidindo={decidindo}
+              setDecidindo={setDecidindo}
+              motivoDecisao={motivoDecisao}
+              setMotivoDecisao={setMotivoDecisao}
+              onDecisao={onDecisao}
+              onDecisaoGrupo={onDecisaoGrupo}
+            />
+          ))}
         </div>
       )}
     </div>
@@ -267,33 +309,46 @@ export default function SolicitacoesPage() {
 
   const pendentesAprovacao = lista.filter(podeDecidir).length;
 
-  // Agrupar por rede+produto quando codigoRede existe e há >1 sol do mesmo grupo
+  // Agrupar por rede (nível 1) → produto (nível 2)
+  // Redes com apenas 1 solicitação total → exibe como solo
   const itensRender = useMemo(() => {
-    const grupos = new Map();
-    const solos = [];
+    const redesMap = new Map(); // codigoRede → { redeNome, codigoRede, produtosMap }
+    const solosDirectos = [];
 
     for (const s of lista) {
       const produtoCodigo = s.itens?.[0]?.produtoCodigo || s.itens?.[0]?.produto;
       if (s.codigoRede && produtoCodigo) {
-        const key = `${s.codigoRede}__${produtoCodigo}`;
-        if (!grupos.has(key)) grupos.set(key, { rede: s.redeSubrede || s.codigoRede, produto: s.itens?.[0]?.produto, sols: [] });
-        grupos.get(key).sols.push(s);
+        if (!redesMap.has(s.codigoRede)) {
+          redesMap.set(s.codigoRede, {
+            redeNome: s.redeSubrede || s.codigoRede,
+            codigoRede: s.codigoRede,
+            produtosMap: new Map(),
+          });
+        }
+        const rg = redesMap.get(s.codigoRede);
+        if (!rg.produtosMap.has(produtoCodigo)) {
+          rg.produtosMap.set(produtoCodigo, { produto: s.itens?.[0]?.produto, sols: [] });
+        }
+        rg.produtosMap.get(produtoCodigo).sols.push(s);
       } else {
-        solos.push({ tipo: "solo", sol: s });
+        solosDirectos.push(s);
       }
     }
 
     const result = [];
-    for (const [key, g] of grupos) {
-      if (g.sols.length === 1) {
-        // Apenas 1 solicitação no grupo — trata como solo
-        solos.push({ tipo: "solo", sol: g.sols[0] });
+    const solos = [...solosDirectos];
+
+    for (const [key, rg] of redesMap) {
+      const produtos = Array.from(rg.produtosMap.values());
+      const totalSols = produtos.reduce((t, p) => t + p.sols.length, 0);
+      if (totalSols <= 1) {
+        if (produtos[0]?.sols[0]) solos.push(produtos[0].sols[0]);
       } else {
-        result.push({ tipo: "grupo", key, grupo: g });
+        result.push({ tipo: "rede", key, redeGrupo: { redeNome: rg.redeNome, codigoRede: rg.codigoRede, produtos } });
       }
     }
-    // Adiciona solos no final (ordenados por criação original)
-    for (const s of solos) result.push(s);
+
+    for (const s of solos) result.push({ tipo: "solo", sol: s });
 
     return result;
   }, [lista]);
@@ -349,10 +404,10 @@ export default function SolicitacoesPage() {
       ) : (
         <div className="space-y-3">
           {itensRender.map((item) =>
-            item.tipo === "grupo" ? (
-              <RedeGrupoCard
+            item.tipo === "rede" ? (
+              <RedeCard
                 key={item.key}
-                grupo={item.grupo}
+                redeGrupo={item.redeGrupo}
                 podeDecidir={podeDecidir}
                 decidindo={decidindo}
                 setDecidindo={setDecidindo}
