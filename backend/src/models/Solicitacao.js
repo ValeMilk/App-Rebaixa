@@ -70,6 +70,10 @@ const solicitacaoSchema = new mongoose.Schema(
     motivo: { type: String },
     observacoes: { type: String },
 
+    // Período da ação (rebaixa ou oferta)
+    inicioAcao: { type: Date, required: true },
+    fimAcao:    { type: Date, required: true },
+
     aprovadoPorId: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
     aprovadoPorNome: String,
     aprovadoEm: Date,

@@ -54,6 +54,8 @@ function RebaixaModal({ item, onClose, onEnviado }) {
   const [precoPDV, setPrecoPDV] = useState("");
   const [sellout, setSellout] = useState("");
   const [motivo, setMotivo] = useState("");
+  const [inicioAcao, setInicioAcao] = useState("");
+  const [fimAcao, setFimAcao] = useState("");
   const [enviando, setEnviando] = useState(false);
   const [erro, setErro] = useState("");
 
@@ -108,6 +110,8 @@ function RebaixaModal({ item, onClose, onEnviado }) {
     setErro("");
     if (!precoOferta) { setErro("Informe o preço da oferta"); return; }
     if (!precoPDV)    { setErro("Informe o preço PDV"); return; }
+    if (!inicioAcao || !fimAcao) { setErro("Informe o período da ação (início e fim)"); return; }
+    if (new Date(fimAcao) < new Date(inicioAcao)) { setErro("Fim da ação não pode ser anterior ao início"); return; }
     setEnviando(true);
     try {
       await api.post("/solicitacoes", {
@@ -117,6 +121,8 @@ function RebaixaModal({ item, onClose, onEnviado }) {
         codigoRede: item.codigoRede || null,
         redeSubrede: item.redeSubrede || null,
         motivo,
+        inicioAcao,
+        fimAcao,
         itens: [{
           produto: item.produto,
           produtoCodigo: item.produtoCodigo,
@@ -296,6 +302,18 @@ function RebaixaModal({ item, onClose, onEnviado }) {
               />
             </div>
 
+            {/* Período da ação */}
+            <div className="grid grid-cols-2 gap-2">
+              <div>
+                <label className="block text-[10px] font-semibold text-slate-500 uppercase tracking-wide mb-1">Início *</label>
+                <input type="date" className="input" value={inicioAcao} onChange={(e) => setInicioAcao(e.target.value)} required />
+              </div>
+              <div>
+                <label className="block text-[10px] font-semibold text-slate-500 uppercase tracking-wide mb-1">Fim *</label>
+                <input type="date" className="input" value={fimAcao} onChange={(e) => setFimAcao(e.target.value)} required />
+              </div>
+            </div>
+
             {erro && (
               <div className="rounded-xl bg-red-50 border border-red-200 p-3 text-sm text-red-700 flex items-center gap-2 animate-fade-in">
                 <IcoAlert className="w-4 h-4 shrink-0" />
@@ -317,10 +335,13 @@ function RebaixaModal({ item, onClose, onEnviado }) {
 }
 
 function RedeRebaixaModal({ redeSubrede, codigoRede, produto, onClose, onEnviado }) {
+  const [tipoAcao, setTipoAcao] = useState("rebaixa"); // "rebaixa" | "oferta_interna"
   const [precoOferta, setPrecoOferta] = useState("");
   const [precoPDV, setPrecoPDV] = useState("");
   const [sellout, setSellout] = useState("");
   const [motivo, setMotivo] = useState("");
+  const [inicioAcao, setInicioAcao] = useState("");
+  const [fimAcao, setFimAcao] = useState("");
   const [enviando, setEnviando] = useState(false);
   const [erro, setErro] = useState("");
 
@@ -369,13 +390,17 @@ function RedeRebaixaModal({ redeSubrede, codigoRede, produto, onClose, onEnviado
     setErro("");
     if (!precoOferta) { setErro("Informe o preço da oferta"); return; }
     if (!precoPDV)    { setErro("Informe o preço PDV"); return; }
+    if (!inicioAcao || !fimAcao) { setErro("Informe o período da ação (início e fim)"); return; }
+    if (new Date(fimAcao) < new Date(inicioAcao)) { setErro("Fim da ação não pode ser anterior ao início"); return; }
     setEnviando(true);
     try {
       const payloadComum = {
-        tipo: "rebaixa",
+        tipo: tipoAcao,
         codigoRede,
         redeSubrede,
         motivo,
+        inicioAcao,
+        fimAcao,
       };
       await Promise.all(
         produto.lojas.map((loja) =>
@@ -422,12 +447,23 @@ function RedeRebaixaModal({ redeSubrede, codigoRede, produto, onClose, onEnviado
         <div className="shrink-0 px-4 pt-3 pb-2.5 border-b border-slate-100 bg-white sm:rounded-t-3xl safe-area-pt">
           <div className="flex items-center justify-between gap-3">
             <div className="min-w-0 flex-1">
-              <div className="text-[10px] font-semibold text-blue-600 uppercase tracking-wider mb-0.5">Rebaixa por Rede</div>
+              <div className="text-[10px] font-semibold text-blue-600 uppercase tracking-wider mb-0.5">Ação por Rede</div>
               <h2 className="font-bold text-slate-900 text-base leading-snug line-clamp-2">{produto.produto}</h2>
             </div>
             <button onClick={onClose} aria-label="Fechar"
               className="shrink-0 h-9 w-9 rounded-full bg-slate-100 active:bg-slate-200 active:scale-95 transition flex items-center justify-center text-slate-600">
               <IcoX className="w-5 h-5" />
+            </button>
+          </div>
+          {/* Toggle Rebaixa / Oferta */}
+          <div className="mt-2.5 flex gap-1.5 p-1 bg-slate-100 rounded-xl">
+            <button type="button" onClick={() => setTipoAcao("rebaixa")}
+              className={`flex-1 text-xs font-bold py-1.5 rounded-lg transition ${tipoAcao === "rebaixa" ? "bg-white text-brand shadow-sm" : "text-slate-500"}`}>
+              Rebaixa
+            </button>
+            <button type="button" onClick={() => setTipoAcao("oferta_interna")}
+              className={`flex-1 text-xs font-bold py-1.5 rounded-lg transition ${tipoAcao === "oferta_interna" ? "bg-white text-blue-600 shadow-sm" : "text-slate-500"}`}>
+              Oferta
             </button>
           </div>
         </div>
@@ -554,6 +590,18 @@ function RedeRebaixaModal({ redeSubrede, codigoRede, produto, onClose, onEnviado
               />
             </div>
 
+            {/* Período da ação */}
+            <div className="grid grid-cols-2 gap-2">
+              <div>
+                <label className="block text-[10px] font-semibold text-slate-500 uppercase tracking-wide mb-1">Início *</label>
+                <input type="date" className="input" value={inicioAcao} onChange={(e) => setInicioAcao(e.target.value)} required />
+              </div>
+              <div>
+                <label className="block text-[10px] font-semibold text-slate-500 uppercase tracking-wide mb-1">Fim *</label>
+                <input type="date" className="input" value={fimAcao} onChange={(e) => setFimAcao(e.target.value)} required />
+              </div>
+            </div>
+
             <div className="rounded-xl bg-blue-50 border border-blue-200 p-3 text-xs text-blue-700 flex items-start gap-2">
               <IcoUsers className="w-4 h-4 shrink-0 mt-0.5" />
               <span>Será criada <strong>1 solicitação por loja</strong> ({produto.lojas.length} no total) com os mesmos preços e margens.</span>
@@ -584,7 +632,7 @@ function RedeRebaixaModal({ redeSubrede, codigoRede, produto, onClose, onEnviado
           <button type="submit" form="form-rede-rebaixa"
             className="w-full py-3 text-base font-semibold text-white bg-blue-600 rounded-2xl hover:bg-blue-700 active:scale-[0.98] transition disabled:opacity-60"
             disabled={enviando}>
-            {enviando ? `Enviando ${produto.lojas.length} sol...` : `Solicitar para ${produto.lojas.length} Loja${produto.lojas.length !== 1 ? "s" : ""}`}
+            {enviando ? `Enviando ${produto.lojas.length} sol...` : `Solicitar ${tipoAcao === "oferta_interna" ? "Oferta" : "Rebaixa"} para ${produto.lojas.length} Loja${produto.lojas.length !== 1 ? "s" : ""}`}
           </button>
         </div>
       </div>

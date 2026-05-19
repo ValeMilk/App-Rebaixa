@@ -10,9 +10,20 @@ function statusInicial(role) {
 }
 
 async function criar(req, res) {
-  const { tipo, cliente, clienteCodigo, itens, motivo, observacoes } = req.body || {};
+  const { tipo, cliente, clienteCodigo, itens, motivo, observacoes, inicioAcao, fimAcao } = req.body || {};
   if (!tipo || !cliente || !clienteCodigo || !Array.isArray(itens) || itens.length === 0) {
     return res.status(400).json({ error: "Dados incompletos" });
+  }
+  if (!inicioAcao || !fimAcao) {
+    return res.status(400).json({ error: "Período da ação (início e fim) é obrigatório" });
+  }
+  const dIni = new Date(inicioAcao);
+  const dFim = new Date(fimAcao);
+  if (isNaN(dIni) || isNaN(dFim)) {
+    return res.status(400).json({ error: "Datas de início/fim inválidas" });
+  }
+  if (dFim < dIni) {
+    return res.status(400).json({ error: "Fim da ação não pode ser anterior ao início" });
   }
 
   // Buscar carteira do cliente para obter supervisor e dados de rede
@@ -59,6 +70,8 @@ async function criar(req, res) {
     itens,
     motivo,
     observacoes,
+    inicioAcao: dIni,
+    fimAcao: dFim,
     criadoPorId: req.user.id,
     criadoPorNome: req.user.nome,
     criadoPorRole: req.user.role,

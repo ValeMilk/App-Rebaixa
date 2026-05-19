@@ -30,6 +30,15 @@ function fmtBRL(v) {
   return Number(v).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 }
 
+function TipoBadge({ tipo }) {
+  const isOferta = tipo === "oferta_interna";
+  return (
+    <span className={`inline-flex items-center text-[10px] font-bold px-1.5 py-0.5 rounded uppercase tracking-wide ${isOferta ? "bg-blue-100 text-blue-700" : "bg-purple-100 text-purple-700"}`}>
+      {isOferta ? "Oferta" : "Rebaixa"}
+    </span>
+  );
+}
+
 // Card individual (loja solo)
 function SolCard({ s, podeDecidir, decidindo, setDecidindo, motivoDecisao, setMotivoDecisao, onDecisao }) {
   const pode = podeDecidir(s);
@@ -38,6 +47,7 @@ function SolCard({ s, podeDecidir, decidindo, setDecidindo, motivoDecisao, setMo
       <div className="px-4 pt-3.5 pb-3">
         <div className="flex items-start justify-between gap-2 mb-2">
           <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-1.5 mb-0.5"><TipoBadge tipo={s.tipo} /></div>
             <div className="font-semibold text-slate-900 truncate">{s.cliente}</div>
             <div className="text-xs text-slate-500 mt-1 flex flex-wrap items-center gap-x-3 gap-y-0.5">
               <span className="inline-flex items-center gap-1"><IcoUser className="w-3 h-3" />{s.criadoPorNome || "—"}</span>
@@ -108,6 +118,9 @@ function ProdutoGrupoCard({ prodGrupo, redeKey, podeDecidir, decidindo, setDecid
       <div className="px-3 pt-3 pb-2">
         <div className="flex items-start justify-between gap-2">
           <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-1.5 mb-0.5">
+              <TipoBadge tipo={sols[0]?.tipo} />
+            </div>
             <div className="font-semibold text-slate-900 text-sm leading-snug">{produto}</div>
             <div className="text-xs text-slate-500 mt-1 flex flex-wrap items-center gap-x-3 gap-y-0.5">
               <span className="inline-flex items-center gap-1"><IcoStore className="w-3 h-3" />{sols.length} loja{sols.length !== 1 ? "s" : ""} · {qtdTotal} un</span>

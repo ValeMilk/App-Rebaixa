@@ -112,6 +112,15 @@ export default function DetalheSolicitacao() {
 
         {s.motivo && (<p className="mt-4 text-sm"><strong>Motivo:</strong> {s.motivo}</p>)}
         {s.observacoes && (<p className="mt-1 text-sm"><strong>Observacoes:</strong> {s.observacoes}</p>)}
+
+        {(s.inicioAcao || s.fimAcao) && (
+          <div className="mt-4 inline-flex items-center gap-2 rounded-xl bg-slate-50 border border-slate-200 px-3 py-2 text-xs">
+            <span className="font-bold uppercase tracking-wide text-slate-500">Período da ação</span>
+            <span className="font-semibold text-slate-800">
+              {s.inicioAcao ? fmtData(s.inicioAcao) : "—"} até {s.fimAcao ? fmtData(s.fimAcao) : "—"}
+            </span>
+          </div>
+        )}
       </div>
 
       {/* Itens da solicitacao com detalhes de preco/margem */}
