@@ -139,19 +139,7 @@ async function listar(req, res) {
       if (s.status === "pendente_supervisor") {
         const rede = s.codigoRede;
         if (rede && setRedesComResp.has(rede)) {
-     Override de responsabilidade por rede:
-  // se a rede da solicitação tem responsável definido e o usuário NÃO é o responsável,
-  // bloqueia a decisão na etapa de supervisor (diretoria/admin segue normal).
-  if (role === "supervisor" && sol.codigoRede) {
-    const override = await ResponsavelRede.findOne({ codigoRede: sol.codigoRede }).lean();
-    if (override && override.supervisorCodigo !== req.user.codigo) {
-      return res.status(403).json({
-        error: `Esta rede tem responsável definido (${override.supervisorNome}). Apenas ele pode decidir.`,
-      });
-    }
-  }
-
-  //      // Rede tem override: só o responsável decide
+          // Rede tem override: só o responsável decide
           podeDecidirSupervisor = setRedesResp.has(rede);
         } else {
           // Rede sem override: regra carteira (a própria query já garantiu visibilidade)
@@ -204,6 +192,18 @@ async function decidir(req, res) {
   if (!sol) return res.status(404).json({ error: "Nao encontrada" });
 
   const { role } = req.user;
+
+  // Override de responsabilidade por rede:
+  // se a rede da solicitação tem responsável definido e o usuário NÃO é o responsável,
+  // bloqueia a decisão na etapa de supervisor (diretoria/admin segue normal).
+  if (role === "supervisor" && sol.codigoRede) {
+    const override = await ResponsavelRede.findOne({ codigoRede: sol.codigoRede }).lean();
+    if (override && override.supervisorCodigo !== req.user.codigo) {
+      return res.status(403).json({
+        error: `Esta rede tem responsável definido (${override.supervisorNome}). Apenas ele pode decidir.`,
+      });
+    }
+  }
 
   // Supervisor pode decidir pendente_supervisor
   if (role === "supervisor" && sol.status === "pendente_supervisor") {
