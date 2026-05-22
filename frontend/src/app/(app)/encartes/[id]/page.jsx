@@ -349,7 +349,25 @@ function AdicionarProdutoModal({ encarteId, codigoRede, onClose, onAdicionado })
                     placeholder="0,00" value={precoOferta} onChange={(e) => setPrecoOferta(e.target.value)} />
                 </div>
                 <div>
-                  <label className="block text-xs text-slate-500 mb-1">Sellout</label>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="text-xs text-slate-500">Sellout</label>
+                    {(() => {
+                      const uc = stats?.mediaUC;
+                      const pdv = pdvNum;
+                      const oferta = ofertaNum;
+                      if (!uc || !pdv || !oferta || pdv <= oferta) return null;
+                      const sugerido = uc * (pdv - oferta) / pdv;
+                      return (
+                        <button
+                          type="button"
+                          onClick={() => setSellout(sugerido.toFixed(2))}
+                          className="text-[10px] font-semibold text-brand bg-brand/10 hover:bg-brand/20 px-2 py-0.5 rounded-full transition"
+                        >
+                          Sugerir: R$ {sugerido.toFixed(2)} (= Margem PDV)
+                        </button>
+                      );
+                    })()}
+                  </div>
                   <input type="number" inputMode="decimal" step="0.01"
                     className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand/40"
                     placeholder="0,00" value={sellout} onChange={(e) => setSellout(e.target.value)} />
@@ -357,9 +375,12 @@ function AdicionarProdutoModal({ encarteId, codigoRede, onClose, onAdicionado })
                 <div className="flex items-center justify-between bg-emerald-50 border border-emerald-100 rounded-xl px-3 py-2">
                   <div>
                     <div className="text-xs font-semibold text-emerald-700">Custo Promo</div>
-                    <div className="text-[10px] text-slate-400">Últ. Compra − Sellout · por produto</div>
+                    <div className="text-[10px] text-slate-400">Últ. Compra média − Sellout</div>
                   </div>
-                  <span className="text-sm font-bold text-emerald-600">Calculado ao salvar</span>
+                  {custoPromoPreview != null
+                    ? <span className="text-sm font-bold text-emerald-600">{fmtBRL(custoPromoPreview)}</span>
+                    : <span className="text-sm font-bold text-slate-300">—</span>
+                  }
                 </div>
               </div>
             )}
