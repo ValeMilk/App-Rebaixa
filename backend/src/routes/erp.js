@@ -42,6 +42,7 @@ router.post("/ultima-compra-rede", async (req, res) => {
       precoUltimaCompra: Number(r.precoUltimaCompra) || 0,
       dataUltimaCompra: r.dataUltimaCompra,
       subcategoria: r.subcategoria || null,
+      codigoRede: r.codigoRede != null ? String(r.codigoRede) : null,
       rede: r.rede || null,
     });
   } catch (err) {

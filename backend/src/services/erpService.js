@@ -134,6 +134,7 @@ WITH UltimaCompra AS (
         m01.M01_PRECOU       AS precoUltimaCompra,
         m00.M00_ENTSAI       AS dataUltimaCompra,
         e29.E29_DESC         AS subcategoria,
+        A16.A16_ID           AS codigoRede,
         a16.A16_DESC         AS rede,
         ROW_NUMBER() OVER (
             PARTITION BY m00.M00_ID_A00, m01.M01_ID_E02
@@ -156,6 +157,7 @@ SELECT TOP 1
     precoUltimaCompra,
     dataUltimaCompra,
     subcategoria,
+    codigoRede,
     rede
 FROM UltimaCompra
 WHERE rn = 1;
@@ -184,8 +186,10 @@ async function buscarUltimaCompraRede(codigoRede, produtoCodigo) {
   const sql = require("mssql");
   const pool = await getPool();
 
+  console.log(`[buscarUltimaCompraRede] codigoRede=${codigoRede} produtoCodigo=${produtoCodigo}`);
+
   const req = pool.request();
-  req.input("codigoRede",    sql.VarChar(50), String(codigoRede));
+  req.input("codigoRede",    sql.Int, Number(codigoRede));
   req.input("produtoCodigo", sql.VarChar(50), String(produtoCodigo));
 
   const query = `
@@ -196,6 +200,7 @@ WITH UltimaCompra AS (
         m01.M01_PRECOU       AS precoUltimaCompra,
         m00.M00_ENTSAI       AS dataUltimaCompra,
         e29.E29_DESC         AS subcategoria,
+        A16.A16_ID           AS codigoRede,
         a16.A16_DESC         AS rede,
         ROW_NUMBER() OVER (
             PARTITION BY m00.M00_ID_A00
@@ -218,6 +223,7 @@ SELECT TOP 1
     precoUltimaCompra,
     dataUltimaCompra,
     subcategoria,
+    codigoRede,
     rede
 FROM UltimaCompra
 WHERE rn = 1
