@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useState, useCallback, useMemo } from "react";
 import { useRouter, useParams } from "next/navigation";
@@ -14,7 +14,7 @@ import {
   IcoTrash,
 } from "@/components/Icons";
 
-// IcoTrash pode nao existir — fallback inline
+// IcoTrash pode nao existir â€” fallback inline
 function TrashIcon(props) {
   return (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}
@@ -28,12 +28,12 @@ function TrashIcon(props) {
 }
 
 function fmtBRL(v) {
-  if (v == null || v === "") return "—";
+  if (v == null || v === "") return "â€”";
   return Number(v).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 }
 
 function MargemBadge({ pct }) {
-  if (pct == null) return <span className="text-slate-300 text-base font-bold">—</span>;
+  if (pct == null) return <span className="text-slate-300 text-base font-bold">â€”</span>;
   const cor = pct >= 20
     ? "text-emerald-700 bg-emerald-50 border-emerald-200"
     : pct >= 10
@@ -46,7 +46,7 @@ function MargemBadge({ pct }) {
   );
 }
 
-/** Modal para adicionar um produto ao encarte */
+/** Modal para adicionar produtos ao encarte (por subcategoria) */
 function AdicionarProdutoModal({ encarteId, codigoRede, onClose, onAdicionado }) {
   // Subcategoria + lista
   const [subcategorias, setSubcategorias] = useState([]);
@@ -55,23 +55,18 @@ function AdicionarProdutoModal({ encarteId, codigoRede, onClose, onAdicionado })
   const [q, setQ] = useState("");
   const [produtos, setProdutos] = useState([]);
   const [loadingProdutos, setLoadingProdutos] = useState(false);
-  const [produtoSel, setProdutoSel] = useState(null);
 
-  // Ultima compra
-  const [ultimaCompra, setUltimaCompra] = useState(null);
-  const [loadingUC, setLoadingUC] = useState(false);
-
-  // Preços negociados para a subcategoria (pré-preenchem o formulário por produto)
-  const [precoPDVSubcat, setPrecoPDVSubcat] = useState("");
-  const [precoOfertaSubcat, setPrecoOfertaSubcat] = useState("");
-  const [selloutSubcat, setSelloutSubcat] = useState("");
-
-  // Campos de preço (por produto)
+  // NegociaÃ§Ã£o para a subcategoria inteira
   const [precoPDV, setPrecoPDV] = useState("");
   const [precoOferta, setPrecoOferta] = useState("");
   const [sellout, setSellout] = useState("");
+
+  // Produtos desmarcados (por _id)
+  const [desmarcados, setDesmarcados] = useState(new Set());
+
   const [erro, setErro] = useState("");
   const [salvando, setSalvando] = useState(false);
+  const [progresso, setProgresso] = useState({ feitos: 0, total: 0 });
 
   // Carrega subcategorias ao abrir
   useEffect(() => {
@@ -87,7 +82,7 @@ function AdicionarProdutoModal({ encarteId, codigoRede, onClose, onAdicionado })
     const t = setTimeout(async () => {
       setLoadingProdutos(true);
       try {
-        const params = { subcategoria: subcategoriaSel, limit: 200 };
+        const params = { subcategoria: subcategoriaSel, limit: 500 };
         if (q.trim().length >= 2) params.q = q.trim();
         const { data } = await api.get("/encartes/produtos", { params });
         setProdutos(data.produtos || []);
@@ -97,91 +92,103 @@ function AdicionarProdutoModal({ encarteId, codigoRede, onClose, onAdicionado })
     return () => clearTimeout(t);
   }, [subcategoriaSel, q]);
 
-  // Ao selecionar produto, busca ultima compra por rede
-  async function selecionarProduto(p) {
-    setProdutoSel(p);
-    // Pré-preenche preços com os valores negociados da subcategoria
-    if (precoPDVSubcat)    setPrecoPDV(precoPDVSubcat);
-    if (precoOfertaSubcat) setPrecoOferta(precoOfertaSubcat);
-    if (selloutSubcat)     setSellout(selloutSubcat);
-    setLoadingUC(true);
-    setUltimaCompra(null);
-    try {
-      const { data: ucData } = await api.post("/erp/ultima-compra-rede", {
-        produtoCodigo: p.codigoLivre || p.codigo,
-        codigoRede,
-      });
-      setUltimaCompra(ucData);
-    } catch {
-      setUltimaCompra({ encontrado: false });
-    } finally {
-      setLoadingUC(false);
-    }
+  function toggleProduto(id) {
+    setDesmarcados((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
   }
 
-  const precoUC = ultimaCompra?.encontrado ? Number(ultimaCompra.precoUltimaCompra) : null;
-  const dataUC  = ultimaCompra?.encontrado ? ultimaCompra.dataUltimaCompra : null;
+  const produtosSelecionados = useMemo(
+    () => produtos.filter((p) => !desmarcados.has(p._id)),
+    [produtos, desmarcados]
+  );
 
-  const margemPDV = useMemo(() => {
-    const p = Number(precoPDV);
-    if (!p || p <= 0 || precoUC == null) return null;
-    return ((p - precoUC) / p) * 100;
-  }, [precoPDV, precoUC]);
+  const todosMarcados = produtos.length > 0 && produtosSelecionados.length === produtos.length;
+  function toggleTodos() {
+    if (todosMarcados) setDesmarcados(new Set(produtos.map((p) => p._id)));
+    else setDesmarcados(new Set());
+  }
 
-  const margemOferta = useMemo(() => {
-    const o = Number(precoOferta);
-    if (!o || o <= 0 || precoUC == null) return null;
-    const s = Number(sellout) || 0;
-    return ((o - (precoUC - s)) / o) * 100;
-  }, [precoOferta, sellout, precoUC]);
-
-  const selloutSugerido = useMemo(() => {
-    const o = Number(precoOferta);
-    if (!o || o <= 0 || precoUC == null || margemPDV == null) return null;
-    const s = precoUC - o * (1 - margemPDV / 100);
-    return s > 0 ? Math.round(s * 100) / 100 : null;
-  }, [precoOferta, precoUC, margemPDV]);
-
-  // Custo Promo = Última Compra − Sellout (calculado automaticamente)
-  const custoPromo = useMemo(() => {
-    if (precoUC == null) return null;
-    const s = Number(sellout) || 0;
-    return Math.round((precoUC - s) * 100) / 100;
-  }, [precoUC, sellout]);
+  // Custo Promo preview (sem UC ainda, mostrado por produto após salvar)
 
   async function handleSalvar() {
     setErro("");
-    if (!precoOferta) { setErro("Informe o preço da oferta"); return; }
-    if (!precoPDV)    { setErro("Informe o preço PDV"); return; }
+    if (!subcategoriaSel) { setErro("Selecione uma subcategoria"); return; }
+    if (!precoPDV)        { setErro("Informe o PreÃ§o PDV"); return; }
+    if (!precoOferta)     { setErro("Informe o PreÃ§o Oferta"); return; }
+    if (produtosSelecionados.length === 0) { setErro("Selecione pelo menos um produto"); return; }
+
     setSalvando(true);
-    try {
-      const { data } = await api.post(`/encartes/${encarteId}/itens`, {
-        produtoCodigo:    produtoSel.codigoLivre || produtoSel.codigo,
-        produto:          produtoSel.descricao,
-        precoTabela:      produtoSel.precoTabela,
-        precoMinimo:      produtoSel.precoMinimo,
-        precoPromo:       produtoSel.precoPromo,
-        custo:            produtoSel.custo,
-        precoUltimaCompra: precoUC,
-        dataUltimaCompra:  dataUC,
-        precoOferta:      Number(precoOferta),
-        precoPDV:         Number(precoPDV),
-        sellout:          sellout ? Number(sellout) : 0,
-        margemPDV:        margemPDV != null ? Math.round(margemPDV * 10) / 10 : null,
-        margemOferta:     margemOferta != null ? Math.round(margemOferta * 10) / 10 : null,
-      });
-      onAdicionado(data);
-      onClose();
-    } catch (err) {
-      setErro(err.response?.data?.error || "Erro ao adicionar produto");
-    } finally {
-      setSalvando(false);
+    setProgresso({ feitos: 0, total: produtosSelecionados.length });
+
+    const pdvNum     = Number(precoPDV);
+    const ofertaNum  = Number(precoOferta);
+    const selloutNum = Number(sellout) || 0;
+
+    let ultimoEncarte = null;
+    let erros = 0;
+
+    // Processa em batches de 4 para nÃ£o saturar o ERP
+    const lote = 4;
+    for (let i = 0; i < produtosSelecionados.length; i += lote) {
+      const batch = produtosSelecionados.slice(i, i + lote);
+      const results = await Promise.allSettled(batch.map(async (p) => {
+        let precoUC = null;
+        let dataUC = null;
+        try {
+          const { data: uc } = await api.post("/erp/ultima-compra-rede", {
+            produtoCodigo: p.codigoLivre || p.codigo,
+            codigoRede,
+          });
+          if (uc?.encontrado) {
+            precoUC = Number(uc.precoUltimaCompra);
+            dataUC  = uc.dataUltimaCompra;
+          }
+        } catch { /* segue sem UC */ }
+
+        const margemPDV    = precoUC != null ? Math.round((((pdvNum - precoUC) / pdvNum) * 100) * 10) / 10 : null;
+        const custoPromo   = precoUC != null ? precoUC - selloutNum : null;
+        const margemOferta = custoPromo != null ? Math.round((((ofertaNum - custoPromo) / ofertaNum) * 100) * 10) / 10 : null;
+
+        const { data } = await api.post(`/encartes/${encarteId}/itens`, {
+          produtoCodigo:     p.codigoLivre || p.codigo,
+          produto:           p.descricao,
+          precoTabela:       p.precoTabela,
+          precoMinimo:       p.precoMinimo,
+          precoPromo:        p.precoPromo,
+          custo:             p.custo,
+          precoUltimaCompra: precoUC,
+          dataUltimaCompra:  dataUC,
+          precoOferta:       ofertaNum,
+          precoPDV:          pdvNum,
+          sellout:           selloutNum,
+          margemPDV,
+          margemOferta,
+        });
+        return data;
+      }));
+
+      for (const r of results) {
+        if (r.status === "fulfilled") ultimoEncarte = r.value;
+        else erros += 1;
+      }
+      setProgresso({ feitos: Math.min(i + lote, produtosSelecionados.length), total: produtosSelecionados.length });
     }
+
+    setSalvando(false);
+    if (ultimoEncarte) onAdicionado(ultimoEncarte);
+    if (erros > 0) {
+      setErro(`${erros} produto(s) falharam ao adicionar`);
+      return;
+    }
+    onClose();
   }
 
   return (
     <div className="fixed inset-0 z-50 flex flex-col sm:items-center sm:justify-center sm:p-6 animate-fade-in">
-      <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={onClose} />
+      <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={salvando ? undefined : onClose} />
       <div className="relative bg-white shadow-2xl flex flex-col w-full sm:max-w-md sm:rounded-3xl sm:max-h-[90dvh] animate-slide-up safe-area-pb"
         style={{ height: "100dvh", maxHeight: "100dvh" }}>
 
@@ -192,14 +199,12 @@ function AdicionarProdutoModal({ encarteId, codigoRede, onClose, onAdicionado })
               <div className="text-[10px] font-semibold text-brand uppercase tracking-wider mb-0.5">
                 Precificar para Encarte
               </div>
-              {produtoSel && (
-                <h2 className="font-bold text-slate-900 text-base leading-snug line-clamp-2">
-                  {produtoSel.descricao}
-                </h2>
-              )}
+              <h2 className="font-bold text-slate-900 text-base leading-snug">
+                {subcategoriaSel || "Selecione uma subcategoria"}
+              </h2>
             </div>
-            <button onClick={onClose} aria-label="Fechar"
-              className="shrink-0 h-9 w-9 rounded-full bg-slate-100 active:bg-slate-200 active:scale-95 transition flex items-center justify-center text-slate-600">
+            <button onClick={onClose} disabled={salvando} aria-label="Fechar"
+              className="shrink-0 h-9 w-9 rounded-full bg-slate-100 active:bg-slate-200 active:scale-95 transition flex items-center justify-center text-slate-600 disabled:opacity-50">
               <IcoX className="w-5 h-5" />
             </button>
           </div>
@@ -224,7 +229,7 @@ function AdicionarProdutoModal({ encarteId, codigoRede, onClose, onAdicionado })
                   autoFocus
                   className="w-full border border-slate-200 rounded-xl px-3 py-2.5 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-brand/40"
                   value={subcategoriaSel}
-                  onChange={(e) => { setSubcategoriaSel(e.target.value); setQ(""); setPrecoPDVSubcat(""); setPrecoOfertaSubcat(""); setSelloutSubcat(""); setProdutoSel(null); }}>
+                  onChange={(e) => { setSubcategoriaSel(e.target.value); setQ(""); setDesmarcados(new Set()); }}>
                   <option value="">Selecione uma subcategoria...</option>
                   {subcategorias.map((s) => (
                     <option key={s} value={s}>{s}</option>
@@ -233,187 +238,127 @@ function AdicionarProdutoModal({ encarteId, codigoRede, onClose, onAdicionado })
               )}
             </div>
 
-            {/* Negociação da subcategoria */}
+            {/* NegociaÃ§Ã£o da subcategoria */}
             {subcategoriaSel && (
               <div className="bg-brand/5 border border-brand/15 rounded-xl px-3 py-3 space-y-2">
-                <div className="text-xs font-bold text-brand uppercase tracking-wide">Negociação da subcategoria</div>
+                <div className="text-xs font-bold text-brand uppercase tracking-wide">NegociaÃ§Ã£o da subcategoria</div>
                 <div className="grid grid-cols-3 gap-2">
                   <div>
-                    <label className="block text-[10px] font-semibold text-slate-500 mb-1">Preço PDV</label>
+                    <label className="block text-[10px] font-semibold text-slate-500 mb-1">PreÃ§o PDV</label>
                     <input type="number" inputMode="decimal" step="0.01"
                       className="w-full border border-slate-200 rounded-xl px-2 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-brand/40"
-                      placeholder="0,00" value={precoPDVSubcat} onChange={(e) => setPrecoPDVSubcat(e.target.value)} />
+                      placeholder="0,00" value={precoPDV} onChange={(e) => setPrecoPDV(e.target.value)} />
                   </div>
                   <div>
-                    <label className="block text-[10px] font-semibold text-slate-500 mb-1">Preço Oferta</label>
+                    <label className="block text-[10px] font-semibold text-slate-500 mb-1">PreÃ§o Oferta</label>
                     <input type="number" inputMode="decimal" step="0.01"
                       className="w-full border border-slate-200 rounded-xl px-2 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-brand/40"
-                      placeholder="0,00" value={precoOfertaSubcat} onChange={(e) => setPrecoOfertaSubcat(e.target.value)} />
+                      placeholder="0,00" value={precoOferta} onChange={(e) => setPrecoOferta(e.target.value)} />
                   </div>
                   <div>
                     <label className="block text-[10px] font-semibold text-slate-500 mb-1">Sellout</label>
                     <input type="number" inputMode="decimal" step="0.01"
                       className="w-full border border-slate-200 rounded-xl px-2 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-brand/40"
-                      placeholder="0,00" value={selloutSubcat} onChange={(e) => setSelloutSubcat(e.target.value)} />
+                      placeholder="0,00" value={sellout} onChange={(e) => setSellout(e.target.value)} />
                   </div>
                 </div>
-                <p className="text-[10px] text-slate-400">Pré-preenchidos em cada produto — ajuste individualmente se necessário</p>
+                <p className="text-[10px] text-slate-400">Estes valores serÃ£o aplicados a todos os produtos selecionados abaixo</p>
               </div>
             )}
 
-            {/* Lista de produtos (quando nenhum selecionado) */}
-            {!produtoSel && subcategoriaSel && (
-              <>
-                <div className="relative">
-                  <IcoSearch className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                  <input
-                    className="w-full pl-9 pr-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-brand/40"
-                    placeholder="Filtrar por nome..."
-                    value={q}
-                    onChange={(e) => setQ(e.target.value)}
-                  />
-                </div>
-                {loadingProdutos && (
-                  <div className="flex justify-center py-6">
-                    <div className="w-6 h-6 rounded-full border-4 border-slate-200 border-t-brand animate-spin" />
-                  </div>
-                )}
-                {!loadingProdutos && produtos.length === 0 && (
-                  <p className="text-center text-slate-400 text-sm py-6">Nenhum produto encontrado</p>
-                )}
-                <ul className="divide-y divide-slate-50">
-                  {produtos.map((p) => (
-                    <li key={p._id}>
-                      <button
-                        onClick={() => selecionarProduto(p)}
-                        className="w-full flex items-center gap-3 py-3 text-left hover:bg-slate-50 transition rounded-xl px-2"
-                      >
-                        <div className="h-9 w-9 rounded-xl bg-brand/10 flex items-center justify-center shrink-0">
-                          <IcoPackage className="w-4 h-4 text-brand" />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="font-semibold text-slate-800 text-sm truncate">{p.descricao}</div>
-                          <div className="text-xs text-slate-400">Cód {p.codigoLivre || p.codigo}</div>
-                        </div>
-                        <div className="text-right shrink-0">
-                          <div className="text-xs font-semibold text-slate-700">{fmtBRL(p.precoTabela)}</div>
-                          <div className="text-[10px] text-slate-400">tabela</div>
-                        </div>
-                      </button>
-                    </li>
-                  ))}
-                </ul>
-              </>
+            {/* Filtro */}
+            {subcategoriaSel && (
+              <div className="relative">
+                <IcoSearch className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                <input
+                  className="w-full pl-9 pr-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-brand/40"
+                  placeholder="Filtrar por nome..."
+                  value={q}
+                  onChange={(e) => setQ(e.target.value)}
+                />
+              </div>
+            )}
+
+            {/* CabeÃ§alho com contagem + select all */}
+            {subcategoriaSel && produtos.length > 0 && (
+              <div className="flex items-center justify-between text-xs px-1">
+                <span className="text-slate-500">
+                  <span className="font-bold text-brand">{produtosSelecionados.length}</span> de {produtos.length} selecionados
+                </span>
+                <button type="button" onClick={toggleTodos} className="text-brand font-semibold">
+                  {todosMarcados ? "Desmarcar todos" : "Marcar todos"}
+                </button>
+              </div>
+            )}
+
+            {loadingProdutos && (
+              <div className="flex justify-center py-6">
+                <div className="w-6 h-6 rounded-full border-4 border-slate-200 border-t-brand animate-spin" />
+              </div>
+            )}
+
+            {!loadingProdutos && subcategoriaSel && produtos.length === 0 && (
+              <p className="text-center text-slate-400 text-sm py-6">Nenhum produto encontrado</p>
             )}
 
             {!subcategoriaSel && (
               <p className="text-center text-slate-400 text-sm py-6">Selecione uma subcategoria para ver os produtos</p>
             )}
 
-            {/* Formulário do produto selecionado */}
-            {produtoSel && (
-              <div className="space-y-3">
-                {/* Botão trocar produto */}
-                <button
-                  onClick={() => { setProdutoSel(null); setPrecoPDV(""); setPrecoOferta(""); setSellout(""); setUltimaCompra(null); }}
-                  className="flex items-center gap-1.5 text-xs text-brand font-semibold hover:opacity-80 transition">
-                  <IcoChevronRight className="w-3.5 h-3.5 rotate-180" />
-                  Trocar produto
-                </button>
-
-                {/* Preços de referência */}
-                <div className="bg-slate-50 rounded-xl border border-slate-100 px-3 py-2.5 space-y-1">
-                  <div className="flex justify-between text-xs">
-                    <span className="text-slate-500">Preço tabela</span>
-                    <span className="font-semibold text-slate-800">{fmtBRL(produtoSel.precoTabela)}</span>
-                  </div>
-                  <div className="flex justify-between text-xs">
-                    <span className="text-slate-500">Preço mínimo</span>
-                    <span className="font-semibold text-slate-800">{fmtBRL(produtoSel.precoMinimo)}</span>
-                  </div>
-                  <div className="flex justify-between text-xs border-t border-slate-200 pt-1 mt-1">
-                    <span className="text-slate-500">Última compra</span>
-                    {loadingUC
-                      ? <span className="text-slate-400 text-xs">carregando...</span>
-                      : <span className={`font-bold text-sm ${precoUC != null ? "text-brand" : "text-slate-400"}`}>
-                          {precoUC != null ? fmtBRL(precoUC) : "—"}
-                          {dataUC && <span className="text-[10px] text-slate-400 ml-1">({fmtData(dataUC)})</span>}
-                        </span>
-                    }
-                  </div>
-                </div>
-
-                {/* Margem PDV */}
-                <div className="bg-white rounded-xl border border-slate-100 px-3 py-2.5">
-                  <div className="flex items-center justify-between mb-0.5">
-                    <span className="text-xs font-semibold text-slate-600 uppercase tracking-wide">Margem PDV</span>
-                    <MargemBadge pct={margemPDV} />
-                  </div>
-                  <div className="text-[10px] text-slate-400 mb-1.5">(PDV − Últ. Compra) / PDV</div>
-                  <div>
-                    <label className="block text-xs text-slate-500 mb-1">Preço PDV (R$)</label>
-                    <input type="number" inputMode="decimal" step="0.01"
-                      className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand/40"
-                      placeholder="0,00" value={precoPDV} onChange={(e) => setPrecoPDV(e.target.value)} />
-                  </div>
-                </div>
-
-                {/* Margem Oferta */}
-                <div className="bg-white rounded-xl border border-slate-100 px-3 py-2.5 space-y-2">
-                  <div className="flex items-center justify-between mb-0.5">
-                    <span className="text-xs font-semibold text-slate-600 uppercase tracking-wide">Margem Oferta</span>
-                    <MargemBadge pct={margemOferta} />
-                  </div>
-                  <div className="text-[10px] text-slate-400 -mt-1">(Oferta − Custo Promo) / Oferta</div>
-                  <div>
-                    <label className="block text-xs text-slate-500 mb-1">Preço oferta (encarte)</label>
-                    <input type="number" inputMode="decimal" step="0.01"
-                      className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand/40"
-                      placeholder="0,00" value={precoOferta} onChange={(e) => setPrecoOferta(e.target.value)} />
-                  </div>
-                  <div>
-                    <div className="flex items-center justify-between mb-1">
-                      <label className="text-xs text-slate-500">Sellout</label>
-                      {selloutSugerido != null && (
-                        <button type="button"
-                          onClick={() => setSellout(String(selloutSugerido))}
-                          className="text-[10px] text-brand font-semibold underline">
-                          Usar sugerido {fmtBRL(selloutSugerido)}
-                        </button>
-                      )}
-                    </div>
-                    <input type="number" inputMode="decimal" step="0.01"
-                      className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand/40"
-                      placeholder="0,00" value={sellout} onChange={(e) => setSellout(e.target.value)} />
-                  </div>
-
-                  {/* Custo Promo calculado automaticamente */}
-                  {custoPromo != null && (
-                    <div className="flex items-center justify-between bg-emerald-50 border border-emerald-100 rounded-xl px-3 py-2">
-                      <div>
-                        <div className="text-xs font-semibold text-emerald-700">Custo Promo</div>
-                        <div className="text-[10px] text-slate-400">Últ. Compra − Sellout</div>
+            {/* Lista de produtos com checkbox */}
+            <ul className="divide-y divide-slate-50">
+              {produtos.map((p) => {
+                const marcado = !desmarcados.has(p._id);
+                return (
+                  <li key={p._id}>
+                    <button
+                      type="button"
+                      onClick={() => toggleProduto(p._id)}
+                      className={`w-full flex items-center gap-3 py-3 text-left transition rounded-xl px-2 ${marcado ? "" : "opacity-50"} hover:bg-slate-50`}
+                    >
+                      <div className={`h-5 w-5 rounded-md border-2 flex items-center justify-center shrink-0 transition ${marcado ? "bg-brand border-brand" : "bg-white border-slate-300"}`}>
+                        {marcado && (
+                          <svg viewBox="0 0 24 24" className="w-3.5 h-3.5 text-white" fill="none" stroke="currentColor" strokeWidth={3} strokeLinecap="round" strokeLinejoin="round">
+                            <polyline points="20 6 9 17 4 12" />
+                          </svg>
+                        )}
                       </div>
-                      <span className="text-base font-bold text-emerald-700">{fmtBRL(custoPromo)}</span>
-                    </div>
-                  )}
-                </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="font-semibold text-slate-800 text-sm truncate">{p.descricao}</div>
+                        <div className="text-xs text-slate-400">CÃ³d {p.codigoLivre || p.codigo}</div>
+                      </div>
+                      <div className="text-right shrink-0">
+                        <div className="text-xs font-semibold text-slate-700">{fmtBRL(p.precoTabela)}</div>
+                        <div className="text-[10px] text-slate-400">tabela</div>
+                      </div>
+                    </button>
+                  </li>
+                );
+              })}
+            </ul>
 
-                {erro && <p className="text-red-600 text-xs">{erro}</p>}
-              </div>
-            )}
-
+            {erro && <p className="text-red-600 text-xs">{erro}</p>}
           </div>
         </div>
 
-        {/* Footer — só aparece quando produto selecionado */}
-        {produtoSel && (
+        {/* Footer */}
+        {subcategoriaSel && produtos.length > 0 && (
           <div className="shrink-0 px-4 pb-4 pt-2 border-t border-slate-100 safe-area-pb">
+            {salvando && progresso.total > 0 && (
+              <div className="mb-2">
+                <div className="h-1.5 w-full bg-slate-100 rounded-full overflow-hidden">
+                  <div className="h-full bg-brand transition-all" style={{ width: `${(progresso.feitos / progresso.total) * 100}%` }} />
+                </div>
+                <div className="text-[10px] text-slate-500 text-center mt-1">
+                  Adicionando {progresso.feitos} de {progresso.total}...
+                </div>
+              </div>
+            )}
             <button
               onClick={handleSalvar}
-              disabled={salvando}
+              disabled={salvando || produtosSelecionados.length === 0}
               className="w-full py-3 rounded-2xl bg-brand text-white font-bold text-sm hover:opacity-90 active:scale-95 transition disabled:opacity-60">
-              {salvando ? "Adicionando..." : "Adicionar ao encarte"}
+              {salvando ? "Adicionando..." : `Adicionar ${produtosSelecionados.length} produto${produtosSelecionados.length === 1 ? "" : "s"} ao encarte`}
             </button>
           </div>
         )}
@@ -447,7 +392,7 @@ export default function EncarteDetalhe() {
   useEffect(() => { carregar(); }, [carregar]);
 
   async function excluirEncarte() {
-    if (!confirm(`Excluir o encarte "${encarte.nome}"? Esta ação não pode ser desfeita.`)) return;
+    if (!confirm(`Excluir o encarte "${encarte.nome}"? Esta aÃ§Ã£o nÃ£o pode ser desfeita.`)) return;
     setExcluindo(true);
     try {
       await api.delete(`/encartes/${id}`);
@@ -483,7 +428,7 @@ export default function EncarteDetalhe() {
     return (
       <div className="flex h-screen items-center justify-center bg-slate-50">
         <div className="text-center">
-          <p className="text-slate-600 font-semibold">{erro || "Encarte não encontrado"}</p>
+          <p className="text-slate-600 font-semibold">{erro || "Encarte nÃ£o encontrado"}</p>
           <button onClick={() => router.back()} className="mt-3 text-brand text-sm underline">Voltar</button>
         </div>
       </div>
@@ -514,19 +459,19 @@ export default function EncarteDetalhe() {
             </button>
           ) : (
             <span className="text-[10px] bg-slate-100 text-slate-500 font-semibold px-2 py-1 rounded-full shrink-0">
-              Visualização
+              VisualizaÃ§Ã£o
             </span>
           )}
         </div>
 
-        {/* Período */}
+        {/* PerÃ­odo */}
         <div className="flex items-center gap-1.5 mt-2 text-xs text-slate-500">
           <IcoCalendar className="w-3.5 h-3.5 shrink-0" />
-          <span>{fmtData(encarte.periodoInicio)} → {fmtData(encarte.periodoFim)}</span>
+          <span>{fmtData(encarte.periodoInicio)} â†’ {fmtData(encarte.periodoFim)}</span>
         </div>
       </div>
 
-      {/* Sumário */}
+      {/* SumÃ¡rio */}
       <div className="bg-white border-b border-slate-100 px-4 py-2.5">
         <div className="flex items-center gap-2 text-xs text-slate-500">
           <IcoTag className="w-3.5 h-3.5" />
@@ -543,7 +488,7 @@ export default function EncarteDetalhe() {
             </div>
             <p className="text-slate-600 font-semibold">Nenhum produto ainda</p>
             <p className="text-slate-400 text-sm mt-1">
-              {encarte.podeEditar ? 'Toque em "+ Adicionar Produto" para montar o encarte.' : "O responsável ainda não adicionou produtos."}
+              {encarte.podeEditar ? 'Toque em "+ Adicionar Produto" para montar o encarte.' : "O responsÃ¡vel ainda nÃ£o adicionou produtos."}
             </p>
           </div>
         ) : (
@@ -552,7 +497,7 @@ export default function EncarteDetalhe() {
               <div className="flex items-start justify-between gap-2">
                 <div className="flex-1 min-w-0">
                   <div className="font-bold text-slate-800 text-sm leading-snug">{it.produto}</div>
-                  <div className="text-[10px] text-slate-400 mt-0.5">Cód {it.produtoCodigo || "—"}</div>
+                  <div className="text-[10px] text-slate-400 mt-0.5">CÃ³d {it.produtoCodigo || "â€”"}</div>
                 </div>
                 {encarte.podeEditar && (
                   <button
@@ -564,17 +509,17 @@ export default function EncarteDetalhe() {
                 )}
               </div>
 
-              {/* Preços em grid */}
+              {/* PreÃ§os em grid */}
               <div className="mt-2.5 grid grid-cols-2 gap-x-4 gap-y-1.5">
                 <div>
-                  <div className="text-[10px] text-slate-400 uppercase tracking-wide">Última compra</div>
+                  <div className="text-[10px] text-slate-400 uppercase tracking-wide">Ãšltima compra</div>
                   <div className="text-sm font-bold text-brand">{fmtBRL(it.precoUltimaCompra)}</div>
                   {it.dataUltimaCompra && (
                     <div className="text-[10px] text-slate-400">{fmtData(it.dataUltimaCompra)}</div>
                   )}
                 </div>
                 <div>
-                  <div className="text-[10px] text-slate-400 uppercase tracking-wide">Preço PDV</div>
+                  <div className="text-[10px] text-slate-400 uppercase tracking-wide">PreÃ§o PDV</div>
                   <div className="text-sm font-semibold text-slate-800">{fmtBRL(it.precoPDV)}</div>
                   {it.margemPDV != null && (
                     <div className={`text-[10px] font-bold ${it.margemPDV >= 20 ? "text-emerald-600" : it.margemPDV >= 10 ? "text-amber-600" : "text-red-600"}`}>
@@ -583,7 +528,7 @@ export default function EncarteDetalhe() {
                   )}
                 </div>
                 <div>
-                  <div className="text-[10px] text-slate-400 uppercase tracking-wide">Preço oferta</div>
+                  <div className="text-[10px] text-slate-400 uppercase tracking-wide">PreÃ§o oferta</div>
                   <div className="text-sm font-semibold text-slate-800">{fmtBRL(it.precoOferta)}</div>
                   {it.margemOferta != null && (
                     <div className={`text-[10px] font-bold ${it.margemOferta >= 20 ? "text-emerald-600" : it.margemOferta >= 10 ? "text-amber-600" : "text-red-600"}`}>
@@ -601,7 +546,7 @@ export default function EncarteDetalhe() {
         )}
       </div>
 
-      {/* Botão fixo Adicionar Produto — só para quem pode editar */}
+      {/* BotÃ£o fixo Adicionar Produto â€” sÃ³ para quem pode editar */}
       {encarte.podeEditar && (
         <div className="fixed bottom-16 lg:bottom-0 left-0 right-0 p-4 bg-white border-t border-slate-100 safe-area-pb lg:left-64">
           <button
