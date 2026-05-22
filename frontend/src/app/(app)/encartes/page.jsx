@@ -198,7 +198,7 @@ function CalendarioRede({ grupo, onClickEncarte }) {
                   return (
                     <button key={e._id} onClick={() => onClickEncarte(e._id)} title={e.nome}
                       className={`w-full rounded-[4px] py-[3px] px-1 text-left text-[9px] font-bold leading-none truncate ${e.cor.bg} ${e.cor.text}`}>
-                      {isInicio ? e.nome : "\u00A0"}
+                      {e.nome}
                     </button>
                   );
                 })}

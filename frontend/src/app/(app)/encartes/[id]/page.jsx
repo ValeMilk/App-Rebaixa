@@ -374,6 +374,7 @@ export default function EncarteDetalhe() {
   const [loading, setLoading] = useState(true);
   const [modalAberto, setModalAberto] = useState(false);
   const [removendoId, setRemovendoId] = useState(null);
+  const [excluindo, setExcluindo] = useState(false);
   const [erro, setErro] = useState("");
 
   const carregar = useCallback(async () => {
@@ -389,6 +390,18 @@ export default function EncarteDetalhe() {
   }, [id]);
 
   useEffect(() => { carregar(); }, [carregar]);
+
+  async function excluirEncarte() {
+    if (!confirm(`Excluir o encarte "${encarte.nome}"? Esta ação não pode ser desfeita.`)) return;
+    setExcluindo(true);
+    try {
+      await api.delete(`/encartes/${id}`);
+      router.back();
+    } catch (err) {
+      alert(err.response?.data?.error || "Erro ao excluir encarte");
+      setExcluindo(false);
+    }
+  }
 
   async function removerItem(itemId) {
     if (!confirm("Remover produto do encarte?")) return;
@@ -437,7 +450,14 @@ export default function EncarteDetalhe() {
             </div>
             <h1 className="font-bold text-slate-900 text-base leading-tight truncate">{encarte.nome}</h1>
           </div>
-          {!encarte.podeEditar && (
+          {encarte.podeEditar ? (
+            <button
+              onClick={excluirEncarte}
+              disabled={excluindo}
+              className="shrink-0 h-9 w-9 rounded-xl bg-red-50 flex items-center justify-center text-red-400 hover:bg-red-100 transition disabled:opacity-40">
+              <TrashIcon className="w-4 h-4" />
+            </button>
+          ) : (
             <span className="text-[10px] bg-slate-100 text-slate-500 font-semibold px-2 py-1 rounded-full shrink-0">
               Visualização
             </span>
