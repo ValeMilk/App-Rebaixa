@@ -33,6 +33,8 @@ export default function CalendarioGeralPage() {
   const router = useRouter();
   const [grupos, setGrupos] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [tooltip, setTooltip] = useState(null);
+  const tooltipCache = useMemo(() => ({}), []);
 
   const hoje = new Date();
   const [mesAno, setMesAno] = useState({ ano: hoje.getFullYear(), mes: hoje.getMonth() });
@@ -88,6 +90,34 @@ export default function CalendarioGeralPage() {
     }
     return dias;
   }, [mesAno, encartesFlat]);
+
+  const fmtBRL = (v) => v != null ? v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) : '—';
+
+  async function onHover(ev, enc) {
+    const rect = ev.currentTarget.getBoundingClientRect();
+    setTooltip({ id: enc._id, x: rect.left + rect.width / 2, y: rect.top, data: tooltipCache[enc._id] || null });
+    if (!tooltipCache[enc._id]) {
+      try {
+        const { data } = await api.get(`/encartes/${enc._id}`);
+        const itens = data.itens || [];
+        const subs = [...new Set(itens.map(it => it.subcategoria).filter(Boolean))];
+        const ofertas = itens.map(it => it.precoOferta).filter(v => v != null);
+        const sellouts = itens.map(it => it.sellout).filter(v => v != null);
+        const info = {
+          rede: enc.redeNome,
+          subs,
+          ofertaMin: ofertas.length ? fmtBRL(Math.min(...ofertas)) : '—',
+          ofertaMax: ofertas.length ? fmtBRL(Math.max(...ofertas)) : '—',
+          selloutMedio: sellouts.length ? fmtBRL(sellouts.reduce((a, b) => a + b, 0) / sellouts.length) : '—',
+          totalItens: itens.length,
+        };
+        tooltipCache[enc._id] = info;
+        setTooltip(prev => prev?.id === enc._id ? { ...prev, data: info } : prev);
+      } catch { /* silencioso */ }
+    }
+  }
+
+  function onLeave() { setTooltip(null); }
 
   const nomeMes = new Date(mesAno.ano, mesAno.mes, 1)
     .toLocaleDateString("pt-BR", { month: "long", year: "numeric" });
@@ -174,7 +204,8 @@ export default function CalendarioGeralPage() {
                           <button
                             key={e._id}
                             onClick={() => router.push(`/encartes/${e._id}`)}
-                            title={`${e.redeNome} — ${e.nome}`}
+                            onMouseEnter={(ev) => onHover(ev, e)}
+                            onMouseLeave={onLeave}
                             className={`w-full rounded-[4px] py-[3px] px-1 text-left text-[9px] font-bold leading-none truncate ${e.cor.bg} ${e.cor.text}`}>
                             {e.nome}
                           </button>
@@ -197,5 +228,41 @@ export default function CalendarioGeralPage() {
         )}
       </div>
     </div>
-  );
+
+      {tooltip && (
+        <div
+          style={{ position: 'fixed', left: tooltip.x, top: tooltip.y - 8, transform: 'translate(-50%, -100%)', zIndex: 9999 }}
+          className="pointer-events-none bg-slate-900 text-white rounded-xl shadow-xl px-3 py-2.5 text-xs min-w-[190px] max-w-[250px]"
+        >
+          {!tooltip.data ? (
+            <div className="text-slate-400 text-center py-1 text-[11px]">Carregando...</div>
+          ) : (
+            <>
+              <div className="font-bold text-sm mb-1.5">{tooltip.data.rede}</div>
+              {tooltip.data.subs.length > 0 && (
+                <div className="mb-1.5">
+                  <div className="text-[9px] text-slate-400 uppercase tracking-wide mb-0.5">Subcategorias</div>
+                  {tooltip.data.subs.map(s => (
+                    <div key={s} className="text-[11px] text-slate-200 leading-snug">• {s}</div>
+                  ))}
+                </div>
+              )}
+              <div className="grid grid-cols-2 gap-x-3 gap-y-1 border-t border-slate-700 pt-1.5 mt-1">
+                <div>
+                  <div className="text-[9px] text-slate-400 uppercase tracking-wide">Preço oferta</div>
+                  <div className="text-[11px] font-semibold text-emerald-400">
+                    {tooltip.data.ofertaMin === tooltip.data.ofertaMax ? tooltip.data.ofertaMin : tooltip.data.ofertaMin + ' – ' + tooltip.data.ofertaMax}
+                  </div>
+                </div>
+                <div>
+                  <div className="text-[9px] text-slate-400 uppercase tracking-wide">Sellout médio</div>
+                  <div className="text-[11px] font-semibold text-amber-400">{tooltip.data.selloutMedio}</div>
+                </div>
+              </div>
+              <div className="text-[9px] text-slate-500 mt-1.5 text-right">{tooltip.data.totalItens} produto{tooltip.data.totalItens !== 1 ? 's' : ''}</div>
+            </>
+          )}
+          <div style={{ position: 'absolute', bottom: -5, left: '50%', transform: 'translateX(-50%)', width: 0, height: 0, borderLeft: '5px solid transparent', borderRight: '5px solid transparent', borderTop: '5px solid #0f172a' }} />
+        </div>
+      )}
 }
