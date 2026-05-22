@@ -253,7 +253,7 @@ export default function CalendarioGeralPage() {
               <div className="grid grid-cols-3 gap-x-2 text-[9px] text-slate-400 uppercase tracking-wide border-b border-slate-700 pb-1 mb-1">
                 <div className="col-span-1">Subcategoria</div>
                 <div className="text-right">Preço oferta</div>
-                <div className="text-right">Sellout médio</div>
+                <div className="text-right">Sellout</div>
               </div>
               {/* Linhas por subcategoria */}
               {tooltip.data.categorias.map(c => (
