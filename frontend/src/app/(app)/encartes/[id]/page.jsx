@@ -64,6 +64,9 @@ function AdicionarProdutoModal({ encarteId, codigoRede, onClose, onAdicionado })
   const [ultimaCompra, setUltimaCompra] = useState(null);
   const [loadingUC, setLoadingUC] = useState(false);
 
+  // Sellout negociado para a subcategoria atual (pré-preenche todos os produtos da sub)
+  const [selloutSubcat, setSelloutSubcat] = useState("");
+
   // Campos de preço
   const [precoPDV, setPrecoPDV] = useState("");
   const [precoOferta, setPrecoOferta] = useState("");
@@ -99,6 +102,7 @@ function AdicionarProdutoModal({ encarteId, codigoRede, onClose, onAdicionado })
   async function selecionarProduto(p) {
     setProdutoSel(p);
     setStep(2);
+    setSellout(selloutSubcat); // pré-preenche sellout com o valor negociado da subcategoria
     setLoadingUC(true);
     setUltimaCompra(null);
     try {
@@ -136,6 +140,13 @@ function AdicionarProdutoModal({ encarteId, codigoRede, onClose, onAdicionado })
     const s = precoUC - o * (1 - margemPDV / 100);
     return s > 0 ? Math.round(s * 100) / 100 : null;
   }, [precoOferta, precoUC, margemPDV]);
+
+  // Custo Promo = Última Compra − Sellout (calculado automaticamente)
+  const custoPromo = useMemo(() => {
+    if (precoUC == null) return null;
+    const s = Number(sellout) || 0;
+    return Math.round((precoUC - s) * 100) / 100;
+  }, [precoUC, sellout]);
 
   async function handleSalvar() {
     setErro("");
@@ -215,7 +226,7 @@ function AdicionarProdutoModal({ encarteId, codigoRede, onClose, onAdicionado })
                     autoFocus
                     className="w-full border border-slate-200 rounded-xl px-3 py-2.5 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-brand/40"
                     value={subcategoriaSel}
-                    onChange={(e) => { setSubcategoriaSel(e.target.value); setQ(""); }}>
+                    onChange={(e) => { setSubcategoriaSel(e.target.value); setQ(""); setSelloutSubcat(""); }}>
                     <option value="">Selecione uma subcategoria...</option>
                     {subcategorias.map((s) => (
                       <option key={s} value={s}>{s}</option>
@@ -223,6 +234,26 @@ function AdicionarProdutoModal({ encarteId, codigoRede, onClose, onAdicionado })
                   </select>
                 )}
               </div>
+
+              {/* Sellout negociado para a subcategoria */}
+              {subcategoriaSel && (
+                <div className="bg-brand/5 border border-brand/15 rounded-xl px-3 py-2.5 space-y-1.5">
+                  <div className="text-xs font-semibold text-brand uppercase tracking-wide">Ação negociada com o fornecedor</div>
+                  <div className="flex items-center gap-2">
+                    <div className="flex-1">
+                      <label className="block text-xs text-slate-500 mb-1">Sellout da subcategoria (R$)</label>
+                      <input
+                        type="number" inputMode="decimal" step="0.01"
+                        className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-brand/40"
+                        placeholder="0,00"
+                        value={selloutSubcat}
+                        onChange={(e) => setSelloutSubcat(e.target.value)}
+                      />
+                    </div>
+                  </div>
+                  <p className="text-[10px] text-slate-400">Será aplicado automaticamente em todos os produtos desta subcategoria</p>
+                </div>
+              )}
 
               {/* Busca por nome dentro da subcategoria */}
               {subcategoriaSel && (
@@ -322,7 +353,7 @@ function AdicionarProdutoModal({ encarteId, codigoRede, onClose, onAdicionado })
                   <span className="text-xs font-semibold text-slate-600 uppercase tracking-wide">Margem Oferta</span>
                   <MargemBadge pct={margemOferta} />
                 </div>
-                <div className="text-[10px] text-slate-400 -mt-1">(Oferta − (Últ. Compra − Sellout)) / Oferta</div>
+                <div className="text-[10px] text-slate-400 -mt-1">(Oferta − Custo Promo) / Oferta</div>
                 <div>
                   <label className="block text-xs text-slate-500 mb-1">Preço oferta (encarte)</label>
                   <input type="number" inputMode="decimal" step="0.01"
@@ -344,6 +375,17 @@ function AdicionarProdutoModal({ encarteId, codigoRede, onClose, onAdicionado })
                     className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand/40"
                     placeholder="0,00" value={sellout} onChange={(e) => setSellout(e.target.value)} />
                 </div>
+
+                {/* Custo Promo calculado automaticamente */}
+                {custoPromo != null && (
+                  <div className="flex items-center justify-between bg-emerald-50 border border-emerald-100 rounded-xl px-3 py-2">
+                    <div>
+                      <div className="text-xs font-semibold text-emerald-700">Custo Promo</div>
+                      <div className="text-[10px] text-slate-400">Últ. Compra − Sellout</div>
+                    </div>
+                    <span className="text-base font-bold text-emerald-700">{fmtBRL(custoPromo)}</span>
+                  </div>
+                )}
               </div>
 
               {erro && <p className="text-red-600 text-xs">{erro}</p>}
