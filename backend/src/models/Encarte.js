@@ -10,6 +10,7 @@ const encarteItemSchema = new mongoose.Schema(
   {
     produtoCodigo:      { type: String, default: null },
     produto:            { type: String, required: true },
+    subcategoria:       { type: String, default: null },
     precoTabela:        { type: Number, default: 0 },
     precoMinimo:        { type: Number, default: 0 },
     precoPromo:         { type: Number, default: 0 },

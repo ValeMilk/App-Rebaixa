@@ -180,6 +180,7 @@ function AdicionarProdutoModal({ encarteId, codigoRede, onClose, onAdicionado })
         const { data } = await api.post(`/encartes/${encarteId}/itens`, {
           produtoCodigo:     cod,
           produto:           p.descricao,
+          subcategoria:      p.subcategoria || null,
           precoTabela:       p.precoTabela,
           precoMinimo:       p.precoMinimo,
           precoPromo:        p.precoPromo,
@@ -554,7 +555,11 @@ export default function EncarteDetalhe() {
               <div className="flex items-start justify-between gap-2">
                 <div className="flex-1 min-w-0">
                   <div className="font-bold text-slate-800 text-sm leading-snug">{it.produto}</div>
-                  <div className="text-[10px] text-slate-400 mt-0.5">CÃ³d {it.produtoCodigo || "â€”"}</div>
+                  <div className="text-[10px] text-slate-400 mt-0.5">
+                    Cód {it.produtoCodigo || "—"}
+                    {it.subcategoria && <span className="ml-2 text-slate-300">·</span>}
+                    {it.subcategoria && <span className="ml-1 text-brand/70 font-medium">{it.subcategoria}</span>}
+                  </div>
                 </div>
                 {encarte.podeEditar && (
                   <button
