@@ -252,11 +252,16 @@ function CalendarioRede({ grupo, onClickEncarte }) {
 // ---------------------------------------------------------------------------
 // Pagina principal
 // ---------------------------------------------------------------------------
+const STORAGE_KEY = "encartes_rede_sel";
+
 export default function EncartesPage() {
   const router = useRouter();
   const [grupos, setGrupos] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [redeSel, setRedeSel] = useState("");
+  const [redeSel, setRedeSel] = useState(() => {
+    if (typeof window !== "undefined") return sessionStorage.getItem(STORAGE_KEY) || "";
+    return "";
+  });
   const [modalAberto, setModalAberto] = useState(false);
 
   const carregar = useCallback(async () => {
@@ -273,6 +278,14 @@ export default function EncartesPage() {
 
   useEffect(() => { carregar(); }, [carregar]);
 
+  function selecionarRede(codigo) {
+    setRedeSel(codigo);
+    if (typeof window !== "undefined") {
+      if (codigo) sessionStorage.setItem(STORAGE_KEY, codigo);
+      else sessionStorage.removeItem(STORAGE_KEY);
+    }
+  }
+
   const grupoSel = grupos.find((g) => g.codigoRede === redeSel) || null;
 
   function handleCriado(novoEncarte) {
@@ -281,9 +294,21 @@ export default function EncartesPage() {
 
   return (
     <div className="flex flex-col min-h-screen bg-slate-50">
-      <div className="bg-white border-b border-slate-100 px-4 py-4 safe-area-pt">
-        <h1 className="font-bold text-slate-900 text-lg leading-tight">Agenda de Encartes</h1>
-        <p className="text-slate-500 text-xs mt-0.5">Selecione uma rede para ver o calendario</p>
+      {/* Header com título + botão Novo Encarte */}
+      <div className="bg-white border-b border-slate-100 px-4 py-3 safe-area-pt">
+        <div className="flex items-center justify-between gap-3">
+          <div>
+            <h1 className="font-bold text-slate-900 text-lg leading-tight">Agenda de Encartes</h1>
+            <p className="text-slate-500 text-xs mt-0.5">Selecione uma rede para ver o calendário</p>
+          </div>
+          {grupoSel?.podeEditar && (
+            <button
+              onClick={() => setModalAberto(true)}
+              className="shrink-0 h-9 px-4 rounded-xl bg-brand text-white text-xs font-bold hover:opacity-90 active:scale-95 transition shadow-sm shadow-brand/20">
+              + Novo Encarte
+            </button>
+          )}
+        </div>
       </div>
 
       <div className="flex-1 p-4 pb-24 space-y-4">
@@ -295,7 +320,7 @@ export default function EncartesPage() {
             <select
               className="w-full border border-slate-200 rounded-xl px-3 py-2.5 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-brand/40"
               value={redeSel}
-              onChange={(e) => setRedeSel(e.target.value)}>
+              onChange={(e) => selecionarRede(e.target.value)}>
               <option value="">Selecione uma rede...</option>
               {grupos.map((g) => (
                 <option key={g.codigoRede} value={g.codigoRede}>
@@ -309,27 +334,17 @@ export default function EncartesPage() {
         {!redeSel && !loading && (
           <div className="flex flex-col items-center justify-center py-16 text-center">
             <IcoCalendar className="w-12 h-12 text-slate-200 mb-3" />
-            <p className="text-slate-400 text-sm">Selecione uma rede para ver o calendario de encartes</p>
+            <p className="text-slate-400 text-sm">Selecione uma rede para ver o calendário de encartes</p>
           </div>
         )}
 
         {grupoSel && (
-          <>
-            <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-4">
-              <CalendarioRede
-                grupo={grupoSel}
-                onClickEncarte={(id) => router.push(`/encartes/${id}`)}
-              />
-            </div>
-
-            {grupoSel.podeEditar && (
-              <button
-                onClick={() => setModalAberto(true)}
-                className="w-full py-3.5 rounded-2xl border-2 border-dashed border-brand/30 text-brand font-bold text-sm hover:bg-brand/5 active:scale-95 transition">
-                + Novo Encarte
-              </button>
-            )}
-          </>
+          <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-4">
+            <CalendarioRede
+              grupo={grupoSel}
+              onClickEncarte={(id) => router.push(`/encartes/${id}`)}
+            />
+          </div>
         )}
       </div>
 
