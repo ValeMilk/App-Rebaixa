@@ -511,6 +511,7 @@ export default function EncarteDetalhe() {
   const [removendoId, setRemovendoId] = useState(null);
   const [excluindo, setExcluindo] = useState(false);
   const [erro, setErro] = useState("");
+  const [gruposAbertos, setGruposAbertos] = useState({});
 
   const carregar = useCallback(async () => {
     setLoading(true);
@@ -614,8 +615,8 @@ export default function EncarteDetalhe() {
         </div>
       </div>
 
-      {/* Lista de itens agrupada por subcategoria */}
-        <div className="flex-1 p-4 pb-36 lg:pb-28 space-y-4">
+      {/* Lista de itens - accordion por subcategoria */}
+      <div className="flex-1 p-4 pb-36 lg:pb-28 space-y-2">
         {encarte.itens.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-16 text-center">
             <div className="w-14 h-14 rounded-2xl bg-slate-100 flex items-center justify-center mb-3">
@@ -633,73 +634,94 @@ export default function EncarteDetalhe() {
             if (!grupos[key]) grupos[key] = [];
             grupos[key].push(it);
           }
-          return Object.entries(grupos).map(([sub, itens]) => (
-            <div key={sub}>
-              <div className="flex items-center gap-2 mb-2">
-                <span className="text-[11px] font-bold text-brand uppercase tracking-wider">{sub}</span>
-                <span className="text-[10px] text-slate-400 font-medium">{itens.length} produto{itens.length !== 1 ? 's' : ''}</span>
-                <div className="flex-1 h-px bg-slate-100" />
-              </div>
-              <div className="space-y-2.5">
-                {itens.map((it) => (
-                  <div key={it._id} className="bg-white rounded-2xl border border-slate-100 shadow-sm px-4 py-3">
-                    <div className="flex items-start justify-between gap-2">
-                      <div className="flex-1 min-w-0">
-                        <div className="font-bold text-slate-800 text-sm leading-snug">{it.produto}</div>
-                        <div className="text-[10px] text-slate-400 mt-0.5">Cód {it.produtoCodigo || '—'}</div>
-                      </div>
-                      {encarte.podeEditar && (
-                        <button
-                          onClick={() => removerItem(String(it._id))}
-                          disabled={removendoId === String(it._id)}
-                          className="h-8 w-8 rounded-xl bg-red-50 flex items-center justify-center text-red-400 hover:bg-red-100 transition disabled:opacity-40 shrink-0">
-                          <TrashIcon className="w-4 h-4" />
-                        </button>
-                      )}
-                    </div>
-                    <div className="mt-2.5 grid grid-cols-2 gap-x-4 gap-y-1.5">
-                      <div>
-                        <div className="text-[10px] text-slate-400 uppercase tracking-wide">Última compra</div>
-                        <div className="text-sm font-bold text-brand">{fmtBRL(it.precoUltimaCompra)}</div>
-                        {it.dataUltimaCompra && <div className="text-[10px] text-slate-400">{fmtData(it.dataUltimaCompra)}</div>}
-                      </div>
-                      <div>
-                        <div className="text-[10px] text-slate-400 uppercase tracking-wide">Preço PDV</div>
-                        <div className="text-sm font-semibold text-slate-800">{fmtBRL(it.precoPDV)}</div>
-                        {it.margemPDV != null && (
-                          <div className={`text-[10px] font-bold ${it.margemPDV >= 20 ? 'text-emerald-600' : it.margemPDV >= 10 ? 'text-amber-600' : 'text-red-600'}`}>
-                            Margem {it.margemPDV.toFixed(1)}%
-                          </div>
-                        )}
-                      </div>
-                      <div>
-                        <div className="text-[10px] text-slate-400 uppercase tracking-wide">Preço oferta</div>
-                        <div className="text-sm font-semibold text-slate-800">{fmtBRL(it.precoOferta)}</div>
-                        {it.margemOferta != null && (
-                          <div className={`text-[10px] font-bold ${it.margemOferta >= 20 ? 'text-emerald-600' : it.margemOferta >= 10 ? 'text-amber-600' : 'text-red-600'}`}>
-                            Margem {it.margemOferta.toFixed(1)}%
-                          </div>
-                        )}
-                      </div>
-                      <div>
-                        <div className="text-[10px] text-slate-400 uppercase tracking-wide">Sellout</div>
-                        <div className="text-sm font-semibold text-slate-800">{fmtBRL(it.sellout || null)}</div>
-                      </div>
-                      {it.custoPromo != null && (
-                        <div className="col-span-2 bg-emerald-50 border border-emerald-100 rounded-xl px-3 py-1.5 flex items-center justify-between">
-                          <div>
-                            <div className="text-[10px] text-emerald-700 font-semibold uppercase tracking-wide">Custo Promo</div>
-                            <div className="text-[10px] text-slate-400">Últ. Compra − Sellout</div>
-                          </div>
-                          <div className="text-sm font-bold text-emerald-600">{fmtBRL(it.custoPromo)}</div>
-                        </div>
-                      )}
-                    </div>
+          return Object.entries(grupos).map(([sub, itens]) => {
+            const aberto = gruposAbertos[sub] !== false; // aberto por padrão
+            return (
+              <div key={sub} className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
+                {/* Cabeçalho clicável */}
+                <button
+                  type="button"
+                  onClick={() => setGruposAbertos(prev => ({ ...prev, [sub]: !aberto }))}
+                  className="w-full flex items-center justify-between px-4 py-3 text-left hover:bg-slate-50 transition"
+                >
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-bold text-brand uppercase tracking-wide">{sub}</span>
+                    <span className="text-[11px] text-slate-400 font-medium bg-slate-100 rounded-full px-2 py-0.5">
+                      {itens.length} produto{itens.length !== 1 ? 's' : ''}
+                    </span>
                   </div>
-                ))}
+                  <svg
+                    className={`w-4 h-4 text-slate-400 transition-transform ${aberto ? 'rotate-180' : ''}`}
+                    fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                  </svg>
+                </button>
+
+                {/* Produtos */}
+                {aberto && (
+                  <div className="border-t border-slate-100 divide-y divide-slate-50">
+                    {itens.map((it) => (
+                      <div key={it._id} className="px-4 py-3">
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="flex-1 min-w-0">
+                            <div className="font-bold text-slate-800 text-sm leading-snug">{it.produto}</div>
+                            <div className="text-[10px] text-slate-400 mt-0.5">Cód {it.produtoCodigo || '—'}</div>
+                          </div>
+                          {encarte.podeEditar && (
+                            <button
+                              onClick={() => removerItem(String(it._id))}
+                              disabled={removendoId === String(it._id)}
+                              className="h-8 w-8 rounded-xl bg-red-50 flex items-center justify-center text-red-400 hover:bg-red-100 transition disabled:opacity-40 shrink-0">
+                              <TrashIcon className="w-4 h-4" />
+                            </button>
+                          )}
+                        </div>
+                        <div className="mt-2.5 grid grid-cols-2 gap-x-4 gap-y-1.5">
+                          <div>
+                            <div className="text-[10px] text-slate-400 uppercase tracking-wide">Última compra</div>
+                            <div className="text-sm font-bold text-brand">{fmtBRL(it.precoUltimaCompra)}</div>
+                            {it.dataUltimaCompra && <div className="text-[10px] text-slate-400">{fmtData(it.dataUltimaCompra)}</div>}
+                          </div>
+                          <div>
+                            <div className="text-[10px] text-slate-400 uppercase tracking-wide">Preço PDV</div>
+                            <div className="text-sm font-semibold text-slate-800">{fmtBRL(it.precoPDV)}</div>
+                            {it.margemPDV != null && (
+                              <div className={`text-[10px] font-bold ${it.margemPDV >= 20 ? 'text-emerald-600' : it.margemPDV >= 10 ? 'text-amber-600' : 'text-red-600'}`}>
+                                Margem {it.margemPDV.toFixed(1)}%
+                              </div>
+                            )}
+                          </div>
+                          <div>
+                            <div className="text-[10px] text-slate-400 uppercase tracking-wide">Preço oferta</div>
+                            <div className="text-sm font-semibold text-slate-800">{fmtBRL(it.precoOferta)}</div>
+                            {it.margemOferta != null && (
+                              <div className={`text-[10px] font-bold ${it.margemOferta >= 20 ? 'text-emerald-600' : it.margemOferta >= 10 ? 'text-amber-600' : 'text-red-600'}`}>
+                                Margem {it.margemOferta.toFixed(1)}%
+                              </div>
+                            )}
+                          </div>
+                          <div>
+                            <div className="text-[10px] text-slate-400 uppercase tracking-wide">Sellout</div>
+                            <div className="text-sm font-semibold text-slate-800">{fmtBRL(it.sellout || null)}</div>
+                          </div>
+                          {it.custoPromo != null && (
+                            <div className="col-span-2 bg-emerald-50 border border-emerald-100 rounded-xl px-3 py-1.5 flex items-center justify-between">
+                              <div>
+                                <div className="text-[10px] text-emerald-700 font-semibold uppercase tracking-wide">Custo Promo</div>
+                                <div className="text-[10px] text-slate-400">Últ. Compra − Sellout</div>
+                              </div>
+                              <div className="text-sm font-bold text-emerald-600">{fmtBRL(it.custoPromo)}</div>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
-            </div>
-          ));
+            );
+          });
         })()}
       </div>
 
