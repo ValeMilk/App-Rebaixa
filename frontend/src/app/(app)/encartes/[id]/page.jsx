@@ -64,7 +64,9 @@ function AdicionarProdutoModal({ encarteId, codigoRede, onClose, onAdicionado })
   const [ultimaCompra, setUltimaCompra] = useState(null);
   const [loadingUC, setLoadingUC] = useState(false);
 
-  // Sellout negociado para a subcategoria atual (pré-preenche todos os produtos da sub)
+  // Preços negociados para a subcategoria (pré-preenchem o Step 2 por produto)
+  const [precoPDVSubcat, setPrecoPDVSubcat] = useState("");
+  const [precoOfertaSubcat, setPrecoOfertaSubcat] = useState("");
   const [selloutSubcat, setSelloutSubcat] = useState("");
 
   // Campos de preço
@@ -102,7 +104,10 @@ function AdicionarProdutoModal({ encarteId, codigoRede, onClose, onAdicionado })
   async function selecionarProduto(p) {
     setProdutoSel(p);
     setStep(2);
-    setSellout(selloutSubcat); // pré-preenche sellout com o valor negociado da subcategoria
+    // Pré-preenche preços com os valores negociados da subcategoria
+    if (precoPDVSubcat)    setPrecoPDV(precoPDVSubcat);
+    if (precoOfertaSubcat) setPrecoOferta(precoOfertaSubcat);
+    if (selloutSubcat)     setSellout(selloutSubcat);
     setLoadingUC(true);
     setUltimaCompra(null);
     try {
@@ -226,7 +231,7 @@ function AdicionarProdutoModal({ encarteId, codigoRede, onClose, onAdicionado })
                     autoFocus
                     className="w-full border border-slate-200 rounded-xl px-3 py-2.5 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-brand/40"
                     value={subcategoriaSel}
-                    onChange={(e) => { setSubcategoriaSel(e.target.value); setQ(""); setSelloutSubcat(""); }}>
+                    onChange={(e) => { setSubcategoriaSel(e.target.value); setQ(""); setPrecoPDVSubcat(""); setPrecoOfertaSubcat(""); setSelloutSubcat(""); }}>
                     <option value="">Selecione uma subcategoria...</option>
                     {subcategorias.map((s) => (
                       <option key={s} value={s}>{s}</option>
@@ -235,23 +240,31 @@ function AdicionarProdutoModal({ encarteId, codigoRede, onClose, onAdicionado })
                 )}
               </div>
 
-              {/* Sellout negociado para a subcategoria */}
+              {/* Preços negociados para a subcategoria */}
               {subcategoriaSel && (
-                <div className="bg-brand/5 border border-brand/15 rounded-xl px-3 py-2.5 space-y-1.5">
-                  <div className="text-xs font-semibold text-brand uppercase tracking-wide">Ação negociada com o fornecedor</div>
-                  <div className="flex items-center gap-2">
-                    <div className="flex-1">
-                      <label className="block text-xs text-slate-500 mb-1">Sellout da subcategoria (R$)</label>
-                      <input
-                        type="number" inputMode="decimal" step="0.01"
-                        className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-brand/40"
-                        placeholder="0,00"
-                        value={selloutSubcat}
-                        onChange={(e) => setSelloutSubcat(e.target.value)}
-                      />
+                <div className="bg-brand/5 border border-brand/15 rounded-xl px-3 py-3 space-y-2">
+                  <div className="text-xs font-bold text-brand uppercase tracking-wide">Negociação da subcategoria</div>
+                  <div className="grid grid-cols-3 gap-2">
+                    <div>
+                      <label className="block text-[10px] font-semibold text-slate-500 mb-1">Preço PDV</label>
+                      <input type="number" inputMode="decimal" step="0.01"
+                        className="w-full border border-slate-200 rounded-xl px-2 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-brand/40"
+                        placeholder="0,00" value={precoPDVSubcat} onChange={(e) => setPrecoPDVSubcat(e.target.value)} />
+                    </div>
+                    <div>
+                      <label className="block text-[10px] font-semibold text-slate-500 mb-1">Preço Oferta</label>
+                      <input type="number" inputMode="decimal" step="0.01"
+                        className="w-full border border-slate-200 rounded-xl px-2 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-brand/40"
+                        placeholder="0,00" value={precoOfertaSubcat} onChange={(e) => setPrecoOfertaSubcat(e.target.value)} />
+                    </div>
+                    <div>
+                      <label className="block text-[10px] font-semibold text-slate-500 mb-1">Sellout</label>
+                      <input type="number" inputMode="decimal" step="0.01"
+                        className="w-full border border-slate-200 rounded-xl px-2 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-brand/40"
+                        placeholder="0,00" value={selloutSubcat} onChange={(e) => setSelloutSubcat(e.target.value)} />
                     </div>
                   </div>
-                  <p className="text-[10px] text-slate-400">Será aplicado automaticamente em todos os produtos desta subcategoria</p>
+                  <p className="text-[10px] text-slate-400">Valores pré-preenchidos em cada produto — ajuste individualmente se necessário</p>
                 </div>
               )}
 
