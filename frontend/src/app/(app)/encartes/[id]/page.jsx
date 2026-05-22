@@ -460,7 +460,7 @@ export default function EncarteDetalhe() {
       </div>
 
       {/* Lista de itens */}
-      <div className="flex-1 p-4 pb-28 space-y-2.5">
+        <div className="flex-1 p-4 pb-36 lg:pb-28 space-y-2.5">
         {encarte.itens.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-16 text-center">
             <div className="w-14 h-14 rounded-2xl bg-slate-100 flex items-center justify-center mb-3">
@@ -528,7 +528,7 @@ export default function EncarteDetalhe() {
 
       {/* Botão fixo Adicionar Produto — só para quem pode editar */}
       {encarte.podeEditar && (
-        <div className="fixed bottom-0 left-0 right-0 p-4 bg-white border-t border-slate-100 safe-area-pb lg:left-64">
+        <div className="fixed bottom-16 lg:bottom-0 left-0 right-0 p-4 bg-white border-t border-slate-100 safe-area-pb lg:left-64">
           <button
             onClick={() => setModalAberto(true)}
             className="w-full py-3.5 rounded-2xl bg-brand text-white font-bold text-sm hover:opacity-90 active:scale-95 transition shadow-lg shadow-brand/20">
