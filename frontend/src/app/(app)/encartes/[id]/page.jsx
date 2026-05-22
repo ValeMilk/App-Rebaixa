@@ -238,31 +238,48 @@ function AdicionarProdutoModal({ encarteId, codigoRede, onClose, onAdicionado })
               )}
             </div>
 
-            {/* NegociaÃ§Ã£o da subcategoria */}
+            {/* Margem PDV */}
             {subcategoriaSel && (
-              <div className="bg-brand/5 border border-brand/15 rounded-xl px-3 py-3 space-y-2">
-                <div className="text-xs font-bold text-brand uppercase tracking-wide">NegociaÃ§Ã£o da subcategoria</div>
-                <div className="grid grid-cols-3 gap-2">
-                  <div>
-                    <label className="block text-[10px] font-semibold text-slate-500 mb-1">PreÃ§o PDV</label>
-                    <input type="number" inputMode="decimal" step="0.01"
-                      className="w-full border border-slate-200 rounded-xl px-2 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-brand/40"
-                      placeholder="0,00" value={precoPDV} onChange={(e) => setPrecoPDV(e.target.value)} />
-                  </div>
-                  <div>
-                    <label className="block text-[10px] font-semibold text-slate-500 mb-1">PreÃ§o Oferta</label>
-                    <input type="number" inputMode="decimal" step="0.01"
-                      className="w-full border border-slate-200 rounded-xl px-2 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-brand/40"
-                      placeholder="0,00" value={precoOferta} onChange={(e) => setPrecoOferta(e.target.value)} />
-                  </div>
-                  <div>
-                    <label className="block text-[10px] font-semibold text-slate-500 mb-1">Sellout</label>
-                    <input type="number" inputMode="decimal" step="0.01"
-                      className="w-full border border-slate-200 rounded-xl px-2 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-brand/40"
-                      placeholder="0,00" value={sellout} onChange={(e) => setSellout(e.target.value)} />
-                  </div>
+              <div className="bg-white rounded-xl border border-slate-100 px-3 py-2.5">
+                <div className="flex items-center justify-between mb-0.5">
+                  <span className="text-xs font-semibold text-slate-600 uppercase tracking-wide">Margem PDV</span>
+                  <span className="text-slate-300 text-base font-bold">—</span>
                 </div>
-                <p className="text-[10px] text-slate-400">Estes valores serÃ£o aplicados a todos os produtos selecionados abaixo</p>
+                <div className="text-[10px] text-slate-400 mb-2">(PDV − Últ. Compra) / PDV · calculada por produto</div>
+                <label className="block text-xs text-slate-500 mb-1">Preço PDV (R$)</label>
+                <input type="number" inputMode="decimal" step="0.01"
+                  className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand/40"
+                  placeholder="0,00" value={precoPDV} onChange={(e) => setPrecoPDV(e.target.value)} />
+              </div>
+            )}
+
+            {/* Margem Oferta */}
+            {subcategoriaSel && (
+              <div className="bg-white rounded-xl border border-slate-100 px-3 py-2.5 space-y-2">
+                <div className="flex items-center justify-between mb-0.5">
+                  <span className="text-xs font-semibold text-slate-600 uppercase tracking-wide">Margem Oferta</span>
+                  <span className="text-slate-300 text-base font-bold">—</span>
+                </div>
+                <div className="text-[10px] text-slate-400 -mt-1">(Oferta − Custo Promo) / Oferta · calculada por produto</div>
+                <div>
+                  <label className="block text-xs text-slate-500 mb-1">Preço oferta (encarte)</label>
+                  <input type="number" inputMode="decimal" step="0.01"
+                    className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand/40"
+                    placeholder="0,00" value={precoOferta} onChange={(e) => setPrecoOferta(e.target.value)} />
+                </div>
+                <div>
+                  <label className="block text-xs text-slate-500 mb-1">Sellout</label>
+                  <input type="number" inputMode="decimal" step="0.01"
+                    className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand/40"
+                    placeholder="0,00" value={sellout} onChange={(e) => setSellout(e.target.value)} />
+                </div>
+                <div className="flex items-center justify-between bg-emerald-50 border border-emerald-100 rounded-xl px-3 py-2">
+                  <div>
+                    <div className="text-xs font-semibold text-emerald-700">Custo Promo</div>
+                    <div className="text-[10px] text-slate-400">Últ. Compra − Sellout · por produto</div>
+                  </div>
+                  <span className="text-sm font-bold text-emerald-600">Calculado ao salvar</span>
+                </div>
               </div>
             )}
 
