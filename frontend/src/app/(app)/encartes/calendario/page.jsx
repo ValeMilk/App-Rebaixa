@@ -100,15 +100,24 @@ export default function CalendarioGeralPage() {
       try {
         const { data } = await api.get(`/encartes/${enc._id}`);
         const itens = data.itens || [];
-        const subs = [...new Set(itens.map(it => it.subcategoria).filter(Boolean))];
-        const ofertas = itens.map(it => it.precoOferta).filter(v => v != null);
-        const sellouts = itens.map(it => it.sellout).filter(v => v != null);
+        // Agrupar por subcategoria
+        const mapasSub = {};
+        itens.forEach(it => {
+          const sub = it.subcategoria || 'Sem categoria';
+          if (!mapasSub[sub]) mapasSub[sub] = { ofertas: [], sellouts: [] };
+          if (it.precoOferta != null) mapasSub[sub].ofertas.push(it.precoOferta);
+          if (it.sellout != null) mapasSub[sub].sellouts.push(it.sellout);
+        });
+        const avg = arr => arr.length ? arr.reduce((a, b) => a + b, 0) / arr.length : null;
+        const categorias = Object.entries(mapasSub).map(([sub, v]) => ({
+          sub,
+          ofertaMedia: avg(v.ofertas),
+          selloutMedio: avg(v.sellouts),
+          qtd: v.ofertas.length || v.sellouts.length,
+        }));
         const info = {
           rede: enc.redeNome,
-          subs,
-          ofertaMin: ofertas.length ? fmtBRL(Math.min(...ofertas)) : '—',
-          ofertaMax: ofertas.length ? fmtBRL(Math.max(...ofertas)) : '—',
-          selloutMedio: sellouts.length ? fmtBRL(sellouts.reduce((a, b) => a + b, 0) / sellouts.length) : '—',
+          categorias,
           totalItens: itens.length,
         };
         tooltipCache[enc._id] = info;
@@ -233,33 +242,27 @@ export default function CalendarioGeralPage() {
       {tooltip && (
         <div
           style={{ position: 'fixed', left: tooltip.x, top: tooltip.y - 8, transform: 'translate(-50%, -100%)', zIndex: 9999 }}
-          className="pointer-events-none bg-slate-900 text-white rounded-xl shadow-xl px-3 py-2.5 text-xs min-w-[190px] max-w-[250px]"
+          className="pointer-events-none bg-slate-900 text-white rounded-xl shadow-xl px-3 py-2.5 text-xs min-w-[220px] max-w-[300px]"
         >
           {!tooltip.data ? (
             <div className="text-slate-400 text-center py-1 text-[11px]">Carregando...</div>
           ) : (
             <>
-              <div className="font-bold text-sm mb-1.5">{tooltip.data.rede}</div>
-              {tooltip.data.subs.length > 0 && (
-                <div className="mb-1.5">
-                  <div className="text-[9px] text-slate-400 uppercase tracking-wide mb-0.5">Subcategorias</div>
-                  {tooltip.data.subs.map(s => (
-                    <div key={s} className="text-[11px] text-slate-200 leading-snug">• {s}</div>
-                  ))}
-                </div>
-              )}
-              <div className="grid grid-cols-2 gap-x-3 gap-y-1 border-t border-slate-700 pt-1.5 mt-1">
-                <div>
-                  <div className="text-[9px] text-slate-400 uppercase tracking-wide">Preço oferta</div>
-                  <div className="text-[11px] font-semibold text-emerald-400">
-                    {tooltip.data.ofertaMin === tooltip.data.ofertaMax ? tooltip.data.ofertaMin : tooltip.data.ofertaMin + ' – ' + tooltip.data.ofertaMax}
-                  </div>
-                </div>
-                <div>
-                  <div className="text-[9px] text-slate-400 uppercase tracking-wide">Sellout médio</div>
-                  <div className="text-[11px] font-semibold text-amber-400">{tooltip.data.selloutMedio}</div>
-                </div>
+              <div className="font-bold text-sm mb-2">{tooltip.data.rede}</div>
+              {/* Cabeçalho da tabela */}
+              <div className="grid grid-cols-3 gap-x-2 text-[9px] text-slate-400 uppercase tracking-wide border-b border-slate-700 pb-1 mb-1">
+                <div className="col-span-1">Subcategoria</div>
+                <div className="text-right">Preço oferta</div>
+                <div className="text-right">Sellout médio</div>
               </div>
+              {/* Linhas por subcategoria */}
+              {tooltip.data.categorias.map(c => (
+                <div key={c.sub} className="grid grid-cols-3 gap-x-2 py-[3px] border-b border-slate-800 last:border-0">
+                  <div className="col-span-1 text-[10px] text-slate-200 leading-tight truncate">{c.sub}</div>
+                  <div className="text-right text-[10px] font-semibold text-emerald-400">{c.ofertaMedia != null ? fmtBRL(c.ofertaMedia) : '—'}</div>
+                  <div className="text-right text-[10px] font-semibold text-amber-400">{c.selloutMedio != null ? fmtBRL(c.selloutMedio) : '—'}</div>
+                </div>
+              ))}
               <div className="text-[9px] text-slate-500 mt-1.5 text-right">{tooltip.data.totalItens} produto{tooltip.data.totalItens !== 1 ? 's' : ''}</div>
             </>
           )}
