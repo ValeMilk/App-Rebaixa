@@ -31,60 +31,90 @@ async function podeEditar(user, encarte) {
 async function listar(req, res) {
   const { role, codigo, id } = req.user;
 
-  let redesPermitidas = null; // null = sem filtro (admin/diretoria)
+  // redesInfo: mapa codigoRede → redeSubrede com todas as redes acessiveis ao usuario
+  let redesInfo = {}; // codigoRede → redeSubrede
 
   if (role === "supervisor") {
     // Redes da carteira
     const carteira = await Carteira.find({ supervisorCodigo: codigo }, "codigoRede redeSubrede").lean();
-    const redesCarteira = carteira.filter((c) => c.codigoRede).map((c) => c.codigoRede);
+    for (const c of carteira) {
+      if (c.codigoRede) redesInfo[c.codigoRede] = c.redeSubrede || null;
+    }
 
-    // Redes em que e responsavel definido
-    const overrides = await ResponsavelRede.find({ supervisorCodigo: codigo }, "codigoRede").lean();
-    const redesOverride = overrides.map((o) => o.codigoRede);
-
-    const set = new Set([...redesCarteira, ...redesOverride]);
-    redesPermitidas = [...set];
+    // Redes em que e responsavel definido (pode nao estar na carteira direta)
+    const overrides = await ResponsavelRede.find({ supervisorCodigo: codigo }, "codigoRede redeSubrede").lean();
+    for (const o of overrides) {
+      if (!redesInfo[o.codigoRede]) redesInfo[o.codigoRede] = o.redeSubrede || null;
+    }
+  } else if (role === "admin" || role === "diretoria") {
+    // Todas as redes distintas da carteira
+    const carteira = await Carteira.find({ codigoRede: { $ne: null } }, "codigoRede redeSubrede").lean();
+    for (const c of carteira) {
+      if (c.codigoRede) redesInfo[c.codigoRede] = c.redeSubrede || null;
+    }
   }
+
+  const redesPermitidas = role === "admin" || role === "diretoria"
+    ? null
+    : Object.keys(redesInfo);
 
   const filtro = redesPermitidas !== null ? { codigoRede: { $in: redesPermitidas } } : {};
 
   const encartes = await Encarte.find(filtro)
     .sort({ codigoRede: 1, periodoInicio: -1 })
-    .select("-itens") // lista sem itens para ser leve
+    .select("-itens")
     .lean();
 
-  // Agrupa por rede
-  const grupos = {};
-  for (const e of encartes) {
-    const key = e.codigoRede;
-    if (!grupos[key]) {
-      grupos[key] = { codigoRede: key, redeSubrede: e.redeSubrede, encartes: [] };
-    }
-    grupos[key].encartes.push(e);
-  }
-
-  // Para cada encarte, resolve se o usuario pode editar
+  // Mapa de overrides para calculo de podeEditar
   const overridesAll = redesPermitidas !== null
-    ? await ResponsavelRede.find({ codigoRede: { $in: redesPermitidas ?? [] } }).lean()
+    ? await ResponsavelRede.find({ codigoRede: { $in: redesPermitidas } }).lean()
     : await ResponsavelRede.find({}).lean();
   const overrideMap = {};
   for (const o of overridesAll) overrideMap[o.codigoRede] = o;
 
-  const lista = Object.values(grupos).map((g) => ({
-    ...g,
-    encartes: g.encartes.map((e) => {
-      const override = overrideMap[e.codigoRede];
-      let podeEdit;
+  // Monta grupos a partir das REDES do usuario (nao so a partir dos encartes existentes)
+  const grupos = {};
+  for (const [codigoRede, redeSubrede] of Object.entries(redesInfo)) {
+    grupos[codigoRede] = { codigoRede, redeSubrede, encartes: [] };
+  }
+
+  // Para admin/diretoria sem redesInfo populado, inicializa grupos a partir dos encartes
+  for (const e of encartes) {
+    if (!grupos[e.codigoRede]) {
+      grupos[e.codigoRede] = { codigoRede: e.codigoRede, redeSubrede: e.redeSubrede, encartes: [] };
+    }
+  }
+
+  // Distribui encartes nos grupos com podeEditar resolvido
+  for (const e of encartes) {
+    const override = overrideMap[e.codigoRede];
+    let podeEdit;
+    if (role === "admin" || role === "diretoria") {
+      podeEdit = true;
+    } else if (override) {
+      podeEdit = override.supervisorCodigo === codigo || String(override.supervisorId) === id;
+    } else {
+      podeEdit = String(e.criadoPorId) === id || e.criadoPorCodigo === codigo;
+    }
+    grupos[e.codigoRede].encartes.push({ ...e, podeEditar: podeEdit });
+  }
+
+  // Resolve podeEditar para criacao de novo encarte em cada grupo (sem encarte ainda)
+  const lista = Object.values(grupos)
+    .sort((a, b) => (a.redeSubrede || a.codigoRede).localeCompare(b.redeSubrede || b.codigoRede))
+    .map((g) => {
+      const override = overrideMap[g.codigoRede];
+      let podeEditGrupo;
       if (role === "admin" || role === "diretoria") {
-        podeEdit = true;
+        podeEditGrupo = true;
       } else if (override) {
-        podeEdit = override.supervisorCodigo === codigo || String(override.supervisorId) === id;
+        podeEditGrupo = override.supervisorCodigo === codigo || String(override.supervisorId) === id;
       } else {
-        podeEdit = String(e.criadoPorId) === id || e.criadoPorCodigo === codigo;
+        // Sem override: qualquer supervisor da carteira pode criar
+        podeEditGrupo = true;
       }
-      return { ...e, podeEditar: podeEdit };
-    }),
-  }));
+      return { ...g, podeEditar: podeEditGrupo };
+    });
 
   res.json({ grupos: lista });
 }

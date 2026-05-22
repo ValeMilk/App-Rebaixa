@@ -168,8 +168,8 @@ function GrupoRede({ grupo, onNovoEncarte, onClickEncarte }) {
             </ul>
           )}
 
-          {/* Botão novo encarte — só quem pode criar */}
-          {(grupo.encartes.length === 0 || grupo.encartes.some((e) => e.podeEditar)) && (
+          {/* Botão novo encarte — só quem pode editar no grupo */}
+          {grupo.podeEditar && (
             <div className="px-4 py-3 border-t border-slate-50">
               <button
                 onClick={() => onNovoEncarte(grupo)}
