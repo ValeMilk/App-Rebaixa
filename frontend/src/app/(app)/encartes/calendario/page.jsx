@@ -131,6 +131,7 @@ export default function CalendarioGeralPage() {
   }
 
   return (
+    <>
     <div className="flex flex-col min-h-screen bg-slate-50">
       {/* Header */}
       <div className="bg-white border-b border-slate-100 px-4 py-3 safe-area-pt">
@@ -265,4 +266,6 @@ export default function CalendarioGeralPage() {
           <div style={{ position: 'absolute', bottom: -5, left: '50%', transform: 'translateX(-50%)', width: 0, height: 0, borderLeft: '5px solid transparent', borderRight: '5px solid transparent', borderTop: '5px solid #0f172a' }} />
         </div>
       )}
+    </>
+  );
 }
