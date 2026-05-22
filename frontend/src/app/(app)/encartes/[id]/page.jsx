@@ -707,12 +707,11 @@ export default function EncarteDetalhe() {
                           </div>
                           {it.custoPromo != null && (
                             <>
-                              <div />
-                              <div className="bg-emerald-50 border border-emerald-100 rounded-xl px-3 py-1.5 flex items-center justify-between">
-                                <div>
-                                  <div className="text-[10px] text-emerald-700 font-semibold uppercase tracking-wide">Custo Promo</div>
-                                  <div className="text-[10px] text-slate-400">Últ. Compra − Sellout</div>
-                                </div>
+                              <div className="bg-emerald-50 border border-emerald-100 rounded-l-xl px-3 py-1.5">
+                                <div className="text-[10px] text-emerald-700 font-semibold uppercase tracking-wide">Custo Promo</div>
+                                <div className="text-[10px] text-slate-400">Últ. Compra − Sellout</div>
+                              </div>
+                              <div className="bg-emerald-50 border border-emerald-100 rounded-r-xl px-3 py-1.5 flex items-center justify-end">
                                 <div className="text-sm font-bold text-emerald-600">{fmtBRL(it.custoPromo)}</div>
                               </div>
                             </>
