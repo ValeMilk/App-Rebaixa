@@ -426,7 +426,7 @@ export default function EncarteDetalhe() {
             </div>
             <p className="text-slate-600 font-semibold">Nenhum produto ainda</p>
             <p className="text-slate-400 text-sm mt-1">
-              {encarte.podeEditar ? "Toque em "+ Adicionar Produto" para montar o encarte." : "O responsável ainda não adicionou produtos."}
+              {encarte.podeEditar ? 'Toque em "+ Adicionar Produto" para montar o encarte.' : "O responsável ainda não adicionou produtos."}
             </p>
           </div>
         ) : (
