@@ -20,6 +20,7 @@ const NAV_SIDEBAR = [
 const NAV_BOTTOM = [
   { href: "/estoque", label: "Lojas", Icon: IcoStore, roles: ["vendedor", "supervisor", "diretoria", "admin"] },
   { href: "/solicitacoes", label: "Pedidos", Icon: IcoClipboard, roles: ["vendedor", "supervisor", "diretoria", "admin"] },
+  { href: "/encartes", label: "Encartes", Icon: IcoTag, roles: ["supervisor", "diretoria", "admin"] },
   { href: "/dashboard", label: "Gráficos", Icon: IcoGrid, roles: ["supervisor", "diretoria", "admin"] },
   { href: "/admin/sync", label: "Sync", Icon: IcoSync, roles: ["admin", "diretoria"] },
   { href: "/admin/usuarios", label: "Usuários", Icon: IcoUsers, roles: ["admin"] },
