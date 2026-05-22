@@ -127,7 +127,6 @@ async function buscarProdutosDoErp() {
 // ---------------------------------------------------------------------------
 
 const SQL_ULTIMA_COMPRA = `
--- Created by GitHub Copilot in SSMS - review carefully before executing
 WITH UltimaCompra AS (
     SELECT
         m00.M00_ID_A00       AS clienteCodigo,
@@ -135,6 +134,7 @@ WITH UltimaCompra AS (
         m01.M01_PRECOU       AS precoUltimaCompra,
         m00.M00_ENTSAI       AS dataUltimaCompra,
         e29.E29_DESC         AS subcategoria,
+        a16.A16_DESC         AS rede,
         ROW_NUMBER() OVER (
             PARTITION BY m00.M00_ID_A00, m01.M01_ID_E02
             ORDER BY m00.M00_ENTSAI DESC
@@ -142,7 +142,9 @@ WITH UltimaCompra AS (
     FROM dbo.M01 WITH (NOLOCK)
     INNER JOIN dbo.M00 WITH (NOLOCK) ON m01.M01_ID_M00 = m00.M00_ID
     INNER JOIN dbo.E02 WITH (NOLOCK) ON m01.M01_ID_E02 = e02.E02_ID
-    LEFT JOIN dbo.E29 WITH (NOLOCK) ON e02.E02_ID_E29 = e29.E29_ID
+    INNER JOIN dbo.A00 WITH (NOLOCK) ON m00.M00_ID_A00 = a00.A00_ID
+    LEFT  JOIN dbo.E29 WITH (NOLOCK) ON e02.E02_ID_E29 = e29.E29_ID
+    LEFT  JOIN dbo.A16 WITH (NOLOCK) ON a00.A00_ID_A16 = a16.A16_ID
     WHERE m00.M00_ENTSAI IS NOT NULL
       AND m00.M00_STATUS = 'N'
       AND m00.M00_ID_A00 = @clienteCodigo
@@ -153,7 +155,8 @@ SELECT TOP 1
     produtoCodigo,
     precoUltimaCompra,
     dataUltimaCompra,
-    subcategoria
+    subcategoria,
+    rede
 FROM UltimaCompra
 WHERE rn = 1;
 `;
@@ -171,24 +174,19 @@ async function buscarUltimaCompra(clienteCodigo, produtoCodigo) {
 }
 
 /**
- * Retorna a ultima compra MAIS RECENTE entre varios clientes (de uma rede) para um produto.
- * Util para a visao consolidada por rede.
+ * Retorna a ultima compra MAIS RECENTE de qualquer loja de uma rede para um produto.
+ * Filtra diretamente por A00_ID_A16 no ERP — sem depender do MongoDB Carteira.
  */
-async function buscarUltimaCompraRede(clientesCodigos, produtoCodigo) {
+async function buscarUltimaCompraRede(codigoRede, produtoCodigo) {
   if (!erpConfigurado()) return null;
-  if (!Array.isArray(clientesCodigos) || clientesCodigos.length === 0) return null;
+  if (!codigoRede || !produtoCodigo) return null;
   const { getPool } = require("./erpDbService");
   const sql = require("mssql");
   const pool = await getPool();
 
-  // Constroi a lista de parametros dinamicamente para evitar SQL injection
   const req = pool.request();
+  req.input("codigoRede",    sql.VarChar(50), String(codigoRede));
   req.input("produtoCodigo", sql.VarChar(50), String(produtoCodigo));
-  const paramNames = clientesCodigos.map((c, i) => {
-    const name = `c${i}`;
-    req.input(name, sql.VarChar(50), String(c));
-    return `@${name}`;
-  });
 
   const query = `
 WITH UltimaCompra AS (
@@ -198,6 +196,7 @@ WITH UltimaCompra AS (
         m01.M01_PRECOU       AS precoUltimaCompra,
         m00.M00_ENTSAI       AS dataUltimaCompra,
         e29.E29_DESC         AS subcategoria,
+        a16.A16_DESC         AS rede,
         ROW_NUMBER() OVER (
             PARTITION BY m00.M00_ID_A00
             ORDER BY m00.M00_ENTSAI DESC
@@ -205,10 +204,12 @@ WITH UltimaCompra AS (
     FROM dbo.M01 WITH (NOLOCK)
     INNER JOIN dbo.M00 WITH (NOLOCK) ON m01.M01_ID_M00 = m00.M00_ID
     INNER JOIN dbo.E02 WITH (NOLOCK) ON m01.M01_ID_E02 = e02.E02_ID
+    INNER JOIN dbo.A00 WITH (NOLOCK) ON m00.M00_ID_A00 = a00.A00_ID
     LEFT  JOIN dbo.E29 WITH (NOLOCK) ON e02.E02_ID_E29 = e29.E29_ID
+    LEFT  JOIN dbo.A16 WITH (NOLOCK) ON a00.A00_ID_A16 = a16.A16_ID
     WHERE m00.M00_ENTSAI IS NOT NULL
       AND m00.M00_STATUS = 'N'
-      AND m00.M00_ID_A00 IN (${paramNames.join(",")})
+      AND a00.A00_ID_A16 = @codigoRede
       AND e02.E02_LIVRE  = @produtoCodigo
 )
 SELECT TOP 1
@@ -216,7 +217,8 @@ SELECT TOP 1
     produtoCodigo,
     precoUltimaCompra,
     dataUltimaCompra,
-    subcategoria
+    subcategoria,
+    rede
 FROM UltimaCompra
 WHERE rn = 1
 ORDER BY dataUltimaCompra DESC;

@@ -1,7 +1,6 @@
 const express = require("express");
 const { auth } = require("../middlewares/auth");
 const { buscarUltimaCompra, buscarUltimaCompraRede } = require("../services/erpService");
-const Carteira = require("../models/Carteira");
 
 const router = express.Router();
 router.use(auth);
@@ -18,6 +17,8 @@ router.get("/ultima-compra", async (req, res) => {
       encontrado: true,
       precoUltimaCompra: Number(r.precoUltimaCompra) || 0,
       dataUltimaCompra: r.dataUltimaCompra,
+      subcategoria: r.subcategoria || null,
+      rede: r.rede || null,
     });
   } catch (err) {
     console.error("[erp/ultima-compra]", err.message);
@@ -25,27 +26,15 @@ router.get("/ultima-compra", async (req, res) => {
   }
 });
 
-// Aceita POST para nao estourar limite de tamanho do query string com muitos clientes
+// Filtra por codigoRede direto no ERP (sem precisar de Carteira sincronizada)
 router.post("/ultima-compra-rede", async (req, res) => {
-  const { clientesCodigos, codigoRede, produtoCodigo } = req.body || {};
-  if (!produtoCodigo) {
-    return res.status(400).json({ error: "produtoCodigo e obrigatorio" });
-  }
-
-  let clientes = Array.isArray(clientesCodigos) ? clientesCodigos.filter(Boolean) : [];
-
-  // Se nao recebeu clientesCodigos, resolve a partir de codigoRede via Carteira
-  if (clientes.length === 0 && codigoRede) {
-    const lojas = await Carteira.find({ codigoRede: String(codigoRede) }, "clienteCodigo").lean();
-    clientes = lojas.map((l) => l.clienteCodigo).filter(Boolean);
-  }
-
-  if (clientes.length === 0) {
-    return res.status(400).json({ error: "clientesCodigos (array) ou codigoRede sao obrigatorios" });
+  const { codigoRede, produtoCodigo } = req.body || {};
+  if (!codigoRede || !produtoCodigo) {
+    return res.status(400).json({ error: "codigoRede e produtoCodigo sao obrigatorios" });
   }
 
   try {
-    const r = await buscarUltimaCompraRede(clientes, produtoCodigo);
+    const r = await buscarUltimaCompraRede(codigoRede, produtoCodigo);
     if (!r) return res.json({ encontrado: false });
     return res.json({
       encontrado: true,
@@ -53,6 +42,7 @@ router.post("/ultima-compra-rede", async (req, res) => {
       precoUltimaCompra: Number(r.precoUltimaCompra) || 0,
       dataUltimaCompra: r.dataUltimaCompra,
       subcategoria: r.subcategoria || null,
+      rede: r.rede || null,
     });
   } catch (err) {
     console.error("[erp/ultima-compra-rede]", err.message);
