@@ -48,11 +48,16 @@ function MargemBadge({ pct }) {
 
 /** Modal para adicionar um produto ao encarte */
 function AdicionarProdutoModal({ encarteId, codigoRede, onClose, onAdicionado }) {
-  // Step 1: buscar produto; Step 2: preencher preços
+  // Step 1: subcategoria + lista de produtos; Step 2: preencher preços
   const [step, setStep] = useState(1);
+
+  // Step 1
+  const [subcategorias, setSubcategorias] = useState([]);
+  const [loadingSubs, setLoadingSubs] = useState(true);
+  const [subcategoriaSel, setSubcategoriaSel] = useState("");
   const [q, setQ] = useState("");
   const [produtos, setProdutos] = useState([]);
-  const [loadingBusca, setLoadingBusca] = useState(false);
+  const [loadingProdutos, setLoadingProdutos] = useState(false);
   const [produtoSel, setProdutoSel] = useState(null);
 
   // Ultima compra
@@ -66,19 +71,29 @@ function AdicionarProdutoModal({ encarteId, codigoRede, onClose, onAdicionado })
   const [erro, setErro] = useState("");
   const [salvando, setSalvando] = useState(false);
 
-  // Busca de produtos no catalogo
+  // Carrega subcategorias ao abrir
   useEffect(() => {
-    if (!q || q.length < 2) { setProdutos([]); return; }
+    api.get("/encartes/subcategorias")
+      .then(({ data }) => setSubcategorias(data.subcategorias || []))
+      .catch(() => setSubcategorias([]))
+      .finally(() => setLoadingSubs(false));
+  }, []);
+
+  // Carrega produtos quando subcategoria mudar ou q mudar
+  useEffect(() => {
+    if (!subcategoriaSel) { setProdutos([]); return; }
     const t = setTimeout(async () => {
-      setLoadingBusca(true);
+      setLoadingProdutos(true);
       try {
-        const { data } = await api.get("/encartes/produtos", { params: { q, limit: 30 } });
+        const params = { subcategoria: subcategoriaSel, limit: 200 };
+        if (q.trim().length >= 2) params.q = q.trim();
+        const { data } = await api.get("/encartes/produtos", { params });
         setProdutos(data.produtos || []);
       } catch { setProdutos([]); }
-      finally { setLoadingBusca(false); }
-    }, 350);
+      finally { setLoadingProdutos(false); }
+    }, 200);
     return () => clearTimeout(t);
-  }, [q]);
+  }, [subcategoriaSel, q]);
 
   // Ao selecionar produto, busca ultima compra por rede
   async function selecionarProduto(p) {
@@ -182,28 +197,58 @@ function AdicionarProdutoModal({ encarteId, codigoRede, onClose, onAdicionado })
         <div className="flex-1 overflow-y-auto px-4 pt-3 pb-4"
           style={{ WebkitOverflowScrolling: "touch", overscrollBehavior: "contain" }}>
 
-          {/* Step 1: busca */}
+          {/* Step 1: subcategoria + lista */}
           {step === 1 && (
-            <div className="space-y-2">
-              <div className="relative">
-                <IcoSearch className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                <input
-                  autoFocus
-                  className="w-full pl-9 pr-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-brand/40"
-                  placeholder="Digite o nome do produto..."
-                  value={q}
-                  onChange={(e) => setQ(e.target.value)}
-                />
+            <div className="space-y-3">
+              {/* Dropdown subcategoria */}
+              <div>
+                <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1.5">
+                  Subcategoria
+                </label>
+                {loadingSubs ? (
+                  <div className="flex items-center gap-2 py-2 text-slate-400 text-sm">
+                    <div className="w-4 h-4 rounded-full border-2 border-slate-200 border-t-brand animate-spin" />
+                    Carregando...
+                  </div>
+                ) : (
+                  <select
+                    autoFocus
+                    className="w-full border border-slate-200 rounded-xl px-3 py-2.5 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-brand/40"
+                    value={subcategoriaSel}
+                    onChange={(e) => { setSubcategoriaSel(e.target.value); setQ(""); }}>
+                    <option value="">Selecione uma subcategoria...</option>
+                    {subcategorias.map((s) => (
+                      <option key={s} value={s}>{s}</option>
+                    ))}
+                  </select>
+                )}
               </div>
 
-              {loadingBusca && (
+              {/* Busca por nome dentro da subcategoria */}
+              {subcategoriaSel && (
+                <div className="relative">
+                  <IcoSearch className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                  <input
+                    className="w-full pl-9 pr-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-brand/40"
+                    placeholder="Filtrar por nome..."
+                    value={q}
+                    onChange={(e) => setQ(e.target.value)}
+                  />
+                </div>
+              )}
+
+              {loadingProdutos && (
                 <div className="flex justify-center py-6">
                   <div className="w-6 h-6 rounded-full border-4 border-slate-200 border-t-brand animate-spin" />
                 </div>
               )}
 
-              {!loadingBusca && q.length >= 2 && produtos.length === 0 && (
+              {!loadingProdutos && subcategoriaSel && produtos.length === 0 && (
                 <p className="text-center text-slate-400 text-sm py-6">Nenhum produto encontrado</p>
+              )}
+
+              {!subcategoriaSel && (
+                <p className="text-center text-slate-400 text-sm py-6">Selecione uma subcategoria para ver os produtos</p>
               )}
 
               <ul className="divide-y divide-slate-50">
@@ -218,7 +263,7 @@ function AdicionarProdutoModal({ encarteId, codigoRede, onClose, onAdicionado })
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="font-semibold text-slate-800 text-sm truncate">{p.descricao}</div>
-                        <div className="text-xs text-slate-400">{p.categoria || "—"} · Cód {p.codigoLivre || p.codigo}</div>
+                        <div className="text-xs text-slate-400">Cód {p.codigoLivre || p.codigo}</div>
                       </div>
                       <div className="text-right shrink-0">
                         <div className="text-xs font-semibold text-slate-700">{fmtBRL(p.precoTabela)}</div>

@@ -11,6 +11,7 @@ const produtoSchema = new mongoose.Schema(
     codigoLivre:  { type: String, index: true },
     descricao:    { type: String, required: true },
     categoria:    { type: String, index: true },
+    subcategoria: { type: String, index: true },
 
     // Tabela de precos do ERP
     precoTabela:  { type: Number, default: 0 },  // E02_PRECO  (TABELA_70)

@@ -9,6 +9,7 @@ const {
   atualizar,
   remover,
   listarProdutos,
+  listarSubcategorias,
 } = require("../controllers/encarteController");
 
 const router = express.Router();
@@ -22,6 +23,7 @@ const roles = requireRole("supervisor", "admin", "diretoria");
 router.get("/",                           roles, listar);
 router.post("/",                          requireRole("supervisor", "admin"), criar);
 router.get("/produtos",                   roles, listarProdutos);
+router.get("/subcategorias",              roles, listarSubcategorias);
 router.get("/:id",                        roles, obter);
 router.put("/:id",                        roles, atualizar);
 router.delete("/:id",                     roles, remover);

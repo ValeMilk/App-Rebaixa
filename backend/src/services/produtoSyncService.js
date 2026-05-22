@@ -25,6 +25,7 @@ async function sincronizarProdutos() {
           codigoLivre:   p.codigoLivre  ? String(p.codigoLivre)  : "",
           descricao:     p.descricao    || "",
           categoria:     p.categoria    || "",
+          subcategoria:  p.subcategoria  || "",
           precoTabela:   Number(p.precoTabela  || 0),
           precoMinimo:   Number(p.precoMinimo  || 0),
           precoPromo:    Number(p.precoPromo   || 0),

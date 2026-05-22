@@ -313,12 +313,13 @@ async function remover(req, res) {
  * Retorna codigo, codigoLivre, descricao, precoTabela, precoMinimo, precoPromo, custo.
  */
 async function listarProdutos(req, res) {
-  const { q, limit = 50 } = req.query;
+  const { q, subcategoria, limit = 100 } = req.query;
   const filtro = { ativo: true };
   if (q) filtro.descricao = { $regex: q, $options: "i" };
+  if (subcategoria) filtro.subcategoria = subcategoria;
 
   const produtos = await Produto.find(filtro)
-    .select("codigo codigoLivre descricao categoria precoTabela precoMinimo precoPromo custo")
+    .select("codigo codigoLivre descricao categoria subcategoria precoTabela precoMinimo precoPromo custo")
     .sort({ descricao: 1 })
     .limit(Number(limit))
     .lean();
@@ -326,4 +327,10 @@ async function listarProdutos(req, res) {
   res.json({ total: produtos.length, produtos });
 }
 
-module.exports = { listar, criar, obter, adicionarItem, removerItem, atualizar, remover, listarProdutos };
+/** Retorna lista de subcategorias distintas (nao vazias) para montar dropdown */
+async function listarSubcategorias(req, res) {
+  const subs = await Produto.distinct("subcategoria", { ativo: true, subcategoria: { $ne: "" } });
+  res.json({ subcategorias: subs.filter(Boolean).sort() });
+}
+
+module.exports = { listar, criar, obter, adicionarItem, removerItem, atualizar, remover, listarProdutos, listarSubcategorias };
