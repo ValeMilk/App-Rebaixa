@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import api from "@/lib/api";
 import { fmtData } from "@/lib/utils";
 import { useAuth } from "@/lib/auth";
+import Link from "next/link";
 import {
   IcoChevronRight,
   IcoX,
@@ -268,13 +269,21 @@ export default function EncartesPage() {
             <h1 className="font-bold text-slate-900 text-lg leading-tight">Agenda de Encartes</h1>
             <p className="text-slate-500 text-xs mt-0.5">Selecione uma rede para ver o calendário</p>
           </div>
-          {grupoSel?.podeEditar && (
-            <button
-              onClick={() => setModalAberto(true)}
-              className="shrink-0 h-9 px-4 rounded-xl bg-brand text-white text-xs font-bold hover:opacity-90 active:scale-95 transition shadow-sm shadow-brand/20">
-              + Novo Encarte
-            </button>
-          )}
+          <div className="flex items-center gap-2">
+            <Link
+              href="/encartes/calendario"
+              className="shrink-0 h-9 px-3 rounded-xl bg-slate-100 text-slate-700 text-xs font-semibold flex items-center gap-1.5 hover:bg-slate-200 transition">
+              <IcoCalendar className="w-4 h-4" />
+              <span className="hidden sm:inline">Cal. Geral</span>
+            </Link>
+            {grupoSel?.podeEditar && (
+              <button
+                onClick={() => setModalAberto(true)}
+                className="shrink-0 h-9 px-4 rounded-xl bg-brand text-white text-xs font-bold hover:opacity-90 active:scale-95 transition shadow-sm shadow-brand/20">
+                + Novo Encarte
+              </button>
+            )}
+          </div>
         </div>
       </div>
 

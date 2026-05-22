@@ -5,13 +5,14 @@ import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useRef } from "react";
 import { useAuth } from "@/lib/auth";
 import api from "@/lib/api";
-import { IcoStore, IcoClipboard, IcoGrid, IcoSync, IcoUser, IcoUsers, IcoLogout, IcoTag } from "@/components/Icons";
+import { IcoStore, IcoClipboard, IcoGrid, IcoSync, IcoUser, IcoUsers, IcoLogout, IcoTag, IcoCalendar } from "@/components/Icons";
 
 const NAV_SIDEBAR = [
   { href: "/dashboard", label: "Dashboard", Icon: IcoGrid, roles: ["supervisor", "diretoria", "admin"] },
   { href: "/estoque", label: "Lojas", Icon: IcoStore, roles: ["vendedor", "supervisor", "diretoria", "admin"] },
   { href: "/solicitacoes", label: "Solicitações", Icon: IcoClipboard, roles: ["vendedor", "supervisor", "diretoria", "admin"] },
   { href: "/encartes", label: "Encartes", Icon: IcoTag, roles: ["supervisor", "diretoria", "admin"] },
+  { href: "/encartes/calendario", label: "Calendário Geral", Icon: IcoCalendar, roles: ["supervisor", "diretoria", "admin"] },
   { href: "/admin/usuarios", label: "Usuários", Icon: IcoUsers, roles: ["admin"] },
   { href: "/admin/responsabilidades", label: "Resp. Rede", Icon: IcoUsers, roles: ["admin"] },
   { href: "/admin/sync", label: "Sincronização", Icon: IcoSync, roles: ["admin", "diretoria"] },
@@ -21,6 +22,7 @@ const NAV_BOTTOM = [
   { href: "/estoque", label: "Lojas", Icon: IcoStore, roles: ["vendedor", "supervisor", "diretoria", "admin"] },
   { href: "/solicitacoes", label: "Pedidos", Icon: IcoClipboard, roles: ["vendedor", "supervisor", "diretoria", "admin"] },
   { href: "/encartes", label: "Encartes", Icon: IcoTag, roles: ["supervisor", "diretoria", "admin"] },
+  { href: "/encartes/calendario", label: "Cal. Geral", Icon: IcoCalendar, roles: ["supervisor", "diretoria", "admin"] },
   { href: "/dashboard", label: "Gráficos", Icon: IcoGrid, roles: ["supervisor", "diretoria", "admin"] },
   { href: "/admin/sync", label: "Sync", Icon: IcoSync, roles: ["admin", "diretoria"] },
   { href: "/admin/usuarios", label: "Usuários", Icon: IcoUsers, roles: ["admin"] },
