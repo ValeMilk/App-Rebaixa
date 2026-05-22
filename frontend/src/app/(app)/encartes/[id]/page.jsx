@@ -132,6 +132,46 @@ function AdicionarProdutoModal({ encarteId, codigoRede, onClose, onAdicionado })
     [produtos, desmarcados]
   );
 
+  // Estatisticas dos selecionados (medias) e margens preview
+  const pdvNum     = Number(precoPDV)    || 0;
+  const ofertaNum  = Number(precoOferta) || 0;
+  const selloutNum = Number(sellout)     || 0;
+
+  const stats = useMemo(() => {
+    if (produtosSelecionados.length === 0) return null;
+    let tabSum = 0, tabN = 0;
+    let minSum = 0, minN = 0;
+    let ucSum  = 0, ucN  = 0;
+    let ucMaisRecente = null;
+    for (const p of produtosSelecionados) {
+      const cod = p.codigoLivre || p.codigo;
+      if (p.precoTabela) { tabSum += Number(p.precoTabela); tabN++; }
+      if (p.precoMinimo) { minSum += Number(p.precoMinimo); minN++; }
+      const uc = ultimasCompras[cod];
+      if (uc?.preco != null) {
+        ucSum += Number(uc.preco); ucN++;
+        if (uc.data && (!ucMaisRecente || new Date(uc.data) > new Date(ucMaisRecente))) {
+          ucMaisRecente = uc.data;
+        }
+      }
+    }
+    return {
+      mediaTabela: tabN ? tabSum / tabN : null,
+      mediaMinimo: minN ? minSum / minN : null,
+      mediaUC:     ucN  ? ucSum  / ucN  : null,
+      ucCarregados: ucN,
+      ucMaisRecente,
+    };
+  }, [produtosSelecionados, ultimasCompras]);
+
+  const margemPDVPreview = (stats?.mediaUC != null && pdvNum > 0)
+    ? ((pdvNum - stats.mediaUC) / pdvNum) * 100
+    : null;
+  const custoPromoPreview = stats?.mediaUC != null ? stats.mediaUC - selloutNum : null;
+  const margemOfertaPreview = (custoPromoPreview != null && ofertaNum > 0)
+    ? ((ofertaNum - custoPromoPreview) / ofertaNum) * 100
+    : null;
+
   const todosMarcados = produtos.length > 0 && produtosSelecionados.length === produtos.length;
   function toggleTodos() {
     if (todosMarcados) setDesmarcados(new Set(produtos.map((p) => p._id)));
@@ -149,10 +189,6 @@ function AdicionarProdutoModal({ encarteId, codigoRede, onClose, onAdicionado })
 
     setSalvando(true);
     setProgresso({ feitos: 0, total: produtosSelecionados.length });
-
-    const pdvNum     = Number(precoPDV);
-    const ofertaNum  = Number(precoOferta);
-    const selloutNum = Number(sellout) || 0;
 
     let ultimoEncarte = null;
     let erros = 0;
@@ -228,6 +264,25 @@ function AdicionarProdutoModal({ encarteId, codigoRede, onClose, onAdicionado })
               <h2 className="font-bold text-slate-900 text-base leading-snug">
                 {subcategoriaSel || "Selecione uma subcategoria"}
               </h2>
+              {stats && (
+                <div className="mt-2 bg-slate-50 rounded-lg px-2 py-1.5 space-y-0.5">
+                  <div className="flex justify-between text-[11px]">
+                    <span className="text-slate-500">Preço tabela (média)</span>
+                    <span className="font-semibold text-slate-700">{fmtBRL(stats.mediaTabela)}</span>
+                  </div>
+                  <div className="flex justify-between text-[11px]">
+                    <span className="text-slate-500">Preço mínimo (média)</span>
+                    <span className="font-semibold text-slate-700">{fmtBRL(stats.mediaMinimo)}</span>
+                  </div>
+                  <div className="flex justify-between text-[11px] border-t border-slate-200 pt-0.5 mt-0.5">
+                    <span className="text-slate-500">Última compra (média)</span>
+                    {stats.mediaUC != null
+                      ? <span className="font-bold text-brand">{fmtBRL(stats.mediaUC)}{stats.ucMaisRecente && <span className="text-[10px] text-slate-400 ml-1">({fmtData(stats.ucMaisRecente)})</span>}</span>
+                      : <span className="text-slate-300 text-[10px]">buscando...</span>
+                    }
+                  </div>
+                </div>
+              )}
             </div>
             <button onClick={onClose} disabled={salvando} aria-label="Fechar"
               className="shrink-0 h-9 w-9 rounded-full bg-slate-100 active:bg-slate-200 active:scale-95 transition flex items-center justify-center text-slate-600 disabled:opacity-50">
@@ -269,9 +324,9 @@ function AdicionarProdutoModal({ encarteId, codigoRede, onClose, onAdicionado })
               <div className="bg-white rounded-xl border border-slate-100 px-3 py-2.5">
                 <div className="flex items-center justify-between mb-0.5">
                   <span className="text-xs font-semibold text-slate-600 uppercase tracking-wide">Margem PDV</span>
-                  <span className="text-slate-300 text-base font-bold">—</span>
+                  <MargemBadge pct={margemPDVPreview} />
                 </div>
-                <div className="text-[10px] text-slate-400 mb-2">(PDV − Últ. Compra) / PDV · calculada por produto</div>
+                <div className="text-[10px] text-slate-400 mb-2">(PDV − Última Compra média) / PDV</div>
                 <label className="block text-xs text-slate-500 mb-1">Preço PDV (R$)</label>
                 <input type="number" inputMode="decimal" step="0.01"
                   className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand/40"
@@ -284,9 +339,9 @@ function AdicionarProdutoModal({ encarteId, codigoRede, onClose, onAdicionado })
               <div className="bg-white rounded-xl border border-slate-100 px-3 py-2.5 space-y-2">
                 <div className="flex items-center justify-between mb-0.5">
                   <span className="text-xs font-semibold text-slate-600 uppercase tracking-wide">Margem Oferta</span>
-                  <span className="text-slate-300 text-base font-bold">—</span>
+                  <MargemBadge pct={margemOfertaPreview} />
                 </div>
-                <div className="text-[10px] text-slate-400 -mt-1">(Oferta − Custo Promo) / Oferta · calculada por produto</div>
+                <div className="text-[10px] text-slate-400 -mt-1">(Oferta − Custo Promo médio) / Oferta</div>
                 <div>
                   <label className="block text-xs text-slate-500 mb-1">Preço oferta (encarte)</label>
                   <input type="number" inputMode="decimal" step="0.01"
