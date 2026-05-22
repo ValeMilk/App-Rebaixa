@@ -226,6 +226,7 @@ function AdicionarProdutoModal({ encarteId, codigoRede, onClose, onAdicionado })
           precoOferta:       ofertaNum,
           precoPDV:          pdvNum,
           sellout:           selloutNum,
+          custoPromo,
           margemPDV,
           margemOferta,
         });
@@ -684,6 +685,15 @@ export default function EncarteDetalhe() {
                         <div className="text-[10px] text-slate-400 uppercase tracking-wide">Sellout</div>
                         <div className="text-sm font-semibold text-slate-800">{fmtBRL(it.sellout || null)}</div>
                       </div>
+                      {it.custoPromo != null && (
+                        <div className="col-span-2 bg-emerald-50 border border-emerald-100 rounded-xl px-3 py-1.5 flex items-center justify-between">
+                          <div>
+                            <div className="text-[10px] text-emerald-700 font-semibold uppercase tracking-wide">Custo Promo</div>
+                            <div className="text-[10px] text-slate-400">Últ. Compra − Sellout</div>
+                          </div>
+                          <div className="text-sm font-bold text-emerald-600">{fmtBRL(it.custoPromo)}</div>
+                        </div>
+                      )}
                     </div>
                   </div>
                 ))}

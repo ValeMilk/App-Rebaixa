@@ -211,6 +211,7 @@ async function adicionarItem(req, res) {
   const {
     produtoCodigo,
     produto,
+    subcategoria,
     precoTabela,
     precoMinimo,
     precoPromo,
@@ -220,6 +221,7 @@ async function adicionarItem(req, res) {
     precoOferta,
     precoPDV,
     sellout,
+    custoPromo,
     margemPDV,
     margemOferta,
   } = req.body || {};
@@ -229,6 +231,7 @@ async function adicionarItem(req, res) {
   enc.itens.push({
     produtoCodigo: produtoCodigo || null,
     produto,
+    subcategoria:      subcategoria      || null,
     precoTabela:       Number(precoTabela)       || 0,
     precoMinimo:       Number(precoMinimo)        || 0,
     precoPromo:        Number(precoPromo)         || 0,
@@ -238,6 +241,7 @@ async function adicionarItem(req, res) {
     precoOferta:       precoOferta != null        ? Number(precoOferta) : null,
     precoPDV:          precoPDV != null           ? Number(precoPDV)    : null,
     sellout:           Number(sellout)            || 0,
+    custoPromo:        custoPromo != null          ? Number(custoPromo)  : null,
     margemPDV:         margemPDV != null          ? Number(margemPDV)   : null,
     margemOferta:      margemOferta != null       ? Number(margemOferta): null,
     adicionadoPorId:   req.user.id,

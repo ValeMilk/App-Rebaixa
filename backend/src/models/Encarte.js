@@ -22,6 +22,7 @@ const encarteItemSchema = new mongoose.Schema(
     precoOferta:        { type: Number, default: null },
     precoPDV:           { type: Number, default: null },
     sellout:            { type: Number, default: 0 },
+    custoPromo:         { type: Number, default: null },
     margemPDV:          { type: Number, default: null },
     margemOferta:       { type: Number, default: null },
     adicionadoPorId:    { type: mongoose.Schema.Types.ObjectId, ref: "User" },
