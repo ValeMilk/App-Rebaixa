@@ -92,6 +92,7 @@ SELECT
     E02_ID            AS codigo,
     E02_LIVRE         AS codigoLivre,
     E02_DESC          AS descricao,
+    E02_REF           AS subcategoria,
     E02_PRECO         AS precoTabela,
     E02_PRECO_02      AS precoMinimo,
     E02_PRECO_03      AS precoPromo,
