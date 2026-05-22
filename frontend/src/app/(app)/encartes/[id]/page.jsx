@@ -87,14 +87,9 @@ function AdicionarProdutoModal({ encarteId, codigoRede, onClose, onAdicionado })
     setLoadingUC(true);
     setUltimaCompra(null);
     try {
-      // Busca clientes da rede para ultima compra
-      const { data: cartData } = await api.get("/encartes", {});
-      // Usamos diretamente a rota de ultima-compra-rede
       const { data: ucData } = await api.post("/erp/ultima-compra-rede", {
         produtoCodigo: p.codigoLivre || p.codigo,
-        // Passa codigoRede como chave; backend precisa dos clientesCodigos
-        // Usamos a rota generica passando o codigoRede para o backend resolver
-        clientesCodigos: [codigoRede], // fallback; idealmente o backend resolva pela rede
+        codigoRede,
       });
       setUltimaCompra(ucData);
     } catch {
@@ -263,12 +258,13 @@ function AdicionarProdutoModal({ encarteId, codigoRede, onClose, onAdicionado })
 
               {/* Margem PDV */}
               <div className="bg-white rounded-xl border border-slate-100 px-3 py-2.5">
-                <div className="flex items-center justify-between mb-1.5">
+                <div className="flex items-center justify-between mb-0.5">
                   <span className="text-xs font-semibold text-slate-600 uppercase tracking-wide">Margem PDV</span>
                   <MargemBadge pct={margemPDV} />
                 </div>
+                <div className="text-[10px] text-slate-400 mb-1.5">(PDV − Últ. Compra) / PDV</div>
                 <div>
-                  <label className="block text-xs text-slate-500 mb-1">Preço PDV</label>
+                  <label className="block text-xs text-slate-500 mb-1">Preço PDV (R$)</label>
                   <input type="number" inputMode="decimal" step="0.01"
                     className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand/40"
                     placeholder="0,00" value={precoPDV} onChange={(e) => setPrecoPDV(e.target.value)} />
@@ -277,10 +273,11 @@ function AdicionarProdutoModal({ encarteId, codigoRede, onClose, onAdicionado })
 
               {/* Margem Oferta */}
               <div className="bg-white rounded-xl border border-slate-100 px-3 py-2.5 space-y-2">
-                <div className="flex items-center justify-between mb-1">
+                <div className="flex items-center justify-between mb-0.5">
                   <span className="text-xs font-semibold text-slate-600 uppercase tracking-wide">Margem Oferta</span>
                   <MargemBadge pct={margemOferta} />
                 </div>
+                <div className="text-[10px] text-slate-400 -mt-1">(Oferta − (Últ. Compra − Sellout)) / Oferta</div>
                 <div>
                   <label className="block text-xs text-slate-500 mb-1">Preço oferta (encarte)</label>
                   <input type="number" inputMode="decimal" step="0.01"
