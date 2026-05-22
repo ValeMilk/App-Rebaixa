@@ -64,6 +64,9 @@ function AdicionarProdutoModal({ encarteId, codigoRede, onClose, onAdicionado })
   // Produtos desmarcados (por _id)
   const [desmarcados, setDesmarcados] = useState(new Set());
 
+  // Última compra por produtoCodigo (busca em background)
+  const [ultimasCompras, setUltimasCompras] = useState({});
+
   const [erro, setErro] = useState("");
   const [salvando, setSalvando] = useState(false);
   const [progresso, setProgresso] = useState({ feitos: 0, total: 0 });
@@ -91,6 +94,30 @@ function AdicionarProdutoModal({ encarteId, codigoRede, onClose, onAdicionado })
     }, 200);
     return () => clearTimeout(t);
   }, [subcategoriaSel, q]);
+
+  // Busca última compra de todos os produtos em background (lotes de 4)
+  useEffect(() => {
+    if (produtos.length === 0) return;
+    setUltimasCompras({});
+    let cancelled = false;
+    (async () => {
+      const lote = 4;
+      for (let i = 0; i < produtos.length; i += lote) {
+        if (cancelled) break;
+        const batch = produtos.slice(i, i + lote);
+        await Promise.allSettled(batch.map(async (p) => {
+          const cod = p.codigoLivre || p.codigo;
+          try {
+            const { data: uc } = await api.post("/erp/ultima-compra-rede", { produtoCodigo: cod, codigoRede });
+            if (!cancelled && uc?.encontrado) {
+              setUltimasCompras((prev) => ({ ...prev, [cod]: { preco: Number(uc.precoUltimaCompra), data: uc.dataUltimaCompra } }));
+            }
+          } catch { /* ignora */ }
+        }));
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [produtos, codigoRede]);
 
   function toggleProduto(id) {
     setDesmarcados((prev) => {
@@ -135,25 +162,23 @@ function AdicionarProdutoModal({ encarteId, codigoRede, onClose, onAdicionado })
     for (let i = 0; i < produtosSelecionados.length; i += lote) {
       const batch = produtosSelecionados.slice(i, i + lote);
       const results = await Promise.allSettled(batch.map(async (p) => {
-        let precoUC = null;
-        let dataUC = null;
-        try {
-          const { data: uc } = await api.post("/erp/ultima-compra-rede", {
-            produtoCodigo: p.codigoLivre || p.codigo,
-            codigoRede,
-          });
-          if (uc?.encontrado) {
-            precoUC = Number(uc.precoUltimaCompra);
-            dataUC  = uc.dataUltimaCompra;
-          }
-        } catch { /* segue sem UC */ }
+        const cod = p.codigoLivre || p.codigo;
+        // Reutiliza UC já buscada em background
+        let precoUC = ultimasCompras[cod]?.preco ?? null;
+        let dataUC  = ultimasCompras[cod]?.data  ?? null;
+        if (precoUC == null) {
+          try {
+            const { data: uc } = await api.post("/erp/ultima-compra-rede", { produtoCodigo: cod, codigoRede });
+            if (uc?.encontrado) { precoUC = Number(uc.precoUltimaCompra); dataUC = uc.dataUltimaCompra; }
+          } catch { /* segue sem UC */ }
+        }
 
         const margemPDV    = precoUC != null ? Math.round((((pdvNum - precoUC) / pdvNum) * 100) * 10) / 10 : null;
         const custoPromo   = precoUC != null ? precoUC - selloutNum : null;
         const margemOferta = custoPromo != null ? Math.round((((ofertaNum - custoPromo) / ofertaNum) * 100) * 10) / 10 : null;
 
         const { data } = await api.post(`/encartes/${encarteId}/itens`, {
-          produtoCodigo:     p.codigoLivre || p.codigo,
+          produtoCodigo:     cod,
           produto:           p.descricao,
           precoTabela:       p.precoTabela,
           precoMinimo:       p.precoMinimo,
@@ -323,17 +348,19 @@ function AdicionarProdutoModal({ encarteId, codigoRede, onClose, onAdicionado })
             )}
 
             {/* Lista de produtos com checkbox */}
-            <ul className="divide-y divide-slate-50">
+            <ul className="space-y-1">
               {produtos.map((p) => {
                 const marcado = !desmarcados.has(p._id);
+                const cod = p.codigoLivre || p.codigo;
+                const uc = ultimasCompras[cod];
                 return (
                   <li key={p._id}>
                     <button
                       type="button"
                       onClick={() => toggleProduto(p._id)}
-                      className={`w-full flex items-center gap-3 py-3 text-left transition rounded-xl px-2 ${marcado ? "" : "opacity-50"} hover:bg-slate-50`}
+                      className={`w-full flex items-start gap-3 py-3 px-3 text-left transition rounded-xl border ${marcado ? "border-brand/20 bg-brand/3" : "border-slate-100 bg-white opacity-50"} hover:border-brand/40`}
                     >
-                      <div className={`h-5 w-5 rounded-md border-2 flex items-center justify-center shrink-0 transition ${marcado ? "bg-brand border-brand" : "bg-white border-slate-300"}`}>
+                      <div className={`mt-0.5 h-5 w-5 rounded-md border-2 flex items-center justify-center shrink-0 transition ${marcado ? "bg-brand border-brand" : "bg-white border-slate-300"}`}>
                         {marcado && (
                           <svg viewBox="0 0 24 24" className="w-3.5 h-3.5 text-white" fill="none" stroke="currentColor" strokeWidth={3} strokeLinecap="round" strokeLinejoin="round">
                             <polyline points="20 6 9 17 4 12" />
@@ -342,11 +369,24 @@ function AdicionarProdutoModal({ encarteId, codigoRede, onClose, onAdicionado })
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="font-semibold text-slate-800 text-sm truncate">{p.descricao}</div>
-                        <div className="text-xs text-slate-400">CÃ³d {p.codigoLivre || p.codigo}</div>
-                      </div>
-                      <div className="text-right shrink-0">
-                        <div className="text-xs font-semibold text-slate-700">{fmtBRL(p.precoTabela)}</div>
-                        <div className="text-[10px] text-slate-400">tabela</div>
+                        <div className="text-xs text-slate-400 mb-1.5">Cód {cod}</div>
+                        <div className="bg-slate-50 rounded-lg px-2 py-1.5 space-y-0.5">
+                          <div className="flex justify-between text-[11px]">
+                            <span className="text-slate-500">Preço tabela</span>
+                            <span className="font-semibold text-slate-700">{fmtBRL(p.precoTabela)}</span>
+                          </div>
+                          <div className="flex justify-between text-[11px]">
+                            <span className="text-slate-500">Preço mínimo</span>
+                            <span className="font-semibold text-slate-700">{fmtBRL(p.precoMinimo)}</span>
+                          </div>
+                          <div className="flex justify-between text-[11px] border-t border-slate-200 pt-0.5 mt-0.5">
+                            <span className="text-slate-500">Última compra</span>
+                            {uc
+                              ? <span className="font-bold text-brand">{fmtBRL(uc.preco)}{uc.data && <span className="text-[10px] text-slate-400 ml-1">({fmtData(uc.data)})</span>}</span>
+                              : <span className="text-slate-300 text-[10px]">buscando...</span>
+                            }
+                          </div>
+                        </div>
                       </div>
                     </button>
                   </li>
