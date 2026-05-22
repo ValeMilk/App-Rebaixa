@@ -1,0 +1,31 @@
+const express = require("express");
+const { auth, requireRole } = require("../middlewares/auth");
+const {
+  listar,
+  criar,
+  obter,
+  adicionarItem,
+  removerItem,
+  atualizar,
+  remover,
+  listarProdutos,
+} = require("../controllers/encarteController");
+
+const router = express.Router();
+
+// Todos os endpoints exigem autenticacao
+router.use(auth);
+
+// Supervisores, admin e diretoria podem acessar encartes
+const roles = requireRole("supervisor", "admin", "diretoria");
+
+router.get("/",                           roles, listar);
+router.post("/",                          requireRole("supervisor", "admin"), criar);
+router.get("/produtos",                   roles, listarProdutos);
+router.get("/:id",                        roles, obter);
+router.put("/:id",                        roles, atualizar);
+router.delete("/:id",                     roles, remover);
+router.post("/:id/itens",                 roles, adicionarItem);
+router.delete("/:id/itens/:itemId",       roles, removerItem);
+
+module.exports = router;
