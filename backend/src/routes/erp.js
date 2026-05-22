@@ -52,6 +52,7 @@ router.post("/ultima-compra-rede", async (req, res) => {
       clienteCodigo: String(r.clienteCodigo),
       precoUltimaCompra: Number(r.precoUltimaCompra) || 0,
       dataUltimaCompra: r.dataUltimaCompra,
+      subcategoria: r.subcategoria || null,
     });
   } catch (err) {
     console.error("[erp/ultima-compra-rede]", err.message);

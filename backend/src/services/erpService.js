@@ -127,12 +127,14 @@ async function buscarProdutosDoErp() {
 // ---------------------------------------------------------------------------
 
 const SQL_ULTIMA_COMPRA = `
+-- Created by GitHub Copilot in SSMS - review carefully before executing
 WITH UltimaCompra AS (
     SELECT
         m00.M00_ID_A00       AS clienteCodigo,
         e02.E02_LIVRE        AS produtoCodigo,
         m01.M01_PRECOU       AS precoUltimaCompra,
         m00.M00_ENTSAI       AS dataUltimaCompra,
+        e29.E29_DESC         AS subcategoria,
         ROW_NUMBER() OVER (
             PARTITION BY m00.M00_ID_A00, m01.M01_ID_E02
             ORDER BY m00.M00_ENTSAI DESC
@@ -140,6 +142,7 @@ WITH UltimaCompra AS (
     FROM dbo.M01 WITH (NOLOCK)
     INNER JOIN dbo.M00 WITH (NOLOCK) ON m01.M01_ID_M00 = m00.M00_ID
     INNER JOIN dbo.E02 WITH (NOLOCK) ON m01.M01_ID_E02 = e02.E02_ID
+    LEFT JOIN dbo.E29 WITH (NOLOCK) ON e02.E02_ID_E29 = e29.E29_ID
     WHERE m00.M00_ENTSAI IS NOT NULL
       AND m00.M00_STATUS = 'N'
       AND m00.M00_ID_A00 = @clienteCodigo
@@ -149,7 +152,8 @@ SELECT TOP 1
     clienteCodigo,
     produtoCodigo,
     precoUltimaCompra,
-    dataUltimaCompra
+    dataUltimaCompra,
+    subcategoria
 FROM UltimaCompra
 WHERE rn = 1;
 `;
@@ -193,6 +197,7 @@ WITH UltimaCompra AS (
         e02.E02_LIVRE        AS produtoCodigo,
         m01.M01_PRECOU       AS precoUltimaCompra,
         m00.M00_ENTSAI       AS dataUltimaCompra,
+        e29.E29_DESC         AS subcategoria,
         ROW_NUMBER() OVER (
             PARTITION BY m00.M00_ID_A00
             ORDER BY m00.M00_ENTSAI DESC
@@ -200,6 +205,7 @@ WITH UltimaCompra AS (
     FROM dbo.M01 WITH (NOLOCK)
     INNER JOIN dbo.M00 WITH (NOLOCK) ON m01.M01_ID_M00 = m00.M00_ID
     INNER JOIN dbo.E02 WITH (NOLOCK) ON m01.M01_ID_E02 = e02.E02_ID
+    LEFT  JOIN dbo.E29 WITH (NOLOCK) ON e02.E02_ID_E29 = e29.E29_ID
     WHERE m00.M00_ENTSAI IS NOT NULL
       AND m00.M00_STATUS = 'N'
       AND m00.M00_ID_A00 IN (${paramNames.join(",")})
@@ -209,7 +215,8 @@ SELECT TOP 1
     clienteCodigo,
     produtoCodigo,
     precoUltimaCompra,
-    dataUltimaCompra
+    dataUltimaCompra,
+    subcategoria
 FROM UltimaCompra
 WHERE rn = 1
 ORDER BY dataUltimaCompra DESC;
