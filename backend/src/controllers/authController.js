@@ -16,7 +16,7 @@ async function login(req, res) {
   if (!ok) return res.status(401).json({ error: "Credenciais invalidas" });
 
   const token = jwt.sign(
-    { id: user._id, role: user.role, nome: user.nome, codigo: user.codigo },
+    { id: user._id, role: user.role, roles: user.roles || [], nome: user.nome, codigo: user.codigo },
     process.env.JWT_SECRET,
     { expiresIn: process.env.JWT_EXPIRES_IN || "8h" }
   );

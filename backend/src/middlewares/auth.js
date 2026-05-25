@@ -16,9 +16,9 @@ function auth(req, res, next) {
 function requireRole(...roles) {
   return (req, res, next) => {
     if (!req.user) return res.status(401).json({ error: "Nao autenticado" });
-    if (!roles.includes(req.user.role)) {
-      return res.status(403).json({ error: "Acesso negado" });
-    }
+    const effective = [req.user.role, ...(req.user.roles || [])];
+    const ok = roles.some((r) => effective.includes(r));
+    if (!ok) return res.status(403).json({ error: "Acesso negado" });
     next();
   };
 }

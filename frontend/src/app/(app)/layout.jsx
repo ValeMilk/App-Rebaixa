@@ -55,8 +55,9 @@ export default function AppLayout({ children }) {
     );
   }
 
-  const sideLinks = NAV_SIDEBAR.filter((n) => n.roles.includes(user.role));
-  const bottomLinks = NAV_BOTTOM.filter((n) => n.roles.includes(user.role));
+  const effectiveRoles = [user.role, ...(user.roles || [])];
+  const sideLinks = NAV_SIDEBAR.filter((n) => n.roles.some((r) => effectiveRoles.includes(r)));
+  const bottomLinks = NAV_BOTTOM.filter((n) => n.roles.some((r) => effectiveRoles.includes(r)));
   const initials = (user.nome || "?").split(" ").map(p => p[0]).slice(0, 2).join("").toUpperCase();
 
   return (

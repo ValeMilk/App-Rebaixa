@@ -30,11 +30,12 @@ async function criar(req, res) {
 
 async function atualizar(req, res) {
   const { id } = req.params;
-  const { nome, email, codigo, role, ativo } = req.body || {};
+  const { nome, email, codigo, role, roles, ativo } = req.body || {};
   const update = {};
   if (nome) update.nome = nome;
   if (email) update.email = String(email).toLowerCase();
   if (role) update.role = role;
+  if (Array.isArray(roles)) update.roles = roles;
   if (typeof ativo === "boolean") update.ativo = ativo;
   if (codigo) {
     update.codigo = String(codigo);

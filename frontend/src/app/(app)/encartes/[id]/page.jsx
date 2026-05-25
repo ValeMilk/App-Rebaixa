@@ -186,7 +186,11 @@ function AdicionarProdutoModal({ encarteId, codigoRede, onClose, onAdicionado })
     if (!precoPDV)        { setErro("Informe o PreÃ§o PDV"); return; }
     if (!precoOferta)     { setErro("Informe o PreÃ§o Oferta"); return; }
     if (produtosSelecionados.length === 0) { setErro("Selecione pelo menos um produto"); return; }
-
+    // Tarefa 3: bloquear se margem oferta > margem PDV
+    if (margemOfertaPreview !== null && margemPDVPreview !== null && margemOfertaPreview > margemPDVPreview) {
+      setErro(`Margem Oferta (${margemOfertaPreview.toFixed(1)}%) não pode ser maior que Margem PDV (${margemPDVPreview.toFixed(1)}%). Ajuste o preço de oferta ou sellout.`);
+      return;
+    }
     setSalvando(true);
     setProgresso({ feitos: 0, total: produtosSelecionados.length });
 
@@ -268,11 +272,11 @@ function AdicionarProdutoModal({ encarteId, codigoRede, onClose, onAdicionado })
               {stats && (
                 <div className="mt-2 bg-slate-50 rounded-lg px-2 py-1.5 space-y-0.5">
                   <div className="flex justify-between text-[11px]">
-                    <span className="text-slate-500">Preço tabela (média)</span>
+                    <span className="text-slate-500">Preço tabela(70)</span>
                     <span className="font-semibold text-slate-700">{fmtBRL(stats.mediaTabela)}</span>
                   </div>
                   <div className="flex justify-between text-[11px]">
-                    <span className="text-slate-500">Preço mínimo (média)</span>
+                    <span className="text-slate-500">Preço mínimo</span>
                     <span className="font-semibold text-slate-700">{fmtBRL(stats.mediaMinimo)}</span>
                   </div>
                   <div className="flex justify-between text-[11px] border-t border-slate-200 pt-0.5 mt-0.5">
@@ -457,6 +461,12 @@ function AdicionarProdutoModal({ encarteId, codigoRede, onClose, onAdicionado })
                             <span className="text-slate-500">Preço mínimo</span>
                             <span className="font-semibold text-slate-700">{fmtBRL(p.precoMinimo)}</span>
                           </div>
+                          {p.precoPromo > 0 && (
+                            <div className="flex justify-between text-[11px]">
+                              <span className="text-slate-500">Preço promo</span>
+                              <span className="font-semibold text-violet-600">{fmtBRL(p.precoPromo)}</span>
+                            </div>
+                          )}
                           <div className="flex justify-between text-[11px] border-t border-slate-200 pt-0.5 mt-0.5">
                             <span className="text-slate-500">Última compra</span>
                             {uc

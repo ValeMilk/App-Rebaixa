@@ -13,6 +13,11 @@ const userSchema = new mongoose.Schema(
       default: "vendedor",
       required: true,
     },
+    roles: {
+      type: [String],
+      enum: ["vendedor", "supervisor", "diretoria", "admin"],
+      default: [],
+    },
     ativo: { type: Boolean, default: true },
   },
   { timestamps: true }
