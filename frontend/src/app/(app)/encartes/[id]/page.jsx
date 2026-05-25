@@ -141,12 +141,14 @@ function AdicionarProdutoModal({ encarteId, codigoRede, onClose, onAdicionado })
     if (produtosSelecionados.length === 0) return null;
     let tabSum = 0, tabN = 0;
     let minSum = 0, minN = 0;
+    let promoSum = 0, promoN = 0;
     let ucSum  = 0, ucN  = 0;
     let ucMaisRecente = null;
     for (const p of produtosSelecionados) {
       const cod = p.codigoLivre || p.codigo;
       if (p.precoTabela) { tabSum += Number(p.precoTabela); tabN++; }
       if (p.precoMinimo) { minSum += Number(p.precoMinimo); minN++; }
+      if (p.precoPromo > 0) { promoSum += Number(p.precoPromo); promoN++; }
       const uc = ultimasCompras[cod];
       if (uc?.preco != null) {
         ucSum += Number(uc.preco); ucN++;
@@ -156,9 +158,10 @@ function AdicionarProdutoModal({ encarteId, codigoRede, onClose, onAdicionado })
       }
     }
     return {
-      mediaTabela: tabN ? tabSum / tabN : null,
-      mediaMinimo: minN ? minSum / minN : null,
-      mediaUC:     ucN  ? ucSum  / ucN  : null,
+      mediaTabela:    tabN   ? tabSum   / tabN   : null,
+      mediaMinimo:    minN   ? minSum   / minN   : null,
+      mediaPrecoPromo: promoN ? promoSum / promoN : null,
+      mediaUC:        ucN    ? ucSum    / ucN    : null,
       ucCarregados: ucN,
       ucMaisRecente,
     };
@@ -279,12 +282,12 @@ function AdicionarProdutoModal({ encarteId, codigoRede, onClose, onAdicionado })
                     <span className="text-slate-500">Preço mínimo</span>
                     <span className="font-semibold text-slate-700">{fmtBRL(stats.mediaMinimo)}</span>
                   </div>
-                    {stats.precoPromo > 0 && (
-                            <div className="flex justify-between text-[11px]">
-                              <span className="text-slate-500">Preço promo</span>
-                              <span className="font-semibold text-violet-600">{fmtBRL(stats.precoPromo)}</span>
-                            </div>
-                          )}
+                  {stats.mediaPrecoPromo != null && (
+                    <div className="flex justify-between text-[11px]">
+                      <span className="text-slate-500">Preço promo</span>
+                      <span className="font-semibold text-violet-600">{fmtBRL(stats.mediaPrecoPromo)}</span>
+                    </div>
+                  )}
                   <div className="flex justify-between text-[11px] border-t border-slate-200 pt-0.5 mt-0.5">
                     <span className="text-slate-500">Última compra </span>
                     {stats.mediaUC != null
