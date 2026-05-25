@@ -279,8 +279,14 @@ function AdicionarProdutoModal({ encarteId, codigoRede, onClose, onAdicionado })
                     <span className="text-slate-500">Preço mínimo</span>
                     <span className="font-semibold text-slate-700">{fmtBRL(stats.mediaMinimo)}</span>
                   </div>
+                    {p.precoPromo > 0 && (
+                            <div className="flex justify-between text-[11px]">
+                              <span className="text-slate-500">Preço promo</span>
+                              <span className="font-semibold text-violet-600">{fmtBRL(p.precoPromo)}</span>
+                            </div>
+                          )}
                   <div className="flex justify-between text-[11px] border-t border-slate-200 pt-0.5 mt-0.5">
-                    <span className="text-slate-500">Última compra (média)</span>
+                    <span className="text-slate-500">Última compra </span>
                     {stats.mediaUC != null
                       ? <span className="font-bold text-brand">{fmtBRL(stats.mediaUC)}{stats.ucMaisRecente && <span className="text-[10px] text-slate-400 ml-1">({fmtData(stats.ucMaisRecente)})</span>}</span>
                       : <span className="text-slate-300 text-[10px]">buscando...</span>
