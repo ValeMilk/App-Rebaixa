@@ -279,10 +279,10 @@ function AdicionarProdutoModal({ encarteId, codigoRede, onClose, onAdicionado })
                     <span className="text-slate-500">Preço mínimo</span>
                     <span className="font-semibold text-slate-700">{fmtBRL(stats.mediaMinimo)}</span>
                   </div>
-                    {p.precoPromo > 0 && (
+                    {stats.precoPromo > 0 && (
                             <div className="flex justify-between text-[11px]">
                               <span className="text-slate-500">Preço promo</span>
-                              <span className="font-semibold text-violet-600">{fmtBRL(p.precoPromo)}</span>
+                              <span className="font-semibold text-violet-600">{fmtBRL(stats.precoPromo)}</span>
                             </div>
                           )}
                   <div className="flex justify-between text-[11px] border-t border-slate-200 pt-0.5 mt-0.5">
