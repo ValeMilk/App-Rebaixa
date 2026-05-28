@@ -56,7 +56,7 @@ function AdicionarProdutoModal({ encarteId, codigoRede, onClose, onAdicionado })
   const [produtos, setProdutos] = useState([]);
   const [loadingProdutos, setLoadingProdutos] = useState(false);
 
-  // NegociaÃ§Ã£o para a subcategoria inteira
+  // Negociação para a subcategoria inteira
   const [precoPDV, setPrecoPDV] = useState("");
   const [precoOferta, setPrecoOferta] = useState("");
   const [sellout, setSellout] = useState("");
@@ -186,8 +186,8 @@ function AdicionarProdutoModal({ encarteId, codigoRede, onClose, onAdicionado })
   async function handleSalvar() {
     setErro("");
     if (!subcategoriaSel) { setErro("Selecione uma subcategoria"); return; }
-    if (!precoPDV)        { setErro("Informe o PreÃ§o PDV"); return; }
-    if (!precoOferta)     { setErro("Informe o PreÃ§o Oferta"); return; }
+    if (!precoPDV)        { setErro("Informe o Preço PDV"); return; }
+    if (!precoOferta)     { setErro("Informe o Preço Oferta"); return; }
     if (produtosSelecionados.length === 0) { setErro("Selecione pelo menos um produto"); return; }
     // Tarefa 3: bloquear se margem oferta > margem PDV
     if (margemOfertaPreview !== null && margemPDVPreview !== null && margemOfertaPreview > margemPDVPreview) {
@@ -200,7 +200,7 @@ function AdicionarProdutoModal({ encarteId, codigoRede, onClose, onAdicionado })
     let ultimoEncarte = null;
     let erros = 0;
 
-    // Processa em batches de 4 para nÃ£o saturar o ERP
+    // Processa em batches de 4 para não saturar o ERP
     const lote = 4;
     for (let i = 0; i < produtosSelecionados.length; i += lote) {
       const batch = produtosSelecionados.slice(i, i + lote);
@@ -412,7 +412,7 @@ function AdicionarProdutoModal({ encarteId, codigoRede, onClose, onAdicionado })
               </div>
             )}
 
-            {/* CabeÃ§alho com contagem + select all */}
+            {/* Cabeçalho com contagem + select all */}
             {subcategoriaSel && produtos.length > 0 && (
               <div className="flex items-center justify-between text-xs px-1">
                 <span className="text-slate-500">
@@ -547,7 +547,7 @@ export default function EncarteDetalhe() {
   useEffect(() => { carregar(); }, [carregar]);
 
   async function excluirEncarte() {
-    if (!confirm(`Excluir o encarte "${encarte.nome}"? Esta aÃ§Ã£o nÃ£o pode ser desfeita.`)) return;
+    if (!confirm(`Excluir o encarte "${encarte.nome}"? Esta ação não pode ser desfeita.`)) return;
     setExcluindo(true);
     try {
       await api.delete(`/encartes/${id}`);
@@ -583,7 +583,7 @@ export default function EncarteDetalhe() {
     return (
       <div className="flex h-screen items-center justify-center bg-slate-50">
         <div className="text-center">
-          <p className="text-slate-600 font-semibold">{erro || "Encarte nÃ£o encontrado"}</p>
+          <p className="text-slate-600 font-semibold">{erro || "Encarte não encontrado"}</p>
           <button onClick={() => router.back()} className="mt-3 text-brand text-sm underline">Voltar</button>
         </div>
       </div>
@@ -614,19 +614,19 @@ export default function EncarteDetalhe() {
             </button>
           ) : (
             <span className="text-[10px] bg-slate-100 text-slate-500 font-semibold px-2 py-1 rounded-full shrink-0">
-              VisualizaÃ§Ã£o
+              Visualização
             </span>
           )}
         </div>
 
-        {/* PerÃ­odo */}
+        {/* Período */}
         <div className="flex items-center gap-1.5 mt-2 text-xs text-slate-500">
           <IcoCalendar className="w-3.5 h-3.5 shrink-0" />
           <span>{fmtData(encarte.periodoInicio)} â†’ {fmtData(encarte.periodoFim)}</span>
         </div>
       </div>
 
-      {/* SumÃ¡rio */}
+      {/* Sumário */}
       <div className="bg-white border-b border-slate-100 px-4 py-2.5">
         <div className="flex items-center gap-2 text-xs text-slate-500">
           <IcoTag className="w-3.5 h-3.5" />
@@ -746,7 +746,7 @@ export default function EncarteDetalhe() {
         })()}
       </div>
 
-      {/* BotÃ£o fixo Adicionar Produto â€” sÃ³ para quem pode editar */}
+      {/* Botão fixo Adicionar Produto â€” sÃ³ para quem pode editar */}
       {encarte.podeEditar && (
         <div className="fixed bottom-16 lg:bottom-0 left-0 right-0 p-4 bg-white border-t border-slate-100 safe-area-pb lg:left-64">
           <button
