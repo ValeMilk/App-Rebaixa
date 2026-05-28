@@ -170,7 +170,9 @@ function AdicionarProdutoModal({ encarteId, codigoRede, onClose, onAdicionado })
   const margemPDVPreview = (stats?.mediaUC != null && pdvNum > 0)
     ? ((pdvNum - stats.mediaUC) / pdvNum) * 100
     : null;
-  const custoPromoPreview = stats?.mediaUC != null ? stats.mediaUC - selloutNum : null;
+  const custoPromoPreview = stats?.mediaUC != null
+    ? Math.max(0, Math.round((stats.mediaUC - selloutNum) * 1000) / 1000) // Evita valores negativos por arredondamento
+    : null;
   const margemOfertaPreview = (custoPromoPreview != null && ofertaNum > 0)
     ? ((ofertaNum - custoPromoPreview) / ofertaNum) * 100
     : null;
@@ -217,7 +219,7 @@ function AdicionarProdutoModal({ encarteId, codigoRede, onClose, onAdicionado })
         }
 
         const margemPDV    = precoUC != null ? Math.round((((pdvNum - precoUC) / pdvNum) * 100) * 10) / 10 : null;
-        const custoPromo   = precoUC != null ? precoUC - selloutNum : null;
+        const custoPromo   = precoUC != null ? Math.max(0, Math.round((precoUC - selloutNum) * 1000) / 1000) : null;
         const margemOferta = custoPromo != null ? Math.round((((ofertaNum - custoPromo) / ofertaNum) * 100) * 10) / 10 : null;
 
         const { data } = await api.post(`/encartes/${encarteId}/itens`, {
