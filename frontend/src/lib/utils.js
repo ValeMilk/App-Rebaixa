@@ -8,6 +8,10 @@ export const CLASSES = {
 
 export function fmtData(d) {
   if (!d) return "-";
+  // Extrai YYYY-MM-DD e cria como horário local (evita offset UTC que causa 1 dia a menos no Brasil)
+  const s = typeof d === "string" ? d : d instanceof Date ? d.toISOString() : String(d);
+  const m = s.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (m) return new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3])).toLocaleDateString("pt-BR");
   return new Date(d).toLocaleDateString("pt-BR");
 }
 
