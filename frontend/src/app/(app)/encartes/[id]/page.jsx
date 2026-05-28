@@ -14,7 +14,7 @@ import {
   IcoTrash,
 } from "@/components/Icons";
 
-// IcoTrash pode nao existir â€” fallback inline
+// IcoTrash pode nao existir — fallback inline
 function TrashIcon(props) {
   return (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}
@@ -28,12 +28,12 @@ function TrashIcon(props) {
 }
 
 function fmtBRL(v) {
-  if (v == null || v === "") return "â€”";
+  if (v == null || v === "") return "—";
   return Number(v).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 }
 
 function MargemBadge({ pct }) {
-  if (pct == null) return <span className="text-slate-300 text-base font-bold">â€”</span>;
+  if (pct == null) return <span className="text-slate-300 text-base font-bold">—</span>;
   const cor = pct >= 20
     ? "text-emerald-700 bg-emerald-50 border-emerald-200"
     : pct >= 10
@@ -340,7 +340,7 @@ function AdicionarProdutoModal({ encarteId, codigoRede, onClose, onAdicionado })
                   <span className="text-xs font-semibold text-slate-600 uppercase tracking-wide">Margem PDV</span>
                   <MargemBadge pct={margemPDVPreview} />
                 </div>
-                <div className="text-[10px] text-slate-400 mb-2">(PDV − Última Compra média) / PDV</div>
+                <div className="text-[10px] text-slate-400 mb-2">(PDV - Última Compra) / PDV</div>
                 <label className="block text-xs text-slate-500 mb-1">Preço PDV (R$)</label>
                 <input type="number" inputMode="decimal" step="0.01"
                   className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand/40"
@@ -355,7 +355,7 @@ function AdicionarProdutoModal({ encarteId, codigoRede, onClose, onAdicionado })
                   <span className="text-xs font-semibold text-slate-600 uppercase tracking-wide">Margem Oferta</span>
                   <MargemBadge pct={margemOfertaPreview} />
                 </div>
-                <div className="text-[10px] text-slate-400 -mt-1">(Oferta − Custo Promo médio) / Oferta</div>
+                <div className="text-[10px] text-slate-400 -mt-1">(Oferta - Custo Promo médio) / Oferta</div>
                 <div>
                   <label className="block text-xs text-slate-500 mb-1">Preço oferta (encarte)</label>
                   <input type="number" inputMode="decimal" step="0.01"
@@ -389,7 +389,7 @@ function AdicionarProdutoModal({ encarteId, codigoRede, onClose, onAdicionado })
                 <div className="flex items-center justify-between bg-emerald-50 border border-emerald-100 rounded-xl px-3 py-2">
                   <div>
                     <div className="text-xs font-semibold text-emerald-700">Custo Promo</div>
-                    <div className="text-[10px] text-slate-400">Últ. Compra média − Sellout</div>
+                    <div className="text-[10px] text-slate-400">Últ. Compra - Sellout</div>
                   </div>
                   {custoPromoPreview != null
                     ? <span className="text-sm font-bold text-emerald-600">{fmtBRL(custoPromoPreview)}</span>
@@ -622,7 +622,7 @@ export default function EncarteDetalhe() {
         {/* Período */}
         <div className="flex items-center gap-1.5 mt-2 text-xs text-slate-500">
           <IcoCalendar className="w-3.5 h-3.5 shrink-0" />
-          <span>{fmtData(encarte.periodoInicio)} â†’ {fmtData(encarte.periodoFim)}</span>
+          <span>{fmtData(encarte.periodoInicio)} → {fmtData(encarte.periodoFim)}</span>
         </div>
       </div>
 
@@ -728,7 +728,7 @@ export default function EncarteDetalhe() {
                             <>
                               <div className="bg-emerald-50 border border-emerald-100 rounded-xl px-3 py-1.5">
                                 <div className="text-[10px] text-emerald-700 font-semibold uppercase tracking-wide">Custo Promo</div>
-                                <div className="text-[10px] text-slate-400">Últ. Compra − Sellout</div>
+                                <div className="text-[10px] text-slate-400">Últ. Compra - Sellout</div>
                               </div>
                               <div className="bg-emerald-50 border border-emerald-100 rounded-xl px-3 py-1.5 flex items-center">
                                 <div className="text-sm font-bold text-emerald-600">{fmtBRL(it.custoPromo)}</div>
@@ -746,7 +746,7 @@ export default function EncarteDetalhe() {
         })()}
       </div>
 
-      {/* Botão fixo Adicionar Produto â€” sÃ³ para quem pode editar */}
+      {/* Botão fixo Adicionar Produto — só para quem pode editar */}
       {encarte.podeEditar && (
         <div className="fixed bottom-16 lg:bottom-0 left-0 right-0 p-4 bg-white border-t border-slate-100 safe-area-pb lg:left-64">
           <button
