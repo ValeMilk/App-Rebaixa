@@ -9,6 +9,7 @@ import { IcoStore, IcoClipboard, IcoGrid, IcoSync, IcoUser, IcoUsers, IcoLogout,
 
 const NAV_SIDEBAR = [
   { href: "/dashboard", label: "Dashboard", Icon: IcoGrid, roles: ["supervisor", "diretoria", "admin"] },
+  { href: "/dashboard/supervisor", label: "Métricas Redes", Icon: IcoGrid, roles: ["supervisor", "diretoria", "admin"] },
   { href: "/estoque", label: "Lojas", Icon: IcoStore, roles: ["vendedor", "supervisor", "diretoria", "admin"] },
   { href: "/solicitacoes", label: "Solicitações", Icon: IcoClipboard, roles: ["vendedor", "supervisor", "diretoria", "admin"] },
   { href: "/encartes", label: "Encartes", Icon: IcoTag, roles: ["supervisor", "diretoria", "admin"] },
@@ -24,6 +25,7 @@ const NAV_BOTTOM = [
   { href: "/encartes", label: "Encartes", Icon: IcoTag, roles: ["supervisor", "diretoria", "admin"] },
   { href: "/encartes/calendario", label: "Cal. Geral", Icon: IcoCalendar, roles: ["supervisor", "diretoria", "admin"] },
   { href: "/dashboard", label: "Gráficos", Icon: IcoGrid, roles: ["supervisor", "diretoria", "admin"] },
+  { href: "/dashboard/supervisor", label: "Métricas", Icon: IcoGrid, roles: ["supervisor", "diretoria", "admin"] },
   { href: "/admin/sync", label: "Sync", Icon: IcoSync, roles: ["admin", "diretoria"] },
   { href: "/admin/usuarios", label: "Usuários", Icon: IcoUsers, roles: ["admin"] },
 ];
