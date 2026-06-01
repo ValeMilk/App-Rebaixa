@@ -36,7 +36,13 @@ async function listar(req, res) {
 
   if (role === "supervisor") {
     // Redes da carteira
-    const carteira = await Carteira.find({ supervisorCodigo: codigo }, "codigoRede redeSubrede").lean();
+    const carteira = await Carteira.find({
+      supervisorCodigo: codigo,
+      $or: [
+        { redeSubrede: { $not: /INATIVO/i } },
+        { redeSubrede: null },
+      ],
+    }, "codigoRede redeSubrede").lean();
     for (const c of carteira) {
       if (c.codigoRede) redesInfo[c.codigoRede] = c.redeSubrede || null;
     }
@@ -48,7 +54,13 @@ async function listar(req, res) {
     }
   } else if (role === "admin" || role === "diretoria") {
     // Todas as redes distintas da carteira
-    const carteira = await Carteira.find({ codigoRede: { $ne: null } }, "codigoRede redeSubrede").lean();
+    const carteira = await Carteira.find({
+      codigoRede: { $ne: null },
+      $or: [
+        { redeSubrede: { $not: /INATIVO/i } },
+        { redeSubrede: null },
+      ],
+    }, "codigoRede redeSubrede").lean();
     for (const c of carteira) {
       if (c.codigoRede) redesInfo[c.codigoRede] = c.redeSubrede || null;
     }

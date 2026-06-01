@@ -11,7 +11,15 @@ async function listar(req, res) {
 // Lista de redes disponiveis (distinct da Carteira) para o dropdown
 async function redesDisponiveis(req, res) {
   const docs = await Carteira.aggregate([
-    { $match: { codigoRede: { $ne: null } } },
+    {
+      $match: {
+        codigoRede: { $ne: null },
+        $or: [
+          { redeSubrede: { $not: /INATIVO/i } },
+          { redeSubrede: null },
+        ],
+      },
+    },
     { $group: { _id: "$codigoRede", redeSubrede: { $first: "$redeSubrede" } } },
     { $project: { _id: 0, codigoRede: "$_id", redeSubrede: 1 } },
     { $sort: { redeSubrede: 1 } },
