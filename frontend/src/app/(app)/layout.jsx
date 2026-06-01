@@ -58,89 +58,119 @@ export default function AppLayout({ children }) {
   }
 
   const effectiveRoles = [user.role, ...(user.roles || [])];
-  const sideLinks = NAV_SIDEBAR.filter((n) => n.roles.some((r) => effectiveRoles.includes(r)));
+  const navLinks = NAV_SIDEBAR.filter((n) => n.roles.some((r) => effectiveRoles.includes(r)));
   const bottomLinks = NAV_BOTTOM.filter((n) => n.roles.some((r) => effectiveRoles.includes(r)));
   const initials = (user.nome || "?").split(" ").map(p => p[0]).slice(0, 2).join("").toUpperCase();
 
   return (
-    <div className="flex min-h-screen bg-slate-50 w-screen max-w-full overflow-x-clip">
-      {/* Sidebar — apenas desktop */}
-      <aside className="hidden lg:flex w-64 bg-gradient-to-b from-brand to-brand-700 text-white flex-col shrink-0">
-        <div className="px-6 py-5 border-b border-white/10">
-          <div className="flex items-center gap-3">
-            <div className="h-10 w-10 rounded-xl bg-white/15 flex items-center justify-center font-black">VM</div>
-            <div>
-              <div className="text-lg font-bold leading-tight">Rebaixa</div>
-              <div className="text-xs text-white/70">Valemilk</div>
+    <div className="flex flex-col min-h-screen bg-slate-50 w-screen max-w-full overflow-x-clip">
+      {/* Navbar horizontal no topo */}
+      <header className="sticky top-0 z-50 bg-white border-b border-slate-200 shadow-sm">
+        <div className="max-w-[1920px] mx-auto px-4 lg:px-6">
+          <div className="flex items-center justify-between h-16">
+            {/* Logo */}
+            <div className="flex items-center gap-3">
+              <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-brand to-brand-600 flex items-center justify-center font-black text-white shadow-md">
+                VM
+              </div>
+              <div className="hidden sm:block">
+                <div className="text-lg font-bold text-slate-900 leading-tight">Rebaixa</div>
+                <div className="text-xs text-slate-500">Valemilk</div>
+              </div>
+            </div>
+
+            {/* Nav links — desktop */}
+            <nav className="hidden lg:flex items-center gap-1 flex-1 max-w-4xl mx-8">
+              {navLinks.map(({ href, label, Icon }) => {
+                const active = pathname === href || pathname.startsWith(href + "/");
+                return (
+                  <Link
+                    key={href}
+                    href={href}
+                    className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition ${
+                      active
+                        ? "bg-brand text-white shadow-sm"
+                        : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
+                    }`}
+                  >
+                    <Icon className="w-4 h-4" />
+                    <span>{label}</span>
+                  </Link>
+                );
+              })}
+            </nav>
+
+            {/* User menu — desktop */}
+            <div className="hidden lg:flex items-center gap-3">
+              <div className="flex items-center gap-2.5 px-3 py-1.5 rounded-lg bg-slate-50 border border-slate-200">
+                <div className="h-8 w-8 rounded-full bg-gradient-to-br from-brand to-brand-600 flex items-center justify-center text-xs font-bold text-white">
+                  {initials}
+                </div>
+                <div className="min-w-0">
+                  <div className="text-sm font-semibold text-slate-900 truncate max-w-[120px]">{user.nome}</div>
+                  <div className="text-xs text-slate-500 capitalize">{user.role}</div>
+                </div>
+              </div>
+              <button
+                onClick={logout}
+                className="h-10 px-4 flex items-center gap-2 text-sm font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition"
+              >
+                <IcoLogout className="w-4 h-4" />
+                <span className="hidden xl:inline">Sair</span>
+              </button>
+            </div>
+
+            {/* Mobile user badge + logout */}
+            <div className="lg:hidden flex items-center gap-2">
+              <div className="flex items-center gap-2 px-2 py-1 rounded-lg bg-slate-50">
+                <div className="h-8 w-8 rounded-full bg-gradient-to-br from-brand to-brand-600 flex items-center justify-center text-xs font-bold text-white">
+                  {initials}
+                </div>
+                <div className="text-xs font-medium text-slate-700 capitalize">{user.role}</div>
+              </div>
+              <button
+                onClick={logout}
+                aria-label="Sair"
+                className="h-10 w-10 rounded-lg bg-slate-100 hover:bg-slate-200 active:scale-95 transition flex items-center justify-center"
+              >
+                <IcoLogout className="w-5 h-5 text-slate-600" />
+              </button>
             </div>
           </div>
         </div>
-        <nav className="flex-1 p-3 space-y-1">
-          {sideLinks.map(({ href, label, Icon }) => {
+      </header>
+
+      {/* Conteúdo principal */}
+      <main className="flex-1 overflow-y-auto pb-20 lg:pb-6">
+        <div className="max-w-[1920px] mx-auto px-4 py-4 lg:px-6 lg:py-6">{children}</div>
+      </main>
+
+      {/* Bottom nav — apenas mobile */}
+      <nav className="lg:hidden fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-md border-t border-slate-200 z-50 safe-area-pb shadow-[0_-4px_20px_-8px_rgba(0,0,0,0.08)]">
+        <div className="flex items-stretch px-1 pt-1.5">
+          {bottomLinks.map(({ href, label, Icon }) => {
             const active = pathname === href || pathname.startsWith(href + "/");
             return (
-              <Link key={href} href={href}
-                className={`flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm transition ${active ? "bg-white/15 font-semibold shadow-sm" : "hover:bg-white/10 text-white/85"}`}>
-                <Icon className="w-5 h-5" />
-                <span>{label}</span>
+              <Link
+                key={href}
+                href={href}
+                className="flex-1 flex flex-col items-center justify-center py-1.5 active:scale-95 transition-transform"
+              >
+                <span
+                  className={`flex items-center justify-center w-12 h-7 rounded-full transition-colors ${
+                    active ? "bg-brand/10 text-brand" : "text-slate-400"
+                  }`}
+                >
+                  <Icon className="w-[22px] h-[22px]" />
+                </span>
+                <span className={`text-[10px] mt-0.5 font-medium ${active ? "text-brand" : "text-slate-500"}`}>
+                  {label}
+                </span>
               </Link>
             );
           })}
-        </nav>
-        <div className="p-4 border-t border-white/10">
-          <div className="flex items-center gap-3 mb-3">
-            <div className="h-9 w-9 rounded-full bg-white/15 flex items-center justify-center text-xs font-bold">{initials}</div>
-            <div className="min-w-0">
-              <div className="text-sm font-medium truncate">{user.nome}</div>
-              <div className="text-xs text-white/70 capitalize">{user.role}</div>
-            </div>
-          </div>
-          <button onClick={logout} className="w-full flex items-center justify-center gap-2 text-xs bg-white/10 hover:bg-white/20 rounded-lg py-2 transition">
-            <IcoLogout className="w-4 h-4" /> Sair
-          </button>
         </div>
-      </aside>
-
-      {/* Conteúdo principal */}
-      <div className="flex-1 min-w-0 flex flex-col min-h-screen overflow-x-clip">
-        {/* Top bar — apenas mobile */}
-        <header className="lg:hidden sticky top-0 z-40 bg-gradient-to-r from-brand to-brand-600 text-white px-4 pt-3 pb-3 shadow-sm safe-area-pt">
-          <div className="flex items-center justify-between gap-3">
-            <div className="flex items-center gap-2.5 min-w-0">
-              <div className="h-9 w-9 shrink-0 rounded-xl bg-white/15 backdrop-blur-sm flex items-center justify-center text-xs font-black ring-1 ring-white/20">VM</div>
-              <div className="min-w-0">
-                <div className="font-bold text-sm leading-tight truncate">Rebaixa Valemilk</div>
-                <div className="text-[11px] text-white/75 capitalize truncate">{user.nome} · {user.role}</div>
-              </div>
-            </div>
-            <button onClick={logout} aria-label="Sair" className="shrink-0 h-9 w-9 rounded-xl bg-white/10 hover:bg-white/20 active:scale-95 transition flex items-center justify-center">
-              <IcoLogout className="w-5 h-5" />
-            </button>
-          </div>
-        </header>
-
-        {/* Conteúdo */}
-        <main className="flex-1 overflow-y-auto pb-24 lg:pb-0 w-full min-w-0">
-          <div className="max-w-7xl mx-auto px-5 py-4 lg:px-8 lg:py-6 w-full min-w-0">{children}</div>
-        </main>
-
-        {/* Bottom nav — apenas mobile */}
-        <nav className="lg:hidden fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-md border-t border-slate-200 z-50 safe-area-pb shadow-[0_-4px_20px_-8px_rgba(0,0,0,0.08)]">
-          <div className="flex items-stretch px-1 pt-1.5">
-            {bottomLinks.map(({ href, label, Icon }) => {
-              const active = pathname === href || pathname.startsWith(href + "/");
-              return (
-                <Link key={href} href={href} className="flex-1 flex flex-col items-center justify-center py-1.5 active:scale-95 transition-transform">
-                  <span className={`flex items-center justify-center w-12 h-7 rounded-full transition-colors ${active ? "bg-brand/10 text-brand" : "text-slate-400"}`}>
-                    <Icon className="w-[22px] h-[22px]" />
-                  </span>
-                  <span className={`text-[10px] mt-0.5 font-medium ${active ? "text-brand" : "text-slate-500"}`}>{label}</span>
-                </Link>
-              );
-            })}
-          </div>
-        </nav>
-      </div>
+      </nav>
     </div>
   );
 }
