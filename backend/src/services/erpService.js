@@ -36,6 +36,7 @@ WHERE
         '149 - L82-SGA-LICITAÇÃO',
         '000 - L82-EXTRA ROTA'
     )
+    AND (seg.A16_DESC NOT LIKE '%INATIVO%' OR seg.A16_DESC IS NULL)
 `;
 
 async function buscarCarteiraDoErp() {
