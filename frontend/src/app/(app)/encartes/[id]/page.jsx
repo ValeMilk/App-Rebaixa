@@ -960,8 +960,8 @@ export default function EncarteDetalhe() {
 
       {/* Botão fixo Adicionar Produto — só para quem pode editar */}
       {encarte.podeEditar && (
-        <div className="fixed bottom-20 lg:bottom-4 left-0 right-0 px-4 safe-area-pb lg:left-64">
-          <div className="max-w-md mx-auto">
+        <div className="fixed bottom-20 lg:bottom-4 left-0 right-0 px-4 safe-area-pb flex justify-center">
+          <div className="w-full max-w-md">
             <button
               onClick={() => setModalAberto(true)}
               className="w-full py-3.5 rounded-xl bg-brand hover:bg-brand-600 text-white font-semibold text-sm active:scale-[0.98] transition shadow-lg">
