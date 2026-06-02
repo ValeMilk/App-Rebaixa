@@ -403,20 +403,20 @@ function AdicionarProdutoModal({ encarteId, codigoRede, onClose, onAdicionado })
             {/* Lista de produtos com scroll */}
             <div className="flex-1 overflow-y-auto px-4 lg:px-6 py-4"
               style={{ WebkitOverflowScrolling: "touch", overscrollBehavior: "contain" }}>
-              <div className="space-y-2 lg:space-y-0 lg:grid lg:grid-cols-2 xl:grid-cols-3 lg:gap-3">
+              <div className="space-y-2">
 
                 {loadingProdutos && (
-                  <div className="col-span-full flex justify-center py-12">
+                  <div className="flex justify-center py-12">
                     <div className="w-8 h-8 rounded-full border-4 border-slate-200 border-t-brand animate-spin" />
                   </div>
                 )}
 
                 {!loadingProdutos && subcategoriaSel && produtos.length === 0 && (
-                  <p className="col-span-full text-center text-slate-400 text-sm py-12">Nenhum produto encontrado</p>
+                  <p className="text-center text-slate-400 text-sm py-12">Nenhum produto encontrado</p>
                 )}
 
                 {!subcategoriaSel && (
-                  <p className="col-span-full text-center text-slate-400 text-sm py-12">Selecione uma subcategoria para ver os produtos</p>
+                  <p className="text-center text-slate-400 text-sm py-12">Selecione uma subcategoria para ver os produtos</p>
                 )}
 
                 {/* Cards de produtos */}
@@ -482,7 +482,7 @@ function AdicionarProdutoModal({ encarteId, codigoRede, onClose, onAdicionado })
           </div>
 
           {/* Painel DIREITO (desktop): Subcategoria + Precificação (MARGENS EM DESTAQUE) */}
-          <div className="lg:w-96 xl:w-[420px] shrink-0 border-b lg:border-b-0 lg:border-l border-slate-200 overflow-y-auto p-4 lg:p-6 space-y-4 order-1 lg:order-2 bg-gradient-to-b from-slate-50/50 to-white">
+          <div className="lg:w-[520px] xl:w-[600px] shrink-0 border-b lg:border-b-0 lg:border-l border-slate-200 overflow-y-auto p-4 lg:p-5 space-y-4 order-1 lg:order-2 bg-gradient-to-b from-slate-50/50 to-white">
             
             {/* Subcategoria — apenas desktop */}
             <div className="hidden lg:block">
@@ -507,40 +507,44 @@ function AdicionarProdutoModal({ encarteId, codigoRede, onClose, onAdicionado })
               )}
             </div>
 
-            {/* Margem PDV */}
+            {/* Margens lado a lado — Grid 2 colunas no desktop */}
             {subcategoriaSel && (
-              <div className="bg-gradient-to-br from-blue-50 to-slate-50 rounded-xl border-2 border-blue-100 p-4 shadow-sm">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-xs font-bold text-slate-700 uppercase tracking-wide">Margem PDV</span>
-                  <MargemBadge pct={margemPDVPreview} />
-                </div>
-                <div className="text-[10px] text-slate-500 mb-3">(PDV - Última Compra) / PDV</div>
-                <label className="block text-xs font-medium text-slate-600 mb-1.5">Preço PDV (R$)</label>
-                <input type="number" inputMode="decimal" step="0.01"
-                  className="w-full border-2 border-slate-200 rounded-lg px-3 py-2.5 text-sm font-medium focus:outline-none focus:border-brand focus:ring-2 focus:ring-brand/20"
-                  placeholder="0,00" value={precoPDV} onChange={(e) => setPrecoPDV(e.target.value)} />
-              </div>
-            )}
-
-            {/* Margem Oferta */}
-            {subcategoriaSel && (
-              <div className="bg-gradient-to-br from-emerald-50 to-slate-50 rounded-xl border-2 border-emerald-100 p-4 space-y-3 shadow-sm">
-                <div className="flex items-center justify-between mb-1">
-                  <span className="text-xs font-bold text-slate-700 uppercase tracking-wide">Margem Oferta</span>
-                  <MargemBadge pct={margemOfertaPreview} />
-                </div>
-                <div className="text-[10px] text-slate-500 -mt-1">(Oferta - Custo Promo médio) / Oferta</div>
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 lg:gap-4">
                 
-                <div>
+                {/* Margem PDV */}
+                <div className="bg-gradient-to-br from-blue-50 to-slate-50 rounded-xl border-2 border-blue-100 p-3 lg:p-4 shadow-sm">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-xs font-bold text-slate-700 uppercase tracking-wide">Margem PDV</span>
+                    <MargemBadge pct={margemPDVPreview} />
+                  </div>
+                  <div className="text-[10px] text-slate-500 mb-3">(PDV - Última Compra) / PDV</div>
+                  <label className="block text-xs font-medium text-slate-600 mb-1.5">Preço PDV (R$)</label>
+                  <input type="number" inputMode="decimal" step="0.01"
+                    className="w-full border-2 border-slate-200 rounded-lg px-3 py-2.5 text-sm font-medium focus:outline-none focus:border-brand focus:ring-2 focus:ring-brand/20"
+                    placeholder="0,00" value={precoPDV} onChange={(e) => setPrecoPDV(e.target.value)} />
+                </div>
+
+                {/* Margem Oferta */}
+                <div className="bg-gradient-to-br from-emerald-50 to-slate-50 rounded-xl border-2 border-emerald-100 p-3 lg:p-4 shadow-sm">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-xs font-bold text-slate-700 uppercase tracking-wide">Margem Oferta</span>
+                    <MargemBadge pct={margemOfertaPreview} />
+                  </div>
+                  <div className="text-[10px] text-slate-500 mb-3">(Oferta - Custo Promo) / Oferta</div>
                   <label className="block text-xs font-medium text-slate-600 mb-1.5">Preço oferta (encarte)</label>
                   <input type="number" inputMode="decimal" step="0.01"
                     className="w-full border-2 border-slate-200 rounded-lg px-3 py-2.5 text-sm font-medium focus:outline-none focus:border-brand focus:ring-2 focus:ring-brand/20"
                     placeholder="0,00" value={precoOferta} onChange={(e) => setPrecoOferta(e.target.value)} />
                 </div>
-                
+              </div>
+            )}
+
+            {/* Sellout + Custo Promo — Span 2 colunas */}
+            {subcategoriaSel && (
+              <div className="space-y-3">
                 <div>
                   <div className="flex items-center justify-between mb-1.5">
-                    <label className="text-xs font-medium text-slate-600">Sellout</label>
+                    <label className="text-xs font-semibold text-slate-600 uppercase tracking-wide">Sellout</label>
                     {(() => {
                       const uc = stats?.mediaUC;
                       const pdv = pdvNum;
@@ -551,9 +555,9 @@ function AdicionarProdutoModal({ encarteId, codigoRede, onClose, onAdicionado })
                         <button
                           type="button"
                           onClick={() => setSellout(sugerido.toFixed(2))}
-                          className="text-[10px] font-bold text-brand bg-white hover:bg-brand/10 px-2 py-1 rounded-lg transition border border-brand/20"
+                          className="text-[10px] font-bold text-brand bg-white hover:bg-brand/10 px-2 py-1 rounded-lg transition border border-brand/20 shadow-sm"
                         >
-                          Sugerir: R$ {sugerido.toFixed(2)}
+                          💡 Sugerir: R$ {sugerido.toFixed(2)}
                         </button>
                       );
                     })()}
@@ -563,14 +567,14 @@ function AdicionarProdutoModal({ encarteId, codigoRede, onClose, onAdicionado })
                     placeholder="0,00" value={sellout} onChange={(e) => setSellout(e.target.value)} />
                 </div>
                 
-                <div className="flex items-center justify-between bg-white rounded-lg px-3 py-2.5 border-2 border-emerald-200">
+                <div className="flex items-center justify-between bg-gradient-to-r from-emerald-50 to-blue-50 rounded-xl px-4 py-3 border-2 border-emerald-200 shadow-sm">
                   <div>
-                    <div className="text-xs font-bold text-emerald-700">Custo Promo</div>
-                    <div className="text-[10px] text-slate-500">Últ. Compra - Sellout</div>
+                    <div className="text-sm font-bold text-slate-700">💰 Custo Promo</div>
+                    <div className="text-[10px] text-slate-500 mt-0.5">Últ. Compra - Sellout</div>
                   </div>
                   {custoPromoPreview != null
-                    ? <span className="text-lg font-bold text-emerald-600">{fmtBRL(custoPromoPreview)}</span>
-                    : <span className="text-lg font-bold text-slate-300">—</span>
+                    ? <span className="text-2xl font-bold text-emerald-600">{fmtBRL(custoPromoPreview)}</span>
+                    : <span className="text-2xl font-bold text-slate-300">—</span>
                   }
                 </div>
               </div>
