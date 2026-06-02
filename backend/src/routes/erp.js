@@ -1,6 +1,6 @@
 const express = require("express");
 const { auth } = require("../middlewares/auth");
-const { buscarUltimaCompra, buscarUltimaCompraRede } = require("../services/erpService");
+const { buscarUltimaCompra, buscarUltimaCompraRede, buscarUltimaCompraRedeBatch } = require("../services/erpService");
 
 const router = express.Router();
 router.use(auth);
@@ -48,6 +48,22 @@ router.post("/ultima-compra-rede", async (req, res) => {
   } catch (err) {
     console.error("[erp/ultima-compra-rede]", err.message);
     return res.status(500).json({ error: "Erro ao consultar ERP" });
+  }
+});
+
+// Busca última compra de MÚLTIPLOS produtos de uma vez (OTIMIZADO)
+router.post("/ultima-compra-rede-batch", async (req, res) => {
+  const { codigoRede, produtosCodigos } = req.body || {};
+  if (!codigoRede || !Array.isArray(produtosCodigos) || produtosCodigos.length === 0) {
+    return res.status(400).json({ error: "codigoRede e produtosCodigos[] sao obrigatorios" });
+  }
+
+  try {
+    const resultados = await buscarUltimaCompraRedeBatch(codigoRede, produtosCodigos);
+    return res.json({ resultados });
+  } catch (err) {
+    console.error("[erp/ultima-compra-rede-batch]", err.message);
+    return res.status(500).json({ error: "Erro ao consultar ERP em batch" });
   }
 });
 

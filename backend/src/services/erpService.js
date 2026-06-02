@@ -234,11 +234,79 @@ ORDER BY dataUltimaCompra DESC;
   return result.recordset[0] || null;
 }
 
+/**
+ * Busca ultima compra de MÚLTIPLOS produtos de uma rede em uma única query.
+ * Muito mais eficiente que chamar buscarUltimaCompraRede() várias vezes.
+ */
+async function buscarUltimaCompraRedeBatch(codigoRede, produtosCodigos) {
+  if (!erpConfigurado()) return {};
+  if (!codigoRede || !Array.isArray(produtosCodigos) || produtosCodigos.length === 0) return {};
+  
+  const { getPool } = require("./erpDbService");
+  const sql = require("mssql");
+  const pool = await getPool();
+
+  // Limita a 500 produtos por segurança
+  const codigos = produtosCodigos.slice(0, 500).map(c => String(c));
+  
+  console.log(`[buscarUltimaCompraRedeBatch] codigoRede=${codigoRede} produtos=${codigos.length}`);
+
+  const req = pool.request();
+  req.input("codigoRede", sql.Int, Number(codigoRede));
+  
+  // Monta placeholders para IN clause
+  const placeholders = codigos.map((_, i) => `@prod${i}`).join(',');
+  codigos.forEach((cod, i) => {
+    req.input(`prod${i}`, sql.VarChar(50), cod);
+  });
+
+  const query = `
+WITH UltimaCompra AS (
+    SELECT
+        e02.E02_LIVRE        AS produtoCodigo,
+        m01.M01_PRECOU       AS precoUltimaCompra,
+        m00.M00_ENTSAI       AS dataUltimaCompra,
+        ROW_NUMBER() OVER (
+            PARTITION BY e02.E02_LIVRE
+            ORDER BY m00.M00_ENTSAI DESC
+        ) AS rn
+    FROM dbo.M01 WITH (NOLOCK)
+    INNER JOIN dbo.M00 WITH (NOLOCK) ON m01.M01_ID_M00 = m00.M00_ID
+    INNER JOIN dbo.E02 WITH (NOLOCK) ON m01.M01_ID_E02 = e02.E02_ID
+    INNER JOIN dbo.A00 WITH (NOLOCK) ON m00.M00_ID_A00 = a00.A00_ID
+    WHERE m00.M00_ENTSAI IS NOT NULL
+      AND m00.M00_STATUS = 'N'
+      AND a00.A00_ID_A16 = @codigoRede
+      AND e02.E02_LIVRE IN (${placeholders})
+)
+SELECT
+    produtoCodigo,
+    precoUltimaCompra,
+    dataUltimaCompra
+FROM UltimaCompra
+WHERE rn = 1;
+`;
+
+  const result = await req.query(query);
+  
+  // Transforma array em objeto { produtoCodigo: { preco, data } }
+  const map = {};
+  result.recordset.forEach(r => {
+    map[r.produtoCodigo] = {
+      preco: Number(r.precoUltimaCompra) || 0,
+      data: r.dataUltimaCompra
+    };
+  });
+  
+  return map;
+}
+
 module.exports = {
   buscarCarteiraDoErp,
   sincronizarCarteira,
   buscarProdutosDoErp,
   buscarUltimaCompra,
   buscarUltimaCompraRede,
+  buscarUltimaCompraRedeBatch,
 };
 

@@ -125,27 +125,29 @@ function AdicionarProdutoModal({ encarteId, codigoRede, onClose, onAdicionado })
     return () => clearTimeout(t);
   }, [subcategoriaSel, q]);
 
-  // Busca última compra de todos os produtos em background (lotes de 4)
+  // Busca última compra de todos os produtos em UMA ÚNICA requisição batch otimizada
   useEffect(() => {
     if (produtos.length === 0) return;
     setUltimasCompras({});
+    
     let cancelled = false;
     (async () => {
-      const lote = 4;
-      for (let i = 0; i < produtos.length; i += lote) {
-        if (cancelled) break;
-        const batch = produtos.slice(i, i + lote);
-        await Promise.allSettled(batch.map(async (p) => {
-          const cod = p.codigoLivre || p.codigo;
-          try {
-            const { data: uc } = await api.post("/erp/ultima-compra-rede", { produtoCodigo: cod, codigoRede });
-            if (!cancelled && uc?.encontrado) {
-              setUltimasCompras((prev) => ({ ...prev, [cod]: { preco: Number(uc.precoUltimaCompra), data: uc.dataUltimaCompra } }));
-            }
-          } catch { /* ignora */ }
-        }));
+      try {
+        const codigos = produtos.map(p => p.codigoLivre || p.codigo);
+        const { data } = await api.post("/erp/ultima-compra-rede-batch", {
+          codigoRede,
+          produtosCodigos: codigos
+        });
+        
+        if (!cancelled && data?.resultados) {
+          setUltimasCompras(data.resultados);
+        }
+      } catch (err) {
+        console.error("Erro ao buscar últimas compras em batch:", err);
+        // Fallback: não fazer nada, deixar sem última compra
       }
     })();
+    
     return () => { cancelled = true; };
   }, [produtos, codigoRede]);
 
