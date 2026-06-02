@@ -11,6 +11,7 @@ export default function DashboardSupervisor() {
   const [loading, setLoading] = useState(true);
   const [busca, setBusca] = useState("");
   const [filtroCobertura, setFiltroCobertura] = useState("todas"); // todas | criticas | atencao | boas
+  const [ordenacao, setOrdenacao] = useState("cobertura-desc"); // cobertura-desc | cobertura-asc | nome-asc | nome-desc
   const [expandidos, setExpandidos] = useState(new Set());
 
   useEffect(() => {
@@ -20,7 +21,7 @@ export default function DashboardSupervisor() {
       .finally(() => setLoading(false));
   }, []);
 
-  // Filtragem
+  // Filtragem e ordenação
   const metricasFiltradas = useMemo(() => {
     let filtradas = metricas;
 
@@ -43,8 +44,32 @@ export default function DashboardSupervisor() {
       });
     }
 
-    return filtradas;
-  }, [metricas, busca, filtroCobertura]);
+    // Ordenação
+    const ordenadas = [...filtradas];
+    if (ordenacao === "cobertura-desc") {
+      // Maior cobertura primeiro (padrão)
+      ordenadas.sort((a, b) => {
+        const pctA = (a.diasComEncarte / 30) * 100;
+        const pctB = (b.diasComEncarte / 30) * 100;
+        return pctB - pctA;
+      });
+    } else if (ordenacao === "cobertura-asc") {
+      // Menor cobertura primeiro (críticas no topo)
+      ordenadas.sort((a, b) => {
+        const pctA = (a.diasComEncarte / 30) * 100;
+        const pctB = (b.diasComEncarte / 30) * 100;
+        return pctA - pctB;
+      });
+    } else if (ordenacao === "nome-asc") {
+      // A-Z
+      ordenadas.sort((a, b) => a.redeSubrede.localeCompare(b.redeSubrede));
+    } else if (ordenacao === "nome-desc") {
+      // Z-A
+      ordenadas.sort((a, b) => b.redeSubrede.localeCompare(a.redeSubrede));
+    }
+
+    return ordenadas;
+  }, [metricas, busca, filtroCobertura, ordenacao]);
 
   const toggleExpand = (codigoRede, e) => {
     e.stopPropagation(); // Evita navegar ao clicar no botão expand
@@ -105,6 +130,20 @@ export default function DashboardSupervisor() {
               <option value="criticas">🔴 Críticas (&lt;40%)</option>
               <option value="atencao">🟡 Atenção (40-69%)</option>
               <option value="boas">🟢 Boas (≥70%)</option>
+            </select>
+          </div>
+
+          {/* Ordenação */}
+          <div className="sm:w-52">
+            <select
+              value={ordenacao}
+              onChange={(e) => setOrdenacao(e.target.value)}
+              className="w-full px-3 py-2.5 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand transition bg-white"
+            >
+              <option value="cobertura-desc">📊 Cobertura: Maior → Menor</option>
+              <option value="cobertura-asc">📉 Cobertura: Menor → Maior</option>
+              <option value="nome-asc">🔤 Nome: A → Z</option>
+              <option value="nome-desc">🔡 Nome: Z → A</option>
             </select>
           </div>
         </div>
