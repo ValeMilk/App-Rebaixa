@@ -751,7 +751,8 @@ export default function EncarteDetalhe() {
     setRemovendoId(itemId);
     try {
       const { data } = await api.delete(`/encartes/${id}/itens/${itemId}`);
-      setEncarte(data);
+      // Preserva podeEditar do encarte atual caso o backend não retorne
+      setEncarte({ ...data, podeEditar: data.podeEditar ?? encarte.podeEditar });
     } catch (err) {
       alert(err.response?.data?.error || "Erro ao remover item");
     } finally {
@@ -973,7 +974,7 @@ export default function EncarteDetalhe() {
           encarteId={id}
           codigoRede={encarte.codigoRede}
           onClose={() => setModalAberto(false)}
-          onAdicionado={(enc) => setEncarte(enc)}
+          onAdicionado={(enc) => setEncarte({ ...enc, podeEditar: enc.podeEditar ?? encarte.podeEditar })}
         />
       )}
     </div>
