@@ -1,7 +1,7 @@
 ﻿"use client";
 
 import { useEffect, useState, useCallback, useMemo } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import api from "@/lib/api";
 import { fmtData } from "@/lib/utils";
 import { useAuth } from "@/lib/auth";
@@ -224,6 +224,7 @@ const STORAGE_KEY = "encartes_rede_sel";
 
 export default function EncartesPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [grupos, setGrupos] = useState([]);
   const [loading, setLoading] = useState(true);
   const [redeSel, setRedeSel] = useState(() => {
@@ -245,6 +246,20 @@ export default function EncartesPage() {
   }, []);
 
   useEffect(() => { carregar(); }, [carregar]);
+
+  // Detectar parâmetro ?rede= da URL e selecionar automaticamente
+  useEffect(() => {
+    const redeParam = searchParams.get('rede');
+    if (redeParam && grupos.length > 0) {
+      const redeExiste = grupos.some(g => g.codigoRede === redeParam);
+      if (redeExiste) {
+        setRedeSel(redeParam);
+        if (typeof window !== "undefined") {
+          sessionStorage.setItem(STORAGE_KEY, redeParam);
+        }
+      }
+    }
+  }, [searchParams, grupos]);
 
   function selecionarRede(codigo) {
     setRedeSel(codigo);
