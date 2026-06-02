@@ -259,72 +259,110 @@ function AdicionarProdutoModal({ encarteId, codigoRede, onClose, onAdicionado })
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex flex-col sm:items-center sm:justify-center sm:p-6 animate-fade-in">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 lg:p-8 animate-fade-in">
       <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={salvando ? undefined : onClose} />
-      <div className="relative bg-white shadow-2xl flex flex-col w-full sm:max-w-md sm:rounded-3xl sm:max-h-[90dvh] animate-slide-up safe-area-pb"
-        style={{ height: "100dvh", maxHeight: "100dvh" }}>
-
-        {/* Header */}
-        <div className="shrink-0 px-4 pt-3 pb-2.5 border-b border-slate-100 bg-white sm:rounded-t-3xl safe-area-pt">
-          <div className="flex items-center justify-between gap-3">
-            <div className="min-w-0 flex-1">
-              <div className="text-[10px] font-semibold text-brand uppercase tracking-wider mb-0.5">
-                Precificar para Encarte
+      
+      {/* Modal container — desktop wide, mobile full */}
+      <div className="relative bg-white shadow-2xl flex flex-col w-full max-w-6xl rounded-2xl max-h-[92vh] lg:max-h-[85vh] animate-slide-up">
+        
+        {/* Header compacto */}
+        <div className="shrink-0 px-4 lg:px-6 py-3 border-b border-slate-200 bg-gradient-to-r from-slate-50 to-white rounded-t-2xl">
+          <div className="flex items-center justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-brand to-brand-600 flex items-center justify-center text-white font-bold text-sm">
+                +
               </div>
-              <h2 className="font-bold text-slate-900 text-base leading-snug">
-                {subcategoriaSel || "Selecione uma subcategoria"}
-              </h2>
-              {stats && (
-                <div className="mt-2 bg-slate-50 rounded-lg px-2 py-1.5 space-y-0.5">
-                  <div className="flex justify-between text-[11px]">
-                    <span className="text-slate-500">Preço tabela(70)</span>
-                    <span className="font-semibold text-slate-700">{fmtBRL(stats.mediaTabela)}</span>
-                  </div>
-                  <div className="flex justify-between text-[11px]">
-                    <span className="text-slate-500">Preço mínimo</span>
-                    <span className="font-semibold text-slate-700">{fmtBRL(stats.mediaMinimo)}</span>
-                  </div>
-                  {stats.mediaPrecoPromo != null && (
-                    <div className="flex justify-between text-[11px]">
-                      <span className="text-slate-500">Preço promo</span>
-                      <span className="font-semibold text-violet-600">{fmtBRL(stats.mediaPrecoPromo)}</span>
-                    </div>
-                  )}
-                  <div className="flex justify-between text-[11px] border-t border-slate-200 pt-0.5 mt-0.5">
-                    <span className="text-slate-500">Última compra </span>
-                    {stats.mediaUC != null
-                      ? <span className="font-bold text-brand">{fmtBRL(stats.mediaUC)}{stats.ucMaisRecente && <span className="text-[10px] text-slate-400 ml-1">({fmtData(stats.ucMaisRecente)})</span>}</span>
-                      : <span className="text-slate-300 text-[10px]">buscando...</span>
-                    }
-                  </div>
+              <div>
+                <div className="text-[10px] font-semibold text-brand uppercase tracking-wider">
+                  Precificar para Encarte
                 </div>
-              )}
+                <h2 className="font-bold text-slate-900 text-lg leading-tight">
+                  {subcategoriaSel || "Selecione uma subcategoria"}
+                </h2>
+              </div>
             </div>
+            
+            {/* Estatísticas inline no header — apenas desktop */}
+            {stats && (
+              <div className="hidden lg:flex items-center gap-4 bg-white rounded-xl border border-slate-200 px-4 py-2 shadow-sm">
+                <div className="text-center border-r border-slate-200 pr-4">
+                  <div className="text-[10px] text-slate-500 uppercase tracking-wide mb-0.5">Tabela(70)</div>
+                  <div className="font-bold text-slate-900">{fmtBRL(stats.mediaTabela)}</div>
+                </div>
+                <div className="text-center border-r border-slate-200 pr-4">
+                  <div className="text-[10px] text-slate-500 uppercase tracking-wide mb-0.5">Mínimo</div>
+                  <div className="font-bold text-slate-900">{fmtBRL(stats.mediaMinimo)}</div>
+                </div>
+                {stats.mediaPrecoPromo != null && (
+                  <div className="text-center border-r border-slate-200 pr-4">
+                    <div className="text-[10px] text-slate-500 uppercase tracking-wide mb-0.5">Promo</div>
+                    <div className="font-bold text-violet-600">{fmtBRL(stats.mediaPrecoPromo)}</div>
+                  </div>
+                )}
+                <div className="text-center">
+                  <div className="text-[10px] text-slate-500 uppercase tracking-wide mb-0.5">Últ. Compra</div>
+                  {stats.mediaUC != null
+                    ? <div className="font-bold text-brand">{fmtBRL(stats.mediaUC)}</div>
+                    : <div className="text-slate-300 text-xs">buscando...</div>
+                  }
+                </div>
+              </div>
+            )}
+            
             <button onClick={onClose} disabled={salvando} aria-label="Fechar"
-              className="shrink-0 h-9 w-9 rounded-full bg-slate-100 active:bg-slate-200 active:scale-95 transition flex items-center justify-center text-slate-600 disabled:opacity-50">
+              className="shrink-0 h-10 w-10 rounded-xl bg-slate-100 hover:bg-slate-200 active:scale-95 transition flex items-center justify-center text-slate-600 disabled:opacity-50">
               <IcoX className="w-5 h-5" />
             </button>
           </div>
+          
+          {/* Estatísticas mobile — abaixo do header */}
+          {stats && (
+            <div className="lg:hidden mt-3 bg-white rounded-lg border border-slate-200 px-3 py-2 space-y-1">
+              <div className="flex justify-between text-xs">
+                <span className="text-slate-500">Preço tabela(70)</span>
+                <span className="font-semibold text-slate-700">{fmtBRL(stats.mediaTabela)}</span>
+              </div>
+              <div className="flex justify-between text-xs">
+                <span className="text-slate-500">Preço mínimo</span>
+                <span className="font-semibold text-slate-700">{fmtBRL(stats.mediaMinimo)}</span>
+              </div>
+              {stats.mediaPrecoPromo != null && (
+                <div className="flex justify-between text-xs">
+                  <span className="text-slate-500">Preço promo</span>
+                  <span className="font-semibold text-violet-600">{fmtBRL(stats.mediaPrecoPromo)}</span>
+                </div>
+              )}
+              <div className="flex justify-between text-xs border-t border-slate-200 pt-1 mt-1">
+                <span className="text-slate-500">Última compra</span>
+                {stats.mediaUC != null
+                  ? <span className="font-bold text-brand">{fmtBRL(stats.mediaUC)}</span>
+                  : <span className="text-slate-300 text-xs">buscando...</span>
+                }
+              </div>
+            </div>
+          )}
         </div>
 
-        <div className="flex-1 overflow-y-auto px-4 pt-3 pb-4"
-          style={{ WebkitOverflowScrolling: "touch", overscrollBehavior: "contain" }}>
-          <div className="space-y-3">
-
+        {/* Conteúdo principal — grid 2 colunas no desktop */}
+        <div className="flex-1 overflow-hidden flex flex-col lg:flex-row min-h-0">
+          
+          {/* Painel esquerdo: Subcategoria + Precificação */}
+          <div className="lg:w-96 shrink-0 border-b lg:border-b-0 lg:border-r border-slate-200 overflow-y-auto p-4 lg:p-6 space-y-4">
+            
             {/* Dropdown subcategoria */}
             <div>
-              <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1.5">
+              <label className="block text-xs font-semibold text-slate-600 uppercase tracking-wide mb-2">
                 Subcategoria
               </label>
               {loadingSubs ? (
-                <div className="flex items-center gap-2 py-2 text-slate-400 text-sm">
+                <div className="flex items-center gap-2 py-3 text-slate-400 text-sm">
                   <div className="w-4 h-4 rounded-full border-2 border-slate-200 border-t-brand animate-spin" />
                   Carregando...
                 </div>
               ) : (
                 <select
                   autoFocus
-                  className="w-full border border-slate-200 rounded-xl px-3 py-2.5 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-brand/40"
+                  className="w-full border-2 border-slate-200 rounded-xl px-3 py-3 text-sm bg-white focus:outline-none focus:border-brand focus:ring-2 focus:ring-brand/20 transition"
                   value={subcategoriaSel}
                   onChange={(e) => { setSubcategoriaSel(e.target.value); setQ(""); setDesmarcados(new Set()); }}>
                   <option value="">Selecione uma subcategoria...</option>
@@ -337,36 +375,38 @@ function AdicionarProdutoModal({ encarteId, codigoRede, onClose, onAdicionado })
 
             {/* Margem PDV */}
             {subcategoriaSel && (
-              <div className="bg-white rounded-xl border border-slate-100 px-3 py-2.5">
-                <div className="flex items-center justify-between mb-0.5">
-                  <span className="text-xs font-semibold text-slate-600 uppercase tracking-wide">Margem PDV</span>
+              <div className="bg-gradient-to-br from-blue-50 to-slate-50 rounded-xl border-2 border-blue-100 p-4">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-xs font-bold text-slate-700 uppercase tracking-wide">Margem PDV</span>
                   <MargemBadge pct={margemPDVPreview} />
                 </div>
-                <div className="text-[10px] text-slate-400 mb-2">(PDV - Última Compra) / PDV</div>
-                <label className="block text-xs text-slate-500 mb-1">Preço PDV (R$)</label>
+                <div className="text-[10px] text-slate-500 mb-3">(PDV - Última Compra) / PDV</div>
+                <label className="block text-xs font-medium text-slate-600 mb-1.5">Preço PDV (R$)</label>
                 <input type="number" inputMode="decimal" step="0.01"
-                  className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand/40"
+                  className="w-full border-2 border-slate-200 rounded-lg px-3 py-2.5 text-sm font-medium focus:outline-none focus:border-brand focus:ring-2 focus:ring-brand/20"
                   placeholder="0,00" value={precoPDV} onChange={(e) => setPrecoPDV(e.target.value)} />
               </div>
             )}
 
             {/* Margem Oferta */}
             {subcategoriaSel && (
-              <div className="bg-white rounded-xl border border-slate-100 px-3 py-2.5 space-y-2">
-                <div className="flex items-center justify-between mb-0.5">
-                  <span className="text-xs font-semibold text-slate-600 uppercase tracking-wide">Margem Oferta</span>
+              <div className="bg-gradient-to-br from-emerald-50 to-slate-50 rounded-xl border-2 border-emerald-100 p-4 space-y-3">
+                <div className="flex items-center justify-between mb-1">
+                  <span className="text-xs font-bold text-slate-700 uppercase tracking-wide">Margem Oferta</span>
                   <MargemBadge pct={margemOfertaPreview} />
                 </div>
-                <div className="text-[10px] text-slate-400 -mt-1">(Oferta - Custo Promo médio) / Oferta</div>
+                <div className="text-[10px] text-slate-500 -mt-1">(Oferta - Custo Promo médio) / Oferta</div>
+                
                 <div>
-                  <label className="block text-xs text-slate-500 mb-1">Preço oferta (encarte)</label>
+                  <label className="block text-xs font-medium text-slate-600 mb-1.5">Preço oferta (encarte)</label>
                   <input type="number" inputMode="decimal" step="0.01"
-                    className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand/40"
+                    className="w-full border-2 border-slate-200 rounded-lg px-3 py-2.5 text-sm font-medium focus:outline-none focus:border-brand focus:ring-2 focus:ring-brand/20"
                     placeholder="0,00" value={precoOferta} onChange={(e) => setPrecoOferta(e.target.value)} />
                 </div>
+                
                 <div>
-                  <div className="flex items-center justify-between mb-1">
-                    <label className="text-xs text-slate-500">Sellout</label>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <label className="text-xs font-medium text-slate-600">Sellout</label>
                     {(() => {
                       const uc = stats?.mediaUC;
                       const pdv = pdvNum;
@@ -377,144 +417,173 @@ function AdicionarProdutoModal({ encarteId, codigoRede, onClose, onAdicionado })
                         <button
                           type="button"
                           onClick={() => setSellout(sugerido.toFixed(2))}
-                          className="text-[10px] font-semibold text-brand bg-brand/10 hover:bg-brand/20 px-2 py-0.5 rounded-full transition"
+                          className="text-[10px] font-bold text-brand bg-white hover:bg-brand/10 px-2 py-1 rounded-lg transition border border-brand/20"
                         >
-                          Sugerir: R$ {sugerido.toFixed(2)} (= Margem PDV)
+                          Sugerir: R$ {sugerido.toFixed(2)}
                         </button>
                       );
                     })()}
                   </div>
                   <input type="number" inputMode="decimal" step="0.01"
-                    className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand/40"
+                    className="w-full border-2 border-slate-200 rounded-lg px-3 py-2.5 text-sm font-medium focus:outline-none focus:border-brand focus:ring-2 focus:ring-brand/20"
                     placeholder="0,00" value={sellout} onChange={(e) => setSellout(e.target.value)} />
                 </div>
-                <div className="flex items-center justify-between bg-emerald-50 border border-emerald-100 rounded-xl px-3 py-2">
+                
+                <div className="flex items-center justify-between bg-white rounded-lg px-3 py-2.5 border-2 border-emerald-200">
                   <div>
-                    <div className="text-xs font-semibold text-emerald-700">Custo Promo</div>
-                    <div className="text-[10px] text-slate-400">Últ. Compra - Sellout</div>
+                    <div className="text-xs font-bold text-emerald-700">Custo Promo</div>
+                    <div className="text-[10px] text-slate-500">Últ. Compra - Sellout</div>
                   </div>
                   {custoPromoPreview != null
-                    ? <span className="text-sm font-bold text-emerald-600">{fmtBRL(custoPromoPreview)}</span>
-                    : <span className="text-sm font-bold text-slate-300">—</span>
+                    ? <span className="text-lg font-bold text-emerald-600">{fmtBRL(custoPromoPreview)}</span>
+                    : <span className="text-lg font-bold text-slate-300">—</span>
                   }
                 </div>
               </div>
             )}
 
-            {/* Filtro */}
+            {erro && (
+              <div className="bg-red-50 border-2 border-red-200 rounded-xl px-3 py-2 text-xs font-medium text-red-700">
+                {erro}
+              </div>
+            )}
+          </div>
+
+          {/* Painel direito: Lista de produtos */}
+          <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
+            
+            {/* Filtro + Contador */}
             {subcategoriaSel && (
-              <div className="relative">
-                <IcoSearch className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                <input
-                  className="w-full pl-9 pr-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-brand/40"
-                  placeholder="Filtrar por nome..."
-                  value={q}
-                  onChange={(e) => setQ(e.target.value)}
-                />
+              <div className="shrink-0 px-4 lg:px-6 pt-4 pb-3 border-b border-slate-200 space-y-3">
+                <div className="relative">
+                  <IcoSearch className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+                  <input
+                    className="w-full pl-10 pr-4 py-3 rounded-xl border-2 border-slate-200 text-sm font-medium focus:outline-none focus:border-brand focus:ring-2 focus:ring-brand/20"
+                    placeholder="Filtrar por nome ou código..."
+                    value={q}
+                    onChange={(e) => setQ(e.target.value)}
+                  />
+                </div>
+                
+                {produtos.length > 0 && (
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-slate-600">
+                      <span className="font-bold text-brand text-lg">{produtosSelecionados.length}</span>
+                      <span className="text-slate-400"> / {produtos.length} selecionados</span>
+                    </span>
+                    <button type="button" onClick={toggleTodos} className="text-brand font-semibold hover:underline">
+                      {todosMarcados ? "Desmarcar todos" : "Marcar todos"}
+                    </button>
+                  </div>
+                )}
               </div>
             )}
 
-            {/* Cabeçalho com contagem + select all */}
-            {subcategoriaSel && produtos.length > 0 && (
-              <div className="flex items-center justify-between text-xs px-1">
-                <span className="text-slate-500">
-                  <span className="font-bold text-brand">{produtosSelecionados.length}</span> de {produtos.length} selecionados
-                </span>
-                <button type="button" onClick={toggleTodos} className="text-brand font-semibold">
-                  {todosMarcados ? "Desmarcar todos" : "Marcar todos"}
-                </button>
-              </div>
-            )}
+            {/* Lista de produtos com scroll */}
+            <div className="flex-1 overflow-y-auto px-4 lg:px-6 py-4"
+              style={{ WebkitOverflowScrolling: "touch", overscrollBehavior: "contain" }}>
+              <div className="space-y-2 lg:space-y-0 lg:grid lg:grid-cols-2 xl:grid-cols-3 lg:gap-3">
 
-            {loadingProdutos && (
-              <div className="flex justify-center py-6">
-                <div className="w-6 h-6 rounded-full border-4 border-slate-200 border-t-brand animate-spin" />
-              </div>
-            )}
+            {/* Lista de produtos com scroll */}
+            <div className="flex-1 overflow-y-auto px-4 lg:px-6 py-4"
+              style={{ WebkitOverflowScrolling: "touch", overscrollBehavior: "contain" }}>
+              <div className="space-y-2 lg:space-y-0 lg:grid lg:grid-cols-2 xl:grid-cols-3 lg:gap-3">
 
-            {!loadingProdutos && subcategoriaSel && produtos.length === 0 && (
-              <p className="text-center text-slate-400 text-sm py-6">Nenhum produto encontrado</p>
-            )}
+                {loadingProdutos && (
+                  <div className="col-span-full flex justify-center py-12">
+                    <div className="w-8 h-8 rounded-full border-4 border-slate-200 border-t-brand animate-spin" />
+                  </div>
+                )}
 
-            {!subcategoriaSel && (
-              <p className="text-center text-slate-400 text-sm py-6">Selecione uma subcategoria para ver os produtos</p>
-            )}
+                {!loadingProdutos && subcategoriaSel && produtos.length === 0 && (
+                  <p className="col-span-full text-center text-slate-400 text-sm py-12">Nenhum produto encontrado</p>
+                )}
 
-            {/* Lista de produtos com checkbox */}
-            <ul className="space-y-1">
-              {produtos.map((p) => {
-                const marcado = !desmarcados.has(p._id);
-                const cod = p.codigoLivre || p.codigo;
-                const uc = ultimasCompras[cod];
-                return (
-                  <li key={p._id}>
+                {!subcategoriaSel && (
+                  <p className="col-span-full text-center text-slate-400 text-sm py-12">Selecione uma subcategoria para ver os produtos</p>
+                )}
+
+                {/* Cards de produtos */}
+                {produtos.map((p) => {
+                  const marcado = !desmarcados.has(p._id);
+                  const cod = p.codigoLivre || p.codigo;
+                  const uc = ultimasCompras[cod];
+                  return (
                     <button
+                      key={p._id}
                       type="button"
                       onClick={() => toggleProduto(p._id)}
-                      className={`w-full flex items-start gap-3 py-3 px-3 text-left transition rounded-xl border ${marcado ? "border-brand/20 bg-brand/3" : "border-slate-100 bg-white opacity-50"} hover:border-brand/40`}
+                      className={`relative w-full text-left transition rounded-xl border-2 p-3 hover:shadow-md ${
+                        marcado 
+                          ? "border-brand/40 bg-brand/5 ring-2 ring-brand/20" 
+                          : "border-slate-200 bg-white opacity-60 hover:opacity-100"
+                      }`}
                     >
-                      <div className={`mt-0.5 h-5 w-5 rounded-md border-2 flex items-center justify-center shrink-0 transition ${marcado ? "bg-brand border-brand" : "bg-white border-slate-300"}`}>
+                      {/* Checkbox */}
+                      <div className={`absolute top-3 right-3 h-6 w-6 rounded-lg border-2 flex items-center justify-center shrink-0 transition ${
+                        marcado ? "bg-brand border-brand" : "bg-white border-slate-300"
+                      }`}>
                         {marcado && (
-                          <svg viewBox="0 0 24 24" className="w-3.5 h-3.5 text-white" fill="none" stroke="currentColor" strokeWidth={3} strokeLinecap="round" strokeLinejoin="round">
+                          <svg viewBox="0 0 24 24" className="w-4 h-4 text-white" fill="none" stroke="currentColor" strokeWidth={3} strokeLinecap="round" strokeLinejoin="round">
                             <polyline points="20 6 9 17 4 12" />
                           </svg>
                         )}
                       </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="font-semibold text-slate-800 text-sm truncate">{p.descricao}</div>
-                        <div className="text-xs text-slate-400 mb-1.5">Cód {cod}</div>
-                        <div className="bg-slate-50 rounded-lg px-2 py-1.5 space-y-0.5">
-                          <div className="flex justify-between text-[11px]">
-                            <span className="text-slate-500">Preço tabela</span>
+                      
+                      <div className="pr-8">
+                        <div className="font-bold text-slate-800 text-sm mb-0.5 line-clamp-2 leading-tight">{p.descricao}</div>
+                        <div className="text-xs text-slate-400 mb-2.5">Cód {cod}</div>
+                        
+                        <div className="space-y-1.5 text-xs">
+                          <div className="flex justify-between">
+                            <span className="text-slate-500">Tabela</span>
                             <span className="font-semibold text-slate-700">{fmtBRL(p.precoTabela)}</span>
                           </div>
-                          <div className="flex justify-between text-[11px]">
-                            <span className="text-slate-500">Preço mínimo</span>
+                          <div className="flex justify-between">
+                            <span className="text-slate-500">Mínimo</span>
                             <span className="font-semibold text-slate-700">{fmtBRL(p.precoMinimo)}</span>
                           </div>
                           {p.precoPromo > 0 && (
-                            <div className="flex justify-between text-[11px]">
-                              <span className="text-slate-500">Preço promo</span>
+                            <div className="flex justify-between">
+                              <span className="text-slate-500">Promo</span>
                               <span className="font-semibold text-violet-600">{fmtBRL(p.precoPromo)}</span>
                             </div>
                           )}
-                          <div className="flex justify-between text-[11px] border-t border-slate-200 pt-0.5 mt-0.5">
-                            <span className="text-slate-500">Última compra</span>
+                          <div className="flex justify-between pt-1 border-t border-slate-200">
+                            <span className="text-slate-500 font-medium">Últ. Compra</span>
                             {uc
-                              ? <span className="font-bold text-brand">{fmtBRL(uc.preco)}{uc.data && <span className="text-[10px] text-slate-400 ml-1">({fmtData(uc.data)})</span>}</span>
+                              ? <span className="font-bold text-brand">{fmtBRL(uc.preco)}</span>
                               : <span className="text-slate-300 text-[10px]">buscando...</span>
                             }
                           </div>
                         </div>
                       </div>
                     </button>
-                  </li>
-                );
-              })}
-            </ul>
-
-            {erro && <p className="text-red-600 text-xs">{erro}</p>}
+                  );
+                })}
+              </div>
+            </div>
           </div>
         </div>
 
-        {/* Footer */}
+        {/* Footer com botão de salvar */}
         {subcategoriaSel && produtos.length > 0 && (
-          <div className="shrink-0 px-4 pb-4 pt-2 border-t border-slate-100 safe-area-pb">
+          <div className="shrink-0 px-4 lg:px-6 pb-4 lg:pb-5 pt-3 border-t border-slate-200 bg-gradient-to-t from-slate-50 to-white rounded-b-2xl">
             {salvando && progresso.total > 0 && (
-              <div className="mb-2">
-                <div className="h-1.5 w-full bg-slate-100 rounded-full overflow-hidden">
-                  <div className="h-full bg-brand transition-all" style={{ width: `${(progresso.feitos / progresso.total) * 100}%` }} />
+              <div className="mb-3">
+                <div className="h-2 w-full bg-slate-200 rounded-full overflow-hidden">
+                  <div className="h-full bg-gradient-to-r from-brand to-brand-600 transition-all duration-300" style={{ width: `${(progresso.feitos / progresso.total) * 100}%` }} />
                 </div>
-                <div className="text-[10px] text-slate-500 text-center mt-1">
-                  Adicionando {progresso.feitos} de {progresso.total}...
+                <div className="text-xs text-slate-600 text-center mt-1.5 font-medium">
+                  Adicionando {progresso.feitos} de {progresso.total} produtos...
                 </div>
               </div>
             )}
             <button
               onClick={handleSalvar}
               disabled={salvando || produtosSelecionados.length === 0}
-              className="w-full py-3 rounded-2xl bg-brand text-white font-bold text-sm hover:opacity-90 active:scale-95 transition disabled:opacity-60">
-              {salvando ? "Adicionando..." : `Adicionar ${produtosSelecionados.length} produto${produtosSelecionados.length === 1 ? "" : "s"} ao encarte`}
+              className="w-full py-3.5 rounded-xl bg-gradient-to-r from-brand to-brand-600 text-white font-bold text-base hover:shadow-lg hover:scale-[1.01] active:scale-[0.99] transition disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100">
+              {salvando ? "Adicionando produtos..." : `✓ Adicionar ${produtosSelecionados.length} produto${produtosSelecionados.length === 1 ? "" : "s"} ao encarte`}
             </button>
           </div>
         )}
