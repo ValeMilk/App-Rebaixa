@@ -346,11 +346,11 @@ function AdicionarProdutoModal({ encarteId, codigoRede, onClose, onAdicionado })
         {/* Conteúdo principal — grid 2 colunas no desktop */}
         <div className="flex-1 overflow-hidden flex flex-col lg:flex-row min-h-0">
           
-          {/* Painel esquerdo: Subcategoria + Precificação */}
-          <div className="lg:w-96 shrink-0 border-b lg:border-b-0 lg:border-r border-slate-200 overflow-y-auto p-4 lg:p-6 space-y-4">
+          {/* Painel ESQUERDO (desktop): Lista de produtos + Subcategoria */}
+          <div className="flex-1 flex flex-col min-h-0 overflow-hidden order-2 lg:order-1">
             
-            {/* Dropdown subcategoria */}
-            <div>
+            {/* Subcategoria — apenas mobile (no desktop vai pro painel direito) */}
+            <div className="lg:hidden shrink-0 p-4 pb-3 border-b border-slate-200">
               <label className="block text-xs font-semibold text-slate-600 uppercase tracking-wide mb-2">
                 Subcategoria
               </label>
@@ -372,85 +372,6 @@ function AdicionarProdutoModal({ encarteId, codigoRede, onClose, onAdicionado })
                 </select>
               )}
             </div>
-
-            {/* Margem PDV */}
-            {subcategoriaSel && (
-              <div className="bg-gradient-to-br from-blue-50 to-slate-50 rounded-xl border-2 border-blue-100 p-4">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-xs font-bold text-slate-700 uppercase tracking-wide">Margem PDV</span>
-                  <MargemBadge pct={margemPDVPreview} />
-                </div>
-                <div className="text-[10px] text-slate-500 mb-3">(PDV - Última Compra) / PDV</div>
-                <label className="block text-xs font-medium text-slate-600 mb-1.5">Preço PDV (R$)</label>
-                <input type="number" inputMode="decimal" step="0.01"
-                  className="w-full border-2 border-slate-200 rounded-lg px-3 py-2.5 text-sm font-medium focus:outline-none focus:border-brand focus:ring-2 focus:ring-brand/20"
-                  placeholder="0,00" value={precoPDV} onChange={(e) => setPrecoPDV(e.target.value)} />
-              </div>
-            )}
-
-            {/* Margem Oferta */}
-            {subcategoriaSel && (
-              <div className="bg-gradient-to-br from-emerald-50 to-slate-50 rounded-xl border-2 border-emerald-100 p-4 space-y-3">
-                <div className="flex items-center justify-between mb-1">
-                  <span className="text-xs font-bold text-slate-700 uppercase tracking-wide">Margem Oferta</span>
-                  <MargemBadge pct={margemOfertaPreview} />
-                </div>
-                <div className="text-[10px] text-slate-500 -mt-1">(Oferta - Custo Promo médio) / Oferta</div>
-                
-                <div>
-                  <label className="block text-xs font-medium text-slate-600 mb-1.5">Preço oferta (encarte)</label>
-                  <input type="number" inputMode="decimal" step="0.01"
-                    className="w-full border-2 border-slate-200 rounded-lg px-3 py-2.5 text-sm font-medium focus:outline-none focus:border-brand focus:ring-2 focus:ring-brand/20"
-                    placeholder="0,00" value={precoOferta} onChange={(e) => setPrecoOferta(e.target.value)} />
-                </div>
-                
-                <div>
-                  <div className="flex items-center justify-between mb-1.5">
-                    <label className="text-xs font-medium text-slate-600">Sellout</label>
-                    {(() => {
-                      const uc = stats?.mediaUC;
-                      const pdv = pdvNum;
-                      const oferta = ofertaNum;
-                      if (!uc || !pdv || !oferta || pdv <= oferta) return null;
-                      const sugerido = uc * (pdv - oferta) / pdv;
-                      return (
-                        <button
-                          type="button"
-                          onClick={() => setSellout(sugerido.toFixed(2))}
-                          className="text-[10px] font-bold text-brand bg-white hover:bg-brand/10 px-2 py-1 rounded-lg transition border border-brand/20"
-                        >
-                          Sugerir: R$ {sugerido.toFixed(2)}
-                        </button>
-                      );
-                    })()}
-                  </div>
-                  <input type="number" inputMode="decimal" step="0.01"
-                    className="w-full border-2 border-slate-200 rounded-lg px-3 py-2.5 text-sm font-medium focus:outline-none focus:border-brand focus:ring-2 focus:ring-brand/20"
-                    placeholder="0,00" value={sellout} onChange={(e) => setSellout(e.target.value)} />
-                </div>
-                
-                <div className="flex items-center justify-between bg-white rounded-lg px-3 py-2.5 border-2 border-emerald-200">
-                  <div>
-                    <div className="text-xs font-bold text-emerald-700">Custo Promo</div>
-                    <div className="text-[10px] text-slate-500">Últ. Compra - Sellout</div>
-                  </div>
-                  {custoPromoPreview != null
-                    ? <span className="text-lg font-bold text-emerald-600">{fmtBRL(custoPromoPreview)}</span>
-                    : <span className="text-lg font-bold text-slate-300">—</span>
-                  }
-                </div>
-              </div>
-            )}
-
-            {erro && (
-              <div className="bg-red-50 border-2 border-red-200 rounded-xl px-3 py-2 text-xs font-medium text-red-700">
-                {erro}
-              </div>
-            )}
-          </div>
-
-          {/* Painel direito: Lista de produtos */}
-          <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
             
             {/* Filtro + Contador */}
             {subcategoriaSel && (
@@ -558,6 +479,108 @@ function AdicionarProdutoModal({ encarteId, codigoRede, onClose, onAdicionado })
                 })}
               </div>
             </div>
+          </div>
+
+          {/* Painel DIREITO (desktop): Subcategoria + Precificação (MARGENS EM DESTAQUE) */}
+          <div className="lg:w-96 xl:w-[420px] shrink-0 border-b lg:border-b-0 lg:border-l border-slate-200 overflow-y-auto p-4 lg:p-6 space-y-4 order-1 lg:order-2 bg-gradient-to-b from-slate-50/50 to-white">
+            
+            {/* Subcategoria — apenas desktop */}
+            <div className="hidden lg:block">
+              <label className="block text-xs font-semibold text-slate-600 uppercase tracking-wide mb-2">
+                Subcategoria
+              </label>
+              {loadingSubs ? (
+                <div className="flex items-center gap-2 py-3 text-slate-400 text-sm">
+                  <div className="w-4 h-4 rounded-full border-2 border-slate-200 border-t-brand animate-spin" />
+                  Carregando...
+                </div>
+              ) : (
+                <select
+                  className="w-full border-2 border-slate-200 rounded-xl px-3 py-3 text-sm bg-white focus:outline-none focus:border-brand focus:ring-2 focus:ring-brand/20 transition"
+                  value={subcategoriaSel}
+                  onChange={(e) => { setSubcategoriaSel(e.target.value); setQ(""); setDesmarcados(new Set()); }}>
+                  <option value="">Selecione uma subcategoria...</option>
+                  {subcategorias.map((s) => (
+                    <option key={s} value={s}>{s}</option>
+                  ))}
+                </select>
+              )}
+            </div>
+
+            {/* Margem PDV */}
+            {subcategoriaSel && (
+              <div className="bg-gradient-to-br from-blue-50 to-slate-50 rounded-xl border-2 border-blue-100 p-4 shadow-sm">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-xs font-bold text-slate-700 uppercase tracking-wide">Margem PDV</span>
+                  <MargemBadge pct={margemPDVPreview} />
+                </div>
+                <div className="text-[10px] text-slate-500 mb-3">(PDV - Última Compra) / PDV</div>
+                <label className="block text-xs font-medium text-slate-600 mb-1.5">Preço PDV (R$)</label>
+                <input type="number" inputMode="decimal" step="0.01"
+                  className="w-full border-2 border-slate-200 rounded-lg px-3 py-2.5 text-sm font-medium focus:outline-none focus:border-brand focus:ring-2 focus:ring-brand/20"
+                  placeholder="0,00" value={precoPDV} onChange={(e) => setPrecoPDV(e.target.value)} />
+              </div>
+            )}
+
+            {/* Margem Oferta */}
+            {subcategoriaSel && (
+              <div className="bg-gradient-to-br from-emerald-50 to-slate-50 rounded-xl border-2 border-emerald-100 p-4 space-y-3 shadow-sm">
+                <div className="flex items-center justify-between mb-1">
+                  <span className="text-xs font-bold text-slate-700 uppercase tracking-wide">Margem Oferta</span>
+                  <MargemBadge pct={margemOfertaPreview} />
+                </div>
+                <div className="text-[10px] text-slate-500 -mt-1">(Oferta - Custo Promo médio) / Oferta</div>
+                
+                <div>
+                  <label className="block text-xs font-medium text-slate-600 mb-1.5">Preço oferta (encarte)</label>
+                  <input type="number" inputMode="decimal" step="0.01"
+                    className="w-full border-2 border-slate-200 rounded-lg px-3 py-2.5 text-sm font-medium focus:outline-none focus:border-brand focus:ring-2 focus:ring-brand/20"
+                    placeholder="0,00" value={precoOferta} onChange={(e) => setPrecoOferta(e.target.value)} />
+                </div>
+                
+                <div>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <label className="text-xs font-medium text-slate-600">Sellout</label>
+                    {(() => {
+                      const uc = stats?.mediaUC;
+                      const pdv = pdvNum;
+                      const oferta = ofertaNum;
+                      if (!uc || !pdv || !oferta || pdv <= oferta) return null;
+                      const sugerido = uc * (pdv - oferta) / pdv;
+                      return (
+                        <button
+                          type="button"
+                          onClick={() => setSellout(sugerido.toFixed(2))}
+                          className="text-[10px] font-bold text-brand bg-white hover:bg-brand/10 px-2 py-1 rounded-lg transition border border-brand/20"
+                        >
+                          Sugerir: R$ {sugerido.toFixed(2)}
+                        </button>
+                      );
+                    })()}
+                  </div>
+                  <input type="number" inputMode="decimal" step="0.01"
+                    className="w-full border-2 border-slate-200 rounded-lg px-3 py-2.5 text-sm font-medium focus:outline-none focus:border-brand focus:ring-2 focus:ring-brand/20"
+                    placeholder="0,00" value={sellout} onChange={(e) => setSellout(e.target.value)} />
+                </div>
+                
+                <div className="flex items-center justify-between bg-white rounded-lg px-3 py-2.5 border-2 border-emerald-200">
+                  <div>
+                    <div className="text-xs font-bold text-emerald-700">Custo Promo</div>
+                    <div className="text-[10px] text-slate-500">Últ. Compra - Sellout</div>
+                  </div>
+                  {custoPromoPreview != null
+                    ? <span className="text-lg font-bold text-emerald-600">{fmtBRL(custoPromoPreview)}</span>
+                    : <span className="text-lg font-bold text-slate-300">—</span>
+                  }
+                </div>
+              </div>
+            )}
+
+            {erro && (
+              <div className="bg-red-50 border-2 border-red-200 rounded-xl px-3 py-2 text-xs font-medium text-red-700">
+                {erro}
+              </div>
+            )}
           </div>
         </div>
 
