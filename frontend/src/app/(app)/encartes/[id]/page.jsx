@@ -32,17 +32,41 @@ function fmtBRL(v) {
   return Number(v).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 }
 
-function MargemBadge({ pct }) {
-  if (pct == null) return <span className="text-slate-300 text-base font-bold">—</span>;
+function MargemBadge({ pct, onClick, editando, inputValue, onInputChange, onBlur, onKeyDown }) {
+  if (pct == null && !editando) return <span className="text-slate-300 text-base font-bold">—</span>;
+  
+  if (editando) {
+    return (
+      <input
+        type="number"
+        inputMode="decimal"
+        step="0.1"
+        autoFocus
+        value={inputValue}
+        onChange={(e) => onInputChange(e.target.value)}
+        onBlur={onBlur}
+        onKeyDown={onKeyDown}
+        className="w-20 text-center font-bold text-lg px-2 py-1 rounded-lg border-2 border-brand focus:outline-none focus:ring-2 focus:ring-brand/40"
+        placeholder="0.0"
+      />
+    );
+  }
+  
   const cor = pct >= 20
-    ? "text-emerald-700 bg-emerald-50 border-emerald-200"
+    ? "text-emerald-700 bg-emerald-50 border-emerald-200 hover:border-emerald-400"
     : pct >= 10
-      ? "text-amber-700 bg-amber-50 border-amber-200"
-      : "text-red-700 bg-red-50 border-red-200";
+      ? "text-amber-700 bg-amber-50 border-amber-200 hover:border-amber-400"
+      : "text-red-700 bg-red-50 border-red-200 hover:border-red-400";
+  
   return (
-    <span className={`inline-block font-bold text-xl px-3 py-0.5 rounded-xl border ${cor}`}>
+    <button
+      type="button"
+      onClick={onClick}
+      className={`inline-block font-bold text-xl px-3 py-0.5 rounded-xl border transition-all cursor-pointer hover:scale-105 active:scale-95 ${cor}`}
+      title="Clique para definir a margem e calcular o preço automaticamente"
+    >
       {pct.toFixed(1)}%
-    </span>
+    </button>
   );
 }
 
@@ -60,6 +84,12 @@ function AdicionarProdutoModal({ encarteId, codigoRede, onClose, onAdicionado })
   const [precoPDV, setPrecoPDV] = useState("");
   const [precoOferta, setPrecoOferta] = useState("");
   const [sellout, setSellout] = useState("");
+
+  // Edição de margens (cálculo reverso)
+  const [editandoMargemPDV, setEditandoMargemPDV] = useState(false);
+  const [editandoMargemOferta, setEditandoMargemOferta] = useState(false);
+  const [margemPDVInput, setMargemPDVInput] = useState("");
+  const [margemOfertaInput, setMargemOfertaInput] = useState("");
 
   // Produtos desmarcados (por _id)
   const [desmarcados, setDesmarcados] = useState(new Set());
@@ -176,6 +206,45 @@ function AdicionarProdutoModal({ encarteId, codigoRede, onClose, onAdicionado })
   const margemOfertaPreview = (custoPromoPreview != null && ofertaNum > 0)
     ? ((ofertaNum - custoPromoPreview) / ofertaNum) * 100
     : null;
+
+  // Funções para cálculo reverso (margem → preço)
+  function calcularPrecoPorMargemPDV(margemDesejada) {
+    if (!stats?.mediaUC || margemDesejada >= 100 || margemDesejada < 0) return;
+    const precoCalculado = stats.mediaUC / (1 - margemDesejada / 100);
+    setPrecoPDV(precoCalculado.toFixed(2));
+  }
+
+  function calcularPrecoPorMargemOferta(margemDesejada) {
+    if (!custoPromoPreview || margemDesejada >= 100 || margemDesejada < 0) return;
+    const precoCalculado = custoPromoPreview / (1 - margemDesejada / 100);
+    setPrecoOferta(precoCalculado.toFixed(2));
+  }
+
+  function handleMargemPDVClick() {
+    if (margemPDVPreview != null) {
+      setMargemPDVInput(margemPDVPreview.toFixed(1));
+      setEditandoMargemPDV(true);
+    }
+  }
+
+  function handleMargemOfertaClick() {
+    if (margemOfertaPreview != null) {
+      setMargemOfertaInput(margemOfertaPreview.toFixed(1));
+      setEditandoMargemOferta(true);
+    }
+  }
+
+  function aplicarMargemPDV() {
+    const margem = Number(margemPDVInput);
+    if (!isNaN(margem)) calcularPrecoPorMargemPDV(margem);
+    setEditandoMargemPDV(false);
+  }
+
+  function aplicarMargemOferta() {
+    const margem = Number(margemOfertaInput);
+    if (!isNaN(margem)) calcularPrecoPorMargemOferta(margem);
+    setEditandoMargemOferta(false);
+  }
 
   const todosMarcados = produtos.length > 0 && produtosSelecionados.length === produtos.length;
   function toggleTodos() {
@@ -515,9 +584,22 @@ function AdicionarProdutoModal({ encarteId, codigoRede, onClose, onAdicionado })
                 <div className="bg-gradient-to-br from-blue-50 to-slate-50 rounded-xl border-2 border-blue-100 p-3 lg:p-4 shadow-sm">
                   <div className="flex items-center justify-between mb-2">
                     <span className="text-xs font-bold text-slate-700 uppercase tracking-wide">Margem PDV</span>
-                    <MargemBadge pct={margemPDVPreview} />
+                    <MargemBadge 
+                      pct={margemPDVPreview}
+                      onClick={handleMargemPDVClick}
+                      editando={editandoMargemPDV}
+                      inputValue={margemPDVInput}
+                      onInputChange={setMargemPDVInput}
+                      onBlur={aplicarMargemPDV}
+                      onKeyDown={(e) => { if (e.key === 'Enter') aplicarMargemPDV(); if (e.key === 'Escape') setEditandoMargemPDV(false); }}
+                    />
                   </div>
-                  <div className="text-[10px] text-slate-500 mb-3">(PDV - Última Compra) / PDV</div>
+                  <div className="text-[10px] text-slate-500 mb-3">
+                    {editandoMargemPDV 
+                      ? "✏️ Defina a margem desejada e o preço será calculado automaticamente" 
+                      : "(PDV - Última Compra) / PDV · Clique na % para editar"
+                    }
+                  </div>
                   <label className="block text-xs font-medium text-slate-600 mb-1.5">Preço PDV (R$)</label>
                   <input type="number" inputMode="decimal" step="0.01"
                     className="w-full border-2 border-slate-200 rounded-lg px-3 py-2.5 text-sm font-medium focus:outline-none focus:border-brand focus:ring-2 focus:ring-brand/20"
@@ -528,9 +610,22 @@ function AdicionarProdutoModal({ encarteId, codigoRede, onClose, onAdicionado })
                 <div className="bg-gradient-to-br from-emerald-50 to-slate-50 rounded-xl border-2 border-emerald-100 p-3 lg:p-4 shadow-sm">
                   <div className="flex items-center justify-between mb-2">
                     <span className="text-xs font-bold text-slate-700 uppercase tracking-wide">Margem Oferta</span>
-                    <MargemBadge pct={margemOfertaPreview} />
+                    <MargemBadge 
+                      pct={margemOfertaPreview}
+                      onClick={handleMargemOfertaClick}
+                      editando={editandoMargemOferta}
+                      inputValue={margemOfertaInput}
+                      onInputChange={setMargemOfertaInput}
+                      onBlur={aplicarMargemOferta}
+                      onKeyDown={(e) => { if (e.key === 'Enter') aplicarMargemOferta(); if (e.key === 'Escape') setEditandoMargemOferta(false); }}
+                    />
                   </div>
-                  <div className="text-[10px] text-slate-500 mb-3">(Oferta - Custo Promo) / Oferta</div>
+                  <div className="text-[10px] text-slate-500 mb-3">
+                    {editandoMargemOferta
+                      ? "✏️ Defina a margem desejada e o preço será calculado automaticamente"
+                      : "(Oferta - Custo Promo) / Oferta · Clique na % para editar"
+                    }
+                  </div>
                   <label className="block text-xs font-medium text-slate-600 mb-1.5">Preço oferta (encarte)</label>
                   <input type="number" inputMode="decimal" step="0.01"
                     className="w-full border-2 border-slate-200 rounded-lg px-3 py-2.5 text-sm font-medium focus:outline-none focus:border-brand focus:ring-2 focus:ring-brand/20"
