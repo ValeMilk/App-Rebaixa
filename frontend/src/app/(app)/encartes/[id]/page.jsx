@@ -864,9 +864,9 @@ export default function EncarteDetalhe() {
 
                 {/* Produtos */}
                 {aberto && (
-                  <div className="divide-y divide-slate-100">
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 p-3">
                     {itens.map((it) => (
-                      <div key={it._id} className="px-4 py-3 hover:bg-slate-50/50 transition">
+                      <div key={it._id} className="border border-slate-200 rounded-lg px-4 py-3 hover:bg-slate-50/50 hover:border-slate-300 transition">
                         {/* Nome + Botão remover */}
                         <div className="flex items-start justify-between gap-3 mb-3">
                           <div className="flex-1 min-w-0">
