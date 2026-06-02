@@ -781,57 +781,54 @@ export default function EncarteDetalhe() {
   return (
     <div className="flex flex-col min-h-screen bg-slate-50">
       {/* Header */}
-      <div className="bg-white border-b border-slate-100 px-4 py-3 safe-area-pt">
+      <div className="bg-white border-b border-slate-200 px-4 py-3 safe-area-pt">
         <div className="flex items-center gap-3">
           <button onClick={() => router.back()}
-            className="h-9 w-9 rounded-xl bg-slate-100 flex items-center justify-center text-slate-600 hover:bg-slate-200 transition shrink-0">
-            <IcoChevronRight className="w-5 h-5 rotate-180" />
+            className="h-8 w-8 rounded-lg bg-slate-100 hover:bg-slate-200 flex items-center justify-center text-slate-600 transition shrink-0">
+            <IcoChevronRight className="w-4 h-4 rotate-180" />
           </button>
           <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-1.5 text-xs text-slate-400 mb-0.5">
-              <span className="truncate">{encarte.redeSubrede || encarte.codigoRede}</span>
-            </div>
-            <h1 className="font-bold text-slate-900 text-base leading-tight truncate">{encarte.nome}</h1>
+            <div className="text-[10px] text-slate-500 mb-0.5 truncate">{encarte.redeSubrede || encarte.codigoRede}</div>
+            <h1 className="font-semibold text-slate-900 text-base leading-tight truncate">{encarte.nome}</h1>
           </div>
           {encarte.podeEditar ? (
             <button
               onClick={excluirEncarte}
               disabled={excluindo}
-              className="shrink-0 h-9 w-9 rounded-xl bg-red-50 flex items-center justify-center text-red-400 hover:bg-red-100 transition disabled:opacity-40">
+              className="shrink-0 h-8 w-8 rounded-lg bg-slate-100 hover:bg-red-50 flex items-center justify-center text-slate-500 hover:text-red-500 transition disabled:opacity-40">
               <TrashIcon className="w-4 h-4" />
             </button>
           ) : (
-            <span className="text-[10px] bg-slate-100 text-slate-500 font-semibold px-2 py-1 rounded-full shrink-0">
-              Visualização
+            <span className="text-[9px] bg-slate-100 text-slate-500 font-semibold px-2 py-1 rounded-md shrink-0">
+              VISUALIZAÇÃO
             </span>
           )}
         </div>
 
-        {/* Período */}
-        <div className="flex items-center gap-1.5 mt-2 text-xs text-slate-500">
-          <IcoCalendar className="w-3.5 h-3.5 shrink-0" />
-          <span>{fmtData(encarte.periodoInicio)} → {fmtData(encarte.periodoFim)}</span>
-        </div>
-      </div>
-
-      {/* Sumário */}
-      <div className="bg-white border-b border-slate-100 px-4 py-2.5">
-        <div className="flex items-center gap-2 text-xs text-slate-500">
-          <IcoTag className="w-3.5 h-3.5" />
-          <span><span className="font-bold text-slate-800">{encarte.itens.length}</span> produto{encarte.itens.length !== 1 ? "s" : ""} neste encarte</span>
+        {/* Período + Contagem */}
+        <div className="flex items-center gap-4 mt-2.5 text-[11px] text-slate-500">
+          <div className="flex items-center gap-1.5">
+            <IcoCalendar className="w-3.5 h-3.5 shrink-0" />
+            <span>{fmtData(encarte.periodoInicio)} → {fmtData(encarte.periodoFim)}</span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <IcoTag className="w-3.5 h-3.5 shrink-0" />
+            <span className="font-semibold text-slate-700">{encarte.itens.length}</span>
+            <span>produto{encarte.itens.length !== 1 ? 's' : ''}</span>
+          </div>
         </div>
       </div>
 
       {/* Lista de itens - accordion por subcategoria */}
-      <div className="flex-1 p-4 pb-36 lg:pb-28 space-y-2">
+      <div className="flex-1 p-4 pb-24 space-y-2">
         {encarte.itens.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-16 text-center">
-            <div className="w-14 h-14 rounded-2xl bg-slate-100 flex items-center justify-center mb-3">
-              <IcoPackage className="w-7 h-7 text-slate-400" />
+          <div className="flex flex-col items-center justify-center py-20 text-center">
+            <div className="w-12 h-12 rounded-xl bg-slate-100 flex items-center justify-center mb-2">
+              <IcoPackage className="w-6 h-6 text-slate-400" />
             </div>
-            <p className="text-slate-600 font-semibold">Nenhum produto ainda</p>
-            <p className="text-slate-400 text-sm mt-1">
-              {encarte.podeEditar ? 'Toque em "+ Adicionar Produto" para montar o encarte.' : 'O responsável ainda não adicionou produtos.'}
+            <p className="text-sm text-slate-600 font-medium">Nenhum produto adicionado</p>
+            <p className="text-xs text-slate-400 mt-1 max-w-[200px]">
+              {encarte.podeEditar ? 'Adicione produtos para montar o encarte' : 'Aguardando produtos'}
             </p>
           </div>
         ) : (() => {
@@ -844,22 +841,22 @@ export default function EncarteDetalhe() {
           return Object.entries(grupos).map(([sub, itens]) => {
             const aberto = gruposAbertos[sub] !== false; // aberto por padrão
             return (
-              <div key={sub} className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
+              <div key={sub} className="bg-white rounded-xl border border-slate-200 overflow-hidden">
                 {/* Cabeçalho clicável */}
                 <button
                   type="button"
                   onClick={() => setGruposAbertos(prev => ({ ...prev, [sub]: !aberto }))}
-                  className="w-full flex items-center justify-between px-4 py-3 text-left hover:bg-slate-50 transition"
+                  className="w-full flex items-center justify-between px-4 py-2.5 text-left hover:bg-slate-50/70 transition"
                 >
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm font-bold text-brand uppercase tracking-wide">{sub}</span>
-                    <span className="text-[11px] text-slate-400 font-medium bg-slate-100 rounded-full px-2 py-0.5">
-                      {itens.length} produto{itens.length !== 1 ? 's' : ''}
+                  <div className="flex items-center gap-2.5">
+                    <span className="text-xs font-bold text-slate-700 tracking-wide">{sub}</span>
+                    <span className="text-[10px] text-slate-500 font-medium bg-slate-100 rounded-md px-1.5 py-0.5">
+                      {itens.length}
                     </span>
                   </div>
                   <svg
                     className={`w-4 h-4 text-slate-400 transition-transform ${aberto ? 'rotate-180' : ''}`}
-                    fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}
+                    fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}
                   >
                     <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
                   </svg>
@@ -867,62 +864,88 @@ export default function EncarteDetalhe() {
 
                 {/* Produtos */}
                 {aberto && (
-                  <div className="border-t border-slate-100 divide-y divide-slate-50">
+                  <div className="divide-y divide-slate-100">
                     {itens.map((it) => (
-                      <div key={it._id} className="px-4 py-3">
-                        <div className="flex items-start justify-between gap-2">
+                      <div key={it._id} className="px-4 py-3 hover:bg-slate-50/50 transition">
+                        {/* Nome + Botão remover */}
+                        <div className="flex items-start justify-between gap-3 mb-3">
                           <div className="flex-1 min-w-0">
-                            <div className="font-bold text-slate-800 text-sm leading-snug">{it.produto}</div>
-                            <div className="text-[10px] text-slate-400 mt-0.5">Cód {it.produtoCodigo || '—'}</div>
+                            <div className="font-semibold text-slate-900 text-sm leading-snug">{it.produto}</div>
+                            <div className="text-xs text-slate-400 mt-0.5">#{it.produtoCodigo || '—'}</div>
                           </div>
                           {encarte.podeEditar && (
                             <button
                               onClick={() => removerItem(String(it._id))}
                               disabled={removendoId === String(it._id)}
-                              className="h-8 w-8 rounded-xl bg-red-50 flex items-center justify-center text-red-400 hover:bg-red-100 transition disabled:opacity-40 shrink-0">
-                              <TrashIcon className="w-4 h-4" />
+                              className="h-7 w-7 rounded-lg bg-slate-100 hover:bg-red-50 flex items-center justify-center text-slate-400 hover:text-red-500 transition disabled:opacity-40 shrink-0">
+                              <TrashIcon className="w-3.5 h-3.5" />
                             </button>
                           )}
                         </div>
-                        <div className="mt-2.5 grid grid-cols-2 gap-x-4 gap-y-1.5">
-                          <div>
-                            <div className="text-[10px] text-slate-400 uppercase tracking-wide">Última compra</div>
-                            <div className="text-sm font-bold text-brand">{fmtBRL(it.precoUltimaCompra)}</div>
-                            {it.dataUltimaCompra && <div className="text-[10px] text-slate-400">{fmtData(it.dataUltimaCompra)}</div>}
+
+                        {/* Dados em linha compacta */}
+                        <div className="space-y-2">
+                          {/* Última compra */}
+                          <div className="flex items-center justify-between text-xs">
+                            <span className="text-slate-500">Última compra</span>
+                            <div className="text-right">
+                              <div className="font-semibold text-slate-700">{fmtBRL(it.precoUltimaCompra)}</div>
+                              {it.dataUltimaCompra && (
+                                <div className="text-[10px] text-slate-400">{fmtData(it.dataUltimaCompra)}</div>
+                              )}
+                            </div>
                           </div>
-                          <div>
-                            <div className="text-[10px] text-slate-400 uppercase tracking-wide">Preço PDV</div>
-                            <div className="text-sm font-semibold text-slate-800">{fmtBRL(it.precoPDV)}</div>
-                            {it.margemPDV != null && (
-                              <div className={`text-[10px] font-bold ${it.margemPDV >= 20 ? 'text-emerald-600' : it.margemPDV >= 10 ? 'text-amber-600' : 'text-red-600'}`}>
-                                Margem {it.margemPDV.toFixed(1)}%
-                              </div>
+
+                          {/* PDV */}
+                          <div className="flex items-center justify-between text-xs bg-blue-50/50 rounded-lg px-2.5 py-1.5">
+                            <span className="text-slate-600 font-medium">PDV</span>
+                            <div className="flex items-center gap-2">
+                              <span className="font-bold text-slate-900">{fmtBRL(it.precoPDV)}</span>
+                              {it.margemPDV != null && (
+                                <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded ${
+                                  it.margemPDV >= 20 ? 'bg-emerald-100 text-emerald-700' : 
+                                  it.margemPDV >= 10 ? 'bg-amber-100 text-amber-700' : 
+                                  'bg-red-100 text-red-700'
+                                }`}>
+                                  {it.margemPDV.toFixed(1)}%
+                                </span>
+                              )}
+                            </div>
+                          </div>
+
+                          {/* Oferta */}
+                          <div className="flex items-center justify-between text-xs bg-emerald-50/50 rounded-lg px-2.5 py-1.5">
+                            <span className="text-slate-600 font-medium">Oferta</span>
+                            <div className="flex items-center gap-2">
+                              <span className="font-bold text-slate-900">{fmtBRL(it.precoOferta)}</span>
+                              {it.margemOferta != null && (
+                                <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded ${
+                                  it.margemOferta >= 20 ? 'bg-emerald-100 text-emerald-700' : 
+                                  it.margemOferta >= 10 ? 'bg-amber-100 text-amber-700' : 
+                                  'bg-red-100 text-red-700'
+                                }`}>
+                                  {it.margemOferta.toFixed(1)}%
+                                </span>
+                              )}
+                            </div>
+                          </div>
+
+                          {/* Sellout + Custo Promo em linha */}
+                          <div className="flex items-center gap-2 text-xs pt-1">
+                            <div className="flex-1 flex items-center justify-between">
+                              <span className="text-slate-500">Sellout</span>
+                              <span className="font-semibold text-slate-700">{fmtBRL(it.sellout || null)}</span>
+                            </div>
+                            {it.custoPromo != null && (
+                              <>
+                                <div className="h-3 w-px bg-slate-200" />
+                                <div className="flex-1 flex items-center justify-between">
+                                  <span className="text-slate-500">Custo Promo</span>
+                                  <span className="font-bold text-emerald-600">{fmtBRL(it.custoPromo)}</span>
+                                </div>
+                              </>
                             )}
                           </div>
-                          <div>
-                            <div className="text-[10px] text-slate-400 uppercase tracking-wide">Preço oferta</div>
-                            <div className="text-sm font-semibold text-slate-800">{fmtBRL(it.precoOferta)}</div>
-                            {it.margemOferta != null && (
-                              <div className={`text-[10px] font-bold ${it.margemOferta >= 20 ? 'text-emerald-600' : it.margemOferta >= 10 ? 'text-amber-600' : 'text-red-600'}`}>
-                                Margem {it.margemOferta.toFixed(1)}%
-                              </div>
-                            )}
-                          </div>
-                          <div>
-                            <div className="text-[10px] text-slate-400 uppercase tracking-wide">Sellout</div>
-                            <div className="text-sm font-semibold text-slate-800">{fmtBRL(it.sellout || null)}</div>
-                          </div>
-                          {it.custoPromo != null && (
-                            <>
-                              <div className="bg-emerald-50 border border-emerald-100 rounded-xl px-3 py-1.5">
-                                <div className="text-[10px] text-emerald-700 font-semibold uppercase tracking-wide">Custo Promo</div>
-                                <div className="text-[10px] text-slate-400">Últ. Compra - Sellout</div>
-                              </div>
-                              <div className="bg-emerald-50 border border-emerald-100 rounded-xl px-3 py-1.5 flex items-center">
-                                <div className="text-sm font-bold text-emerald-600">{fmtBRL(it.custoPromo)}</div>
-                              </div>
-                            </>
-                          )}
                         </div>
                       </div>
                     ))}
@@ -936,10 +959,10 @@ export default function EncarteDetalhe() {
 
       {/* Botão fixo Adicionar Produto — só para quem pode editar */}
       {encarte.podeEditar && (
-        <div className="fixed bottom-16 lg:bottom-0 left-0 right-0 p-4 bg-white border-t border-slate-100 safe-area-pb lg:left-64">
+        <div className="fixed bottom-16 lg:bottom-0 left-0 right-0 p-4 bg-white/95 backdrop-blur-sm border-t border-slate-200 safe-area-pb lg:left-64">
           <button
             onClick={() => setModalAberto(true)}
-            className="w-full py-3.5 rounded-2xl bg-brand text-white font-bold text-sm hover:opacity-90 active:scale-95 transition shadow-lg shadow-brand/20">
+            className="w-full py-3 rounded-xl bg-brand hover:bg-brand-600 text-white font-semibold text-sm active:scale-[0.98] transition shadow-sm">
             + Adicionar Produto
           </button>
         </div>
