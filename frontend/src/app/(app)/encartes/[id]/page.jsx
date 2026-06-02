@@ -484,11 +484,6 @@ function AdicionarProdutoModal({ encarteId, codigoRede, onClose, onAdicionado })
               style={{ WebkitOverflowScrolling: "touch", overscrollBehavior: "contain" }}>
               <div className="space-y-2 lg:space-y-0 lg:grid lg:grid-cols-2 xl:grid-cols-3 lg:gap-3">
 
-            {/* Lista de produtos com scroll */}
-            <div className="flex-1 overflow-y-auto px-4 lg:px-6 py-4"
-              style={{ WebkitOverflowScrolling: "touch", overscrollBehavior: "contain" }}>
-              <div className="space-y-2 lg:space-y-0 lg:grid lg:grid-cols-2 xl:grid-cols-3 lg:gap-3">
-
                 {loadingProdutos && (
                   <div className="col-span-full flex justify-center py-12">
                     <div className="w-8 h-8 rounded-full border-4 border-slate-200 border-t-brand animate-spin" />
