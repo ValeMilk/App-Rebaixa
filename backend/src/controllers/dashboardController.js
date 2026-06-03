@@ -74,6 +74,19 @@ async function dashboardSupervisor(req, res) {
     .select("codigoRede redeSubrede periodoInicio periodoFim itens")
     .lean();
 
+  console.log("[DEBUG] Data limite:", dataLimite);
+  console.log("[DEBUG] Total encartes encontrados:", encartes.length);
+  if (encartes.length > 0) {
+    console.log("[DEBUG] Primeiro encarte:", {
+      codigoRede: encartes[0].codigoRede,
+      redeSubrede: encartes[0].redeSubrede,
+      periodoInicio: encartes[0].periodoInicio,
+      periodoFim: encartes[0].periodoFim,
+      itensQtd: encartes[0].itens?.length || 0,
+      itens: encartes[0].itens
+    });
+  }
+
   // 3. Agrupar por rede e calcular métricas
   const redesMetricas = new Map();
 
@@ -129,6 +142,21 @@ async function dashboardSupervisor(req, res) {
     const diasTotais = diasInfo.total;
     const diasNegociados = diasInfo.comProdutos;
     const percentualNegociacao = diasTotais > 0 ? Math.round((diasNegociados / diasTotais) * 100) : 0;
+
+    // DEBUG: Se tem encarte, logar
+    if (m.periodos.length > 0) {
+      console.log(`[DEBUG] Rede ${m.redeSubrede}:`, {
+        periodos: m.periodos.length,
+        periodosDetalhes: m.periodos.map(p => ({
+          inicio: p.inicio,
+          fim: p.fim,
+          temProdutos: p.temProdutos
+        })),
+        diasTotais,
+        diasNegociados,
+        percentualNegociacao
+      });
+    }
 
     // Top 3 produtos
     const topProdutos = Object.entries(m.produtosCount)
