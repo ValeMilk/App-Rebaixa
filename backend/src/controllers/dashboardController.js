@@ -60,21 +60,27 @@ async function dashboardSupervisor(req, res) {
     return res.json({ metricas: [] });
   }
 
-  // 2. Buscar encartes dos últimos 30 dias
-  const dataLimite = new Date();
-  dataLimite.setDate(dataLimite.getDate() - 30);
+  // 2. Buscar encartes do mês civil CORRENTE (1º dia até último dia do mês)
+  const hoje = new Date();
+  const mesAtual = hoje.getMonth();      // 0 = jan, 11 = dez
+  const anoAtual = hoje.getFullYear();
+
+  // Primeiro dia do mês às 00:00
+  const dataMin = new Date(anoAtual, mesAtual, 1, 0, 0, 0, 0);
+  
+  // Último dia do mês às 23:59:59
+  const dataMax = new Date(anoAtual, mesAtual + 1, 0, 23, 59, 59, 999);
 
   const encartes = await Encarte.find({
     codigoRede: { $in: redesCodigo },
-    $or: [
-      { periodoInicio: { $gte: dataLimite } },
-      { periodoFim: { $gte: dataLimite } },
-    ],
+    // Buscar encartes que se SOBREPÕEM ao intervalo [dataMin, dataMax]
+    periodoFim: { $gte: dataMin },        // Fim do encarte >= 1º dia do mês
+    periodoInicio: { $lte: dataMax },     // Início do encarte <= último dia do mês
   })
     .select("codigoRede redeSubrede periodoInicio periodoFim itens")
     .lean();
 
-  console.log("[DEBUG] Data limite:", dataLimite);
+  console.log(`[DEBUG] Período considerado: ${dataMin.toLocaleDateString('pt-BR')} até ${dataMax.toLocaleDateString('pt-BR')}`);
   console.log("[DEBUG] Total encartes encontrados:", encartes.length);
   if (encartes.length > 0) {
     console.log("[DEBUG] Primeiro encarte:", {
@@ -82,8 +88,7 @@ async function dashboardSupervisor(req, res) {
       redeSubrede: encartes[0].redeSubrede,
       periodoInicio: encartes[0].periodoInicio,
       periodoFim: encartes[0].periodoFim,
-      itensQtd: encartes[0].itens?.length || 0,
-      itens: encartes[0].itens
+      itensQtd: encartes[0].itens?.length || 0
     });
   }
 
@@ -132,13 +137,10 @@ async function dashboardSupervisor(req, res) {
 
   // 4. Calcular dias cobertos e top produtos
   const resultado = [];
-  const hoje = new Date();
-  const inicio30Dias = new Date();
-  inicio30Dias.setDate(inicio30Dias.getDate() - 30);
 
   for (const [codigo, m] of redesMetricas) {
-    // Calcular dias cobertos (total e com produtos)
-    const diasInfo = calcularDiasCobertos(m.periodos, inicio30Dias, hoje);
+    // Calcular dias cobertos (total e com produtos) dentro do mês
+    const diasInfo = calcularDiasCobertos(m.periodos, dataMin, dataMax);
     const diasTotais = diasInfo.total;
     const diasNegociados = diasInfo.comProdutos;
     const percentualNegociacao = diasTotais > 0 ? Math.round((diasNegociados / diasTotais) * 100) : 0;
