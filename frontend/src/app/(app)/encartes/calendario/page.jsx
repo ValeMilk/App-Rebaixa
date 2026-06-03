@@ -34,6 +34,7 @@ export default function CalendarioGeralPage() {
   const [grupos, setGrupos] = useState([]);
   const [loading, setLoading] = useState(true);
   const [tooltip, setTooltip] = useState(null);
+  const [redeFiltrada, setRedeFiltrada] = useState(null); // Nome da rede filtrada
   const tooltipCache = useMemo(() => ({}), []);
 
   const hoje = new Date();
@@ -53,24 +54,40 @@ export default function CalendarioGeralPage() {
 
   useEffect(() => { carregar(); }, [carregar]);
 
-  // Achata todos os encartes — uma cor por rede
+  // Mapa de cores FIXO por nome de rede (para consistência)
+  const mapeoCores = useMemo(() => {
+    const mapa = {};
+    grupos.forEach((g, gi) => {
+      const redeNome = g.redeSubrede || g.codigoRede;
+      if (!mapa[redeNome]) {
+        mapa[redeNome] = PALETTE[gi % PALETTE.length];
+      }
+    });
+    return mapa;
+  }, [grupos]);
+
+  // Achata todos os encartes — usa mapa fixo de cores
   const encartesFlat = useMemo(() => {
     const result = [];
-    grupos.forEach((g, gi) => {
-      const cor = PALETTE[gi % PALETTE.length];
+    grupos.forEach((g) => {
+      const redeNome = g.redeSubrede || g.codigoRede;
+      const cor = mapeoCores[redeNome] || PALETTE[0];
       g.encartes.forEach((e) => {
-        result.push({ ...e, cor, redeNome: g.redeSubrede || g.codigoRede });
+        result.push({ ...e, cor, redeNome });
       });
     });
     return result;
-  }, [grupos]);
+  }, [grupos, mapeoCores]);
 
   // Redes que têm pelo menos 1 encarte (para legenda)
   const redesComEncartes = useMemo(() =>
     grupos
       .filter((g) => g.encartes.length > 0)
-      .map((g, gi) => ({ nome: g.redeSubrede || g.codigoRede, cor: PALETTE[gi % PALETTE.length] })),
-    [grupos]
+      .map((g) => {
+        const redeNome = g.redeSubrede || g.codigoRede;
+        return { nome: redeNome, cor: mapeoCores[redeNome] || PALETTE[0] };
+      }),
+    [grupos, mapeoCores]
   );
 
   const diasDoMes = useMemo(() => {
@@ -165,15 +182,39 @@ export default function CalendarioGeralPage() {
           </div>
         ) : (
           <>
-            {/* Legenda de redes */}
+            {/* Legenda de redes — clicável para filtrar */}
             {redesComEncartes.length > 0 && (
-              <div className="flex flex-wrap gap-x-4 gap-y-2 mb-4 p-3 bg-white rounded-2xl border border-slate-100 shadow-sm">
-                {redesComEncartes.map((r) => (
-                  <div key={r.nome} className="flex items-center gap-1.5">
-                    <span className={`inline-block w-2.5 h-2.5 rounded-sm shrink-0 ${r.cor.bg}`} />
-                    <span className="text-xs text-slate-700 font-medium">{r.nome}</span>
-                  </div>
-                ))}
+              <div className="mb-4 p-3 bg-white rounded-2xl border border-slate-100 shadow-sm">
+                <div className="text-xs text-slate-500 font-semibold uppercase tracking-wide mb-2">Filtrar por rede (clique para selecionar)</div>
+                <div className="flex flex-wrap gap-x-3 gap-y-2">
+                  {/* Botão "Mostrar tudo" */}
+                  <button
+                    onClick={() => setRedeFiltrada(null)}
+                    className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium transition ${
+                      redeFiltrada === null
+                        ? "bg-slate-200 text-slate-900"
+                        : "bg-slate-100 text-slate-600 hover:bg-slate-150"
+                    }`}
+                  >
+                    <span>✓ Todas</span>
+                  </button>
+                  
+                  {/* Legendas por rede */}
+                  {redesComEncartes.map((r) => (
+                    <button
+                      key={r.nome}
+                      onClick={() => setRedeFiltrada(redeFiltrada === r.nome ? null : r.nome)}
+                      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition ${
+                        redeFiltrada === r.nome
+                          ? `${r.cor.bg} ${r.cor.text} shadow-md`
+                          : `bg-slate-100 text-slate-600 hover:bg-slate-150`
+                      }`}
+                    >
+                      <span className={`inline-block w-2.5 h-2.5 rounded-sm shrink-0 ${r.cor.bg}`} />
+                      {r.nome}
+                    </button>
+                  ))}
+                </div>
               </div>
             )}
 
@@ -210,16 +251,21 @@ export default function CalendarioGeralPage() {
                         {dia.d}
                       </div>
                       <div className="space-y-[2px] pb-[3px] px-[3px]">
-                        {dia.encartes.map((e) => (
-                          <button
-                            key={e._id}
-                            onClick={() => router.push(`/encartes/${e._id}`)}
-                            onMouseEnter={(ev) => onHover(ev, e)}
-                            onMouseLeave={onLeave}
-                            className={`w-full rounded-[4px] py-[3px] px-1 text-left text-[9px] font-bold leading-none truncate ${e.cor.bg} ${e.cor.text}`}>
-                            {e.nome}
-                          </button>
-                        ))}
+                        {dia.encartes.map((e) => {
+                          const selecionado = redeFiltrada === null || e.redeNome === redeFiltrada;
+                          return (
+                            <button
+                              key={e._id}
+                              onClick={() => router.push(`/encartes/${e._id}`)}
+                              onMouseEnter={(ev) => onHover(ev, e)}
+                              onMouseLeave={onLeave}
+                              className={`w-full rounded-[4px] py-[3px] px-1 text-left text-[9px] font-bold leading-none truncate transition ${e.cor.bg} ${e.cor.text} ${
+                                selecionado ? "opacity-100" : "opacity-30"
+                              }`}>
+                              {e.nome}
+                            </button>
+                          );
+                        })}
                       </div>
                     </div>
                   );
