@@ -187,53 +187,74 @@ function CardRedeLista({ metrica, expandido, onToggleExpand, onNavigate }) {
 
   const percentualCoberto = Math.round((diasComEncarte / 30) * 100);
   
-  // Cores baseadas em cobertura
+  // Cores e badges baseados em cobertura
   const getStatusVisual = (pct) => {
+    if (pct === 0) return {
+      border: 'border-l-red-600',
+      bgPct: 'bg-red-100',
+      textPct: 'text-red-700',
+      badge: 'CRÍTICO!',
+      badgeBg: 'bg-red-600',
+      badgeText: 'text-white'
+    };
     if (pct < 40) return {
-      bg: 'bg-red-50',
       border: 'border-l-red-500',
-      text: 'text-red-700',
-      badge: '🔴',
-      label: 'Crítica'
+      bgPct: 'bg-red-50',
+      textPct: 'text-red-700',
+      badge: 'URGENTE',
+      badgeBg: 'bg-red-500',
+      badgeText: 'text-white'
     };
     if (pct < 70) return {
-      bg: 'bg-amber-50',
       border: 'border-l-amber-500',
-      text: 'text-amber-700',
-      badge: '🟡',
-      label: 'Atenção'
+      bgPct: 'bg-amber-50',
+      textPct: 'text-amber-700',
+      badge: 'ATENÇÃO',
+      badgeBg: 'bg-amber-500',
+      badgeText: 'text-white'
     };
     return {
-      bg: 'bg-emerald-50',
       border: 'border-l-emerald-500',
-      text: 'text-emerald-700',
-      badge: '🟢',
-      label: 'Boa'
+      bgPct: 'bg-emerald-50',
+      textPct: 'text-emerald-700',
+      badge: 'BOA',
+      badgeBg: 'bg-emerald-500',
+      badgeText: 'text-white'
     };
   };
 
   const status = getStatusVisual(percentualCoberto);
 
   return (
-    <div className={`bg-white rounded-lg border-l-4 ${status.border} border border-slate-200 shadow-sm hover:shadow-md transition overflow-hidden`}>
-      {/* Header clicável */}
+    <div className={`bg-white rounded-lg border-l-[3px] ${status.border} border border-slate-200 shadow-sm hover:shadow-lg hover:scale-[1.01] transition-all overflow-hidden`}>
+      {/* Header clicável - Layout inline otimizado */}
       <div 
         onClick={() => onNavigate(codigoRede)}
-        className="cursor-pointer hover:bg-slate-50/50 transition"
+        className="cursor-pointer hover:bg-slate-50/70 transition group"
       >
-        <div className="flex items-center justify-between px-4 py-3 gap-3">
-          {/* Nome da rede */}
+        <div className="px-4 py-2 flex items-center justify-between gap-4">
+          {/* Coluna esquerda: Nome da rede */}
           <div className="flex-1 min-w-0">
-            <h3 className="font-bold text-slate-900 text-sm truncate">{redeSubrede}</h3>
-            <p className="text-xs text-slate-500 mt-0.5">{totalEncartes} encarte{totalEncartes !== 1 ? 's' : ''} criado{totalEncartes !== 1 ? 's' : ''}</p>
+            <h3 className="font-bold text-slate-900 text-base truncate group-hover:text-brand transition">
+              {redeSubrede}
+            </h3>
+            <p className="text-xs text-slate-500 mt-0.5">
+              {totalEncartes} encarte{totalEncartes !== 1 ? 's' : ''} • {diasComEncarte}/{30} dias
+            </p>
           </div>
 
-          {/* Métricas inline */}
+          {/* Coluna direita: Percentual + Badge + Ações */}
           <div className="flex items-center gap-3 flex-shrink-0">
-            {/* Cobertura */}
-            <div className={`${status.bg} px-3 py-1.5 rounded-lg text-center min-w-[70px]`}>
-              <div className={`text-lg font-bold ${status.text} leading-none`}>{percentualCoberto}%</div>
-              <div className="text-[10px] text-slate-600 mt-0.5">{diasComEncarte}/{30}d</div>
+            {/* Percentual gigante */}
+            <div className={`${status.bgPct} px-4 py-1.5 rounded-lg`}>
+              <div className={`text-3xl font-black ${status.textPct} leading-none tabular-nums`}>
+                {percentualCoberto}%
+              </div>
+            </div>
+
+            {/* Badge de status */}
+            <div className={`${status.badgeBg} ${status.badgeText} px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider whitespace-nowrap`}>
+              {status.badge}
             </div>
 
             {/* Botão expand */}
@@ -252,6 +273,17 @@ function CardRedeLista({ metrica, expandido, onToggleExpand, onNavigate }) {
                 <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
               </svg>
             </button>
+
+            {/* Ícone de navegação */}
+            <svg 
+              className="w-5 h-5 text-slate-400 group-hover:text-brand group-hover:translate-x-1 transition-all flex-shrink-0" 
+              fill="none" 
+              viewBox="0 0 24 24" 
+              stroke="currentColor" 
+              strokeWidth={2.5}
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+            </svg>
           </div>
         </div>
       </div>
