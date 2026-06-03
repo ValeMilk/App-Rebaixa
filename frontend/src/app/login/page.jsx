@@ -74,7 +74,7 @@ export default function LoginPage() {
             priority
           />
           <p className="text-white/80 text-sm tracking-wide text-center">
-            Sistema de Gestão de Rebaixas
+            Sistema de Gestão de Ações Comerciais
           </p>
         </div>
       </div>

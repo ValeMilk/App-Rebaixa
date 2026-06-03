@@ -5,7 +5,7 @@ const inter = Inter({ subsets: ["latin"], display: "swap" });
 
 export const metadata = {
   title: "Rebaixa Valemilk",
-  description: "Sistema de rebaixas e ofertas internas",
+  description: "de rebaixas e ofertas internas",
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,

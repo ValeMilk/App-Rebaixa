@@ -31,8 +31,15 @@ async function me(req, res) {
 }
 
 // Endpoint publico para popular o select de login
+// Mostra apenas supervisores, administrador e diretoria
 async function listarParaLogin(req, res) {
-  const users = await User.find({ ativo: true }, { nome: 1, email: 1, _id: 0 }).sort({ nome: 1 });
+  const users = await User.find(
+    { 
+      ativo: true,
+      role: { $in: ["supervisor", "admin", "diretoria"] }
+    }, 
+    { nome: 1, email: 1, role: 1, _id: 0 }
+  ).sort({ nome: 1 });
   res.json({ users });
 }
 
