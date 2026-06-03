@@ -128,6 +128,7 @@ async function buscarProdutosDoErp() {
 // ---------------------------------------------------------------------------
 
 const SQL_ULTIMA_COMPRA = `
+-- Created by GitHub Copilot in SSMS - review carefully before executing
 WITH UltimaCompra AS (
     SELECT
         m00.M00_ID_A00       AS clienteCodigo,
@@ -151,6 +152,7 @@ WITH UltimaCompra AS (
       AND m00.M00_STATUS = 'N'
       AND m00.M00_ID_A00 = @clienteCodigo
       AND e02.E02_LIVRE  = @produtoCodigo
+      AND m00.M00_ID_A76 IN (38, 39, 45, 46, 1134)
 )
 SELECT TOP 1
     clienteCodigo,
