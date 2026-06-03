@@ -343,10 +343,24 @@ async function listarProdutos(req, res) {
   res.json({ total: produtos.length, produtos });
 }
 
-/** Retorna lista de subcategorias distintas (nao vazias) para montar dropdown */
+/** Retorna lista de categorias distintas (nao vazias) para montar dropdown */
+async function listarCategorias(req, res) {
+  const categorias = await Produto.distinct("categoria", { ativo: true, categoria: { $ne: "" } });
+  res.json({ categorias: categorias.filter(Boolean).sort() });
+}
+
+/** Retorna lista de subcategorias distintas (nao vazias), opcionalmente filtrado por categoria */
 async function listarSubcategorias(req, res) {
-  const subs = await Produto.distinct("subcategoria", { ativo: true, subcategoria: { $ne: "" } });
+  const { categoria } = req.query;
+  const filtro = { ativo: true, subcategoria: { $ne: "" } };
+  
+  // Se categoria foi especificada, filtrar subcategorias daquela categoria
+  if (categoria) {
+    filtro.categoria = categoria;
+  }
+  
+  const subs = await Produto.distinct("subcategoria", filtro);
   res.json({ subcategorias: subs.filter(Boolean).sort() });
 }
 
-module.exports = { listar, criar, obter, adicionarItem, removerItem, atualizar, remover, listarProdutos, listarSubcategorias };
+module.exports = { listar, criar, obter, adicionarItem, removerItem, atualizar, remover, listarProdutos, listarCategorias, listarSubcategorias };

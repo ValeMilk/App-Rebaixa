@@ -51,7 +51,15 @@ export default function LoginPage() {
     try {
       const u = await login(email, senha);
       const role = u?.role ?? "vendedor";
-      router.replace(role === "vendedor" || role === "supervisor" ? "/estoque" : "/dashboard");
+      
+      // Redirecionamento baseado em role
+      if (role === "supervisor") {
+        router.replace("/dashboard/supervisor"); // Supervisor → Métricas Redes
+      } else if (role === "vendedor") {
+        router.replace("/estoque"); // Vendedor → Estoque
+      } else {
+        router.replace("/dashboard"); // Admin/Diretoria → Dashboard
+      }
     } catch (err) {
       setErro(err.response?.data?.error || "Falha no login");
     } finally {

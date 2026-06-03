@@ -70,9 +70,13 @@ function MargemBadge({ pct, onClick, editando, inputValue, onInputChange, onBlur
   );
 }
 
-/** Modal para adicionar produtos ao encarte (por subcategoria) */
+/** Modal para adicionar produtos ao encarte (por categoria → subcategoria) */
 function AdicionarProdutoModal({ encarteId, codigoRede, onClose, onAdicionado }) {
-  // Subcategoria + lista
+  // Categoria + Subcategoria + lista
+  const [categorias, setCategorias] = useState([]);
+  const [loadingCategorias, setLoadingCategorias] = useState(true);
+  const [categoriaSel, setCategoriaSel] = useState("");
+  
   const [subcategorias, setSubcategorias] = useState([]);
   const [loadingSubs, setLoadingSubs] = useState(true);
   const [subcategoriaSel, setSubcategoriaSel] = useState("");
@@ -101,13 +105,29 @@ function AdicionarProdutoModal({ encarteId, codigoRede, onClose, onAdicionado })
   const [salvando, setSalvando] = useState(false);
   const [progresso, setProgresso] = useState({ feitos: 0, total: 0 });
 
-  // Carrega subcategorias ao abrir
+  // Carrega categorias ao abrir o modal
   useEffect(() => {
-    api.get("/encartes/subcategorias")
+    api.get("/encartes/categorias")
+      .then(({ data }) => setCategorias(data.categorias || []))
+      .catch(() => setCategorias([]))
+      .finally(() => setLoadingCategorias(false));
+  }, []);
+
+  // Carrega subcategorias quando categoria mudar (ou todas se nenhuma categoria selecionada)
+  useEffect(() => {
+    setLoadingSubs(true);
+    const params = categoriaSel ? { categoria: categoriaSel } : {};
+    api.get("/encartes/subcategorias", { params })
       .then(({ data }) => setSubcategorias(data.subcategorias || []))
       .catch(() => setSubcategorias([]))
       .finally(() => setLoadingSubs(false));
-  }, []);
+    
+    // Limpa subcategoria e produtos quando categoria muda
+    setSubcategoriaSel("");
+    setProdutos([]);
+    setQ("");
+    setDesmarcados(new Set());
+  }, [categoriaSel]);
 
   // Carrega produtos quando subcategoria mudar ou q mudar
   useEffect(() => {
@@ -420,6 +440,29 @@ function AdicionarProdutoModal({ encarteId, codigoRede, onClose, onAdicionado })
           {/* Painel ESQUERDO (desktop): Lista de produtos + Subcategoria */}
           <div className="flex-1 flex flex-col min-h-0 overflow-hidden order-2 lg:order-1">
             
+            {/* Categoria — apenas mobile (no desktop vai pro painel direito) */}
+            <div className="lg:hidden shrink-0 p-4 pb-3 border-b border-slate-200">
+              <label className="block text-xs font-semibold text-slate-600 uppercase tracking-wide mb-2">
+                Categoria
+              </label>
+              {loadingCategorias ? (
+                <div className="flex items-center gap-2 py-3 text-slate-400 text-sm">
+                  <div className="w-4 h-4 rounded-full border-2 border-slate-200 border-t-brand animate-spin" />
+                  Carregando...
+                </div>
+              ) : (
+                <select
+                  className="w-full border-2 border-slate-200 rounded-xl px-3 py-3 text-sm bg-white focus:outline-none focus:border-brand focus:ring-2 focus:ring-brand/20 transition"
+                  value={categoriaSel}
+                  onChange={(e) => setCategoriaSel(e.target.value)}>
+                  <option value="">Todas as categorias</option>
+                  {categorias.map((c) => (
+                    <option key={c} value={c}>{c}</option>
+                  ))}
+                </select>
+              )}
+            </div>
+            
             {/* Subcategoria — apenas mobile (no desktop vai pro painel direito) */}
             <div className="lg:hidden shrink-0 p-4 pb-3 border-b border-slate-200">
               <label className="block text-xs font-semibold text-slate-600 uppercase tracking-wide mb-2">
@@ -555,6 +598,29 @@ function AdicionarProdutoModal({ encarteId, codigoRede, onClose, onAdicionado })
           {/* Painel DIREITO (desktop): Subcategoria + Precificação (MARGENS EM DESTAQUE) */}
           <div className="lg:w-[520px] xl:w-[600px] shrink-0 border-b lg:border-b-0 lg:border-l border-slate-200 overflow-y-auto p-4 lg:p-5 space-y-4 order-1 lg:order-2 bg-gradient-to-b from-slate-50/50 to-white">
             
+            {/* Categoria — apenas desktop */}
+            <div className="hidden lg:block">
+              <label className="block text-xs font-semibold text-slate-600 uppercase tracking-wide mb-2">
+                Categoria
+              </label>
+              {loadingCategorias ? (
+                <div className="flex items-center gap-2 py-3 text-slate-400 text-sm">
+                  <div className="w-4 h-4 rounded-full border-2 border-slate-200 border-t-brand animate-spin" />
+                  Carregando...
+                </div>
+              ) : (
+                <select
+                  className="w-full border-2 border-slate-200 rounded-xl px-3 py-3 text-sm bg-white focus:outline-none focus:border-brand focus:ring-2 focus:ring-brand/20 transition"
+                  value={categoriaSel}
+                  onChange={(e) => setCategoriaSel(e.target.value)}>
+                  <option value="">Todas as categorias</option>
+                  {categorias.map((c) => (
+                    <option key={c} value={c}>{c}</option>
+                  ))}
+                </select>
+              )}
+            </div>
+
             {/* Subcategoria — apenas desktop */}
             <div className="hidden lg:block">
               <label className="block text-xs font-semibold text-slate-600 uppercase tracking-wide mb-2">
