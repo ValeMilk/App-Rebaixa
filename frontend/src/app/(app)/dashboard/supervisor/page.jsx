@@ -36,9 +36,9 @@ export default function DashboardSupervisor() {
     // Filtro por cobertura
     if (filtroCobertura !== "todas") {
       filtradas = filtradas.filter(m => {
-        const pct = Math.round((m.diasComEncarte / 30) * 100);
-        if (filtroCobertura === "criticas") return pct < 40;
-        if (filtroCobertura === "atencao") return pct >= 40 && pct < 70;
+        const pct = m.percentualNegociacao; // Usar percentual que vem do backend
+        if (filtroCobertura === "criticas") return pct === 0;
+        if (filtroCobertura === "atencao") return pct > 0 && pct < 70;
         if (filtroCobertura === "boas") return pct >= 70;
         return true;
       });
@@ -48,18 +48,10 @@ export default function DashboardSupervisor() {
     const ordenadas = [...filtradas];
     if (ordenacao === "cobertura-desc") {
       // Maior cobertura primeiro (padrão)
-      ordenadas.sort((a, b) => {
-        const pctA = (a.diasComEncarte / 30) * 100;
-        const pctB = (b.diasComEncarte / 30) * 100;
-        return pctB - pctA;
-      });
+      ordenadas.sort((a, b) => b.percentualNegociacao - a.percentualNegociacao);
     } else if (ordenacao === "cobertura-asc") {
       // Menor cobertura primeiro (críticas no topo)
-      ordenadas.sort((a, b) => {
-        const pctA = (a.diasComEncarte / 30) * 100;
-        const pctB = (b.diasComEncarte / 30) * 100;
-        return pctA - pctB;
-      });
+      ordenadas.sort((a, b) => a.percentualNegociacao - b.percentualNegociacao);
     } else if (ordenacao === "nome-asc") {
       // A-Z
       ordenadas.sort((a, b) => a.redeSubrede.localeCompare(b.redeSubrede));
@@ -106,8 +98,8 @@ export default function DashboardSupervisor() {
 
       {/* Barra de ferramentas */}
       <div className="bg-white border-b border-slate-200 px-4 py-3">
-        <div className="flex flex-col sm:flex-row gap-3">
-          {/* Busca */}
+        <div className="flex flex-col gap-3">
+          {/* Linha 1: Busca */}
           <div className="flex-1 relative">
             <IcoSearch className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
             <input
@@ -119,32 +111,35 @@ export default function DashboardSupervisor() {
             />
           </div>
 
-          {/* Filtro cobertura */}
-          <div className="sm:w-48">
-            <select
-              value={filtroCobertura}
-              onChange={(e) => setFiltroCobertura(e.target.value)}
-              className="w-full px-3 py-2.5 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand transition bg-white"
-            >
-              <option value="todas">Todas as redes</option>
-              <option value="criticas">🔴 Críticas (&lt;40%)</option>
-              <option value="atencao">🟡 Atenção (40-69%)</option>
-              <option value="boas">🟢 Boas (≥70%)</option>
-            </select>
-          </div>
+          {/* Linha 2: Filtro e Ordenação */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {/* Filtro cobertura */}
+            <div>
+              <select
+                value={filtroCobertura}
+                onChange={(e) => setFiltroCobertura(e.target.value)}
+                className="w-full px-3 py-2.5 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand transition bg-white"
+              >
+                <option value="todas">Cobertura: Todas as redes</option>
+                <option value="criticas">🔴 Críticas (0%)</option>
+                <option value="atencao">🟡 Atenção (1-69%)</option>
+                <option value="boas">🟢 Boas (≥70%)</option>
+              </select>
+            </div>
 
-          {/* Ordenação */}
-          <div className="sm:w-52">
-            <select
-              value={ordenacao}
-              onChange={(e) => setOrdenacao(e.target.value)}
-              className="w-full px-3 py-2.5 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand transition bg-white"
-            >
-              <option value="cobertura-desc">📊 Cobertura: Maior → Menor</option>
-              <option value="cobertura-asc">📉 Cobertura: Menor → Maior</option>
-              <option value="nome-asc">🔤 Nome: A → Z</option>
-              <option value="nome-desc">🔡 Nome: Z → A</option>
-            </select>
+            {/* Ordenação */}
+            <div>
+              <select
+                value={ordenacao}
+                onChange={(e) => setOrdenacao(e.target.value)}
+                className="w-full px-3 py-2.5 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand transition bg-white"
+              >
+                <option value="cobertura-desc">Cobertura: Maior → Menor</option>
+                <option value="cobertura-asc">Cobertura: Menor → Maior</option>
+                <option value="nome-asc">Nome: A → Z</option>
+                <option value="nome-desc">Nome: Z → A</option>
+              </select>
+            </div>
           </div>
         </div>
 
