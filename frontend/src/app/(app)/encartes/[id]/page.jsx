@@ -100,6 +100,7 @@ function AdicionarProdutoModal({ encarteId, codigoRede, onClose, onAdicionado })
 
   // Última compra por produtoCodigo (busca em background)
   const [ultimasCompras, setUltimasCompras] = useState({});
+  const [ucBuscado, setUcBuscado] = useState(false); // Flag para saber se a busca batch já completou
 
   const [erro, setErro] = useState("");
   const [salvando, setSalvando] = useState(false);
@@ -149,6 +150,7 @@ function AdicionarProdutoModal({ encarteId, codigoRede, onClose, onAdicionado })
   useEffect(() => {
     if (produtos.length === 0) return;
     setUltimasCompras({});
+    setUcBuscado(false); // Reset quando produtos mudarem
     
     let cancelled = false;
     (async () => {
@@ -161,10 +163,11 @@ function AdicionarProdutoModal({ encarteId, codigoRede, onClose, onAdicionado })
         
         if (!cancelled && data?.resultados) {
           setUltimasCompras(data.resultados);
+          setUcBuscado(true); // Marca que a busca completou
         }
       } catch (err) {
         console.error("Erro ao buscar últimas compras em batch:", err);
-        // Fallback: não fazer nada, deixar sem última compra
+        setUcBuscado(true); // Mesmo com erro, marca como "buscado" para não ficar "buscando..." eternamente
       }
     })();
     
@@ -394,7 +397,7 @@ function AdicionarProdutoModal({ encarteId, codigoRede, onClose, onAdicionado })
                   <div className="text-[10px] text-slate-500 uppercase tracking-wide mb-0.5">Últ. Compra</div>
                   {stats.mediaUC != null
                     ? <div className="font-bold text-brand">{fmtBRL(stats.mediaUC)}</div>
-                    : <div className="text-slate-300 text-xs">buscando...</div>
+                    : ucBuscado ? <div className="text-slate-300 text-xs">sem compra</div> : <div className="text-slate-300 text-xs">buscando...</div>
                   }
                 </div>
               </div>
@@ -427,7 +430,7 @@ function AdicionarProdutoModal({ encarteId, codigoRede, onClose, onAdicionado })
                 <span className="text-slate-500">Última compra</span>
                 {stats.mediaUC != null
                   ? <span className="font-bold text-brand">{fmtBRL(stats.mediaUC)}</span>
-                  : <span className="text-slate-300 text-xs">buscando...</span>
+                  : ucBuscado ? <span className="text-slate-300 text-xs">sem compra</span> : <span className="text-slate-300 text-xs">buscando...</span>
                 }
               </div>
             </div>
@@ -583,7 +586,7 @@ function AdicionarProdutoModal({ encarteId, codigoRede, onClose, onAdicionado })
                             <span className="text-slate-500 font-medium">Últ. Compra</span>
                             {uc
                               ? <span className="font-bold text-brand">{fmtBRL(uc.preco)}</span>
-                              : <span className="text-slate-300 text-[10px]">buscando...</span>
+                              : ucBuscado ? <span className="text-slate-300 text-[10px]">sem compra</span> : <span className="text-slate-300 text-[10px]">buscando...</span>
                             }
                           </div>
                         </div>
