@@ -219,6 +219,7 @@ WITH UltimaCompra AS (
       AND m00.M00_STATUS = 'N'
       AND a00.A00_ID_A16 = @codigoRede
       AND e02.E02_LIVRE  = @produtoCodigo
+      AND m00.M00_ID_A76 IN (38, 39, 45, 46, 1134)
 )
 SELECT TOP 1
     clienteCodigo,
@@ -280,6 +281,7 @@ WITH UltimaCompra AS (
       AND m00.M00_STATUS = 'N'
       AND a00.A00_ID_A16 = @codigoRede
       AND e02.E02_LIVRE IN (${placeholders})
+      AND m00.M00_ID_A76 IN (38, 39, 45, 46, 1134)
 )
 SELECT
     produtoCodigo,
