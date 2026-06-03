@@ -4,15 +4,16 @@ import "./globals.css";
 const inter = Inter({ subsets: ["latin"], display: "swap" });
 
 export const metadata = {
-  title: "Rebaixa Valemilk",
+  title: "Infovale",
   description: "de rebaixas e ofertas internas",
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
-    title: "Rebaixa Valemilk",
+    title: "Infovale",
   },
   icons: {
+    icon: "/logo.png",
     apple: "/icons/icon-192.png",
   },
 };
@@ -29,11 +30,12 @@ export default function RootLayout({ children }) {
   return (
     <html lang="pt-BR">
       <head>
+        <link rel="icon" href="/logo.png" />
         <link rel="apple-touch-icon" href="/icons/icon-192.png" />
         <meta name="mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />
-        <meta name="apple-mobile-web-app-title" content="Rebaixa Valemilk" />
+        <meta name="apple-mobile-web-app-title" content="Infovale" />
       </head>
       <body className={inter.className}>{children}</body>
     </html>
