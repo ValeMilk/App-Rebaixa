@@ -88,9 +88,13 @@ async function dashboardSupervisor(req, res) {
       });
     }
     const m = redesMetricas.get(codigo);
+    
+    // Adicionar período com flag se tem produtos
+    const temProdutos = Array.isArray(enc.itens) && enc.itens.length > 0;
     m.periodos.push({
       inicio: new Date(enc.periodoInicio),
       fim: new Date(enc.periodoFim),
+      temProdutos
     });
 
     // Contar produtos
@@ -120,9 +124,11 @@ async function dashboardSupervisor(req, res) {
   inicio30Dias.setDate(inicio30Dias.getDate() - 30);
 
   for (const [codigo, m] of redesMetricas) {
-    // Calcular dias cobertos (união de intervalos)
-    const diasCobertos = calcularDiasCobertos(m.periodos, inicio30Dias, hoje);
-    const diasSemEncarte = 30 - diasCobertos;
+    // Calcular dias cobertos (total e com produtos)
+    const diasInfo = calcularDiasCobertos(m.periodos, inicio30Dias, hoje);
+    const diasTotais = diasInfo.total;
+    const diasNegociados = diasInfo.comProdutos;
+    const percentualNegociacao = diasTotais > 0 ? Math.round((diasNegociados / diasTotais) * 100) : 0;
 
     // Top 3 produtos
     const topProdutos = Object.entries(m.produtosCount)
@@ -133,8 +139,9 @@ async function dashboardSupervisor(req, res) {
     resultado.push({
       codigoRede: codigo,
       redeSubrede: m.redeSubrede,
-      diasComEncarte: diasCobertos,
-      diasSemEncarte,
+      diasTotais,          // Dias com QUALQUER encarte
+      diasNegociados,      // Dias com encarte + produtos
+      percentualNegociacao, // % = (diasNegociados / diasTotais) * 100
       topProdutos,
       totalEncartes: m.periodos.length,
     });
@@ -147,10 +154,10 @@ async function dashboardSupervisor(req, res) {
 }
 
 /**
- * Calcula quantos dias únicos estão cobertos pelos períodos (união de intervalos)
+ * Calcula quantos dias únicos estão cobertos pelos períodos (com ou sem produtos)
  */
 function calcularDiasCobertos(periodos, dataMin, dataMax) {
-  if (!periodos.length) return 0;
+  if (!periodos.length) return { total: 0, comProdutos: 0 };
 
   // Normalizar datas para início do dia
   const min = new Date(dataMin);
@@ -158,8 +165,9 @@ function calcularDiasCobertos(periodos, dataMin, dataMax) {
   const max = new Date(dataMax);
   max.setHours(0, 0, 0, 0);
 
-  // Set de dias cobertos (timestamp do início do dia)
-  const diasSet = new Set();
+  // Set de dias cobertos
+  const diasTotal = new Set();      // Todos os dias com encarte
+  const diasComProdutos = new Set(); // Apenas dias com encarte + produtos
 
   for (const p of periodos) {
     let inicio = new Date(p.inicio);
@@ -174,12 +182,21 @@ function calcularDiasCobertos(periodos, dataMin, dataMax) {
     // Adicionar todos os dias do período
     const atual = new Date(inicio);
     while (atual <= fim) {
-      diasSet.add(atual.getTime());
+      diasTotal.add(atual.getTime());
+      
+      // Adicionar ao set de produtos se houver itens
+      if (p.temProdutos) {
+        diasComProdutos.add(atual.getTime());
+      }
+      
       atual.setDate(atual.getDate() + 1);
     }
   }
 
-  return diasSet.size;
+  return {
+    total: diasTotal.size,
+    comProdutos: diasComProdutos.size
+  };
 }
 
 module.exports = {

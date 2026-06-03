@@ -183,11 +183,9 @@ export default function DashboardSupervisor() {
 }
 
 function CardRedeLista({ metrica, expandido, onToggleExpand, onNavigate }) {
-  const { codigoRede, redeSubrede, diasComEncarte, diasSemEncarte, topProdutos, totalEncartes } = metrica;
+  const { codigoRede, redeSubrede, diasTotais, diasNegociados, percentualNegociacao, topProdutos, totalEncartes } = metrica;
 
-  const percentualCoberto = Math.round((diasComEncarte / 30) * 100);
-  
-  // Cores e badges baseados em cobertura
+  // Cores e badges baseados em % de negociação
   const getStatusVisual = (pct) => {
     if (pct === 0) return {
       border: 'border-l-red-600',
@@ -223,7 +221,7 @@ function CardRedeLista({ metrica, expandido, onToggleExpand, onNavigate }) {
     };
   };
 
-  const status = getStatusVisual(percentualCoberto);
+  const status = getStatusVisual(percentualNegociacao);
 
   return (
     <div className={`bg-white rounded-lg border-l-[3px] ${status.border} border border-slate-200 shadow-sm hover:shadow-lg hover:scale-[1.01] transition-all overflow-hidden`}>
@@ -239,7 +237,7 @@ function CardRedeLista({ metrica, expandido, onToggleExpand, onNavigate }) {
               {redeSubrede}
             </h3>
             <p className="text-xs text-slate-500 mt-0.5">
-              {totalEncartes} encarte{totalEncartes !== 1 ? 's' : ''} • {diasComEncarte}/{30} dias
+              {diasNegociados} negociados • {diasTotais} dias totais
             </p>
           </div>
 
@@ -248,7 +246,7 @@ function CardRedeLista({ metrica, expandido, onToggleExpand, onNavigate }) {
             {/* Percentual gigante */}
             <div className={`${status.bgPct} px-4 py-1.5 rounded-lg`}>
               <div className={`text-3xl font-black ${status.textPct} leading-none tabular-nums`}>
-                {percentualCoberto}%
+                {percentualNegociacao}%
               </div>
             </div>
 
@@ -291,15 +289,15 @@ function CardRedeLista({ metrica, expandido, onToggleExpand, onNavigate }) {
       {/* Detalhes expandidos */}
       {expandido && (
         <div className="border-t border-slate-100 px-4 py-3 bg-slate-50/50">
-          {/* Estatísticas de cobertura */}
+          {/* Estatísticas de negociação */}
           <div className="grid grid-cols-2 gap-3 mb-3 text-xs">
             <div className="bg-white rounded-lg px-3 py-2 border border-slate-200">
-              <div className="text-slate-500 mb-0.5">Com encarte</div>
-              <div className="font-bold text-emerald-700">{diasComEncarte} dias</div>
+              <div className="text-slate-500 mb-0.5">Negociados</div>
+              <div className="font-bold text-emerald-700">{diasNegociados} dias</div>
             </div>
             <div className="bg-white rounded-lg px-3 py-2 border border-slate-200">
-              <div className="text-slate-500 mb-0.5">Sem encarte</div>
-              <div className="font-bold text-red-600">{diasSemEncarte} dias</div>
+              <div className="text-slate-500 mb-0.5">Não negociados</div>
+              <div className="font-bold text-red-600">{diasTotais - diasNegociados} dias</div>
             </div>
           </div>
 
