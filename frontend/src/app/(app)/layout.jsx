@@ -74,7 +74,7 @@ export default function AppLayout({ children }) {
                 VM
               </div>
               <div className="hidden sm:block">
-                <div className="text-lg font-bold text-slate-900 leading-tight">Rebaixa</div>
+                <div className="text-lg font-bold text-slate-900 leading-tight">InfoVale</div>
                 <div className="text-xs text-slate-500">Valemilk</div>
               </div>
             </div>
