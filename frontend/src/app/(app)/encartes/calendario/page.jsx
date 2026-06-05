@@ -74,10 +74,11 @@ export default function CalendarioGeralPage() {
       // Buscar lista de supervisores (apenas para admin/diretoria)
       try {
         const { data: userInfo } = await api.get("/auth/me");
-        console.log("[CalendarioGeral] User role:", userInfo.role);
-        setUserRole(userInfo.role);
+        const role = userInfo.user?.role;
+        console.log("[CalendarioGeral] User role:", role);
+        setUserRole(role);
         
-        if (userInfo.role === "admin" || userInfo.role === "diretoria") {
+        if (role === "admin" || role === "diretoria") {
           const { data: supData } = await api.get("/responsaveis-rede/supervisores-disponiveis");
           console.log("[CalendarioGeral] Supervisores carregados:", supData.supervisores);
           setSupervisores(supData.supervisores || []);
