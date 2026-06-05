@@ -126,6 +126,8 @@ const DIAS_SEMANA = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sab"];
 function CalendarioRede({ grupo, onClickEncarte }) {
   const hoje = new Date();
   const [mesAno, setMesAno] = useState({ ano: hoje.getFullYear(), mes: hoje.getMonth() });
+  const [tooltip, setTooltip] = useState(null);
+  const tooltipCache = useMemo(() => ({}), []);
 
   const encartesComCor = useMemo(() =>
     grupo.encartes.map((e, i) => ({ ...e, cor: PALETTE[i % PALETTE.length] })),
@@ -149,6 +151,56 @@ function CalendarioRede({ grupo, onClickEncarte }) {
     }
     return dias;
   }, [mesAno, encartesComCor]);
+
+  const fmtBRL = (v) => v != null ? v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) : '—';
+
+  async function onHover(ev, enc) {
+    const rect = ev.currentTarget.getBoundingClientRect();
+    setTooltip({ id: enc._id, x: rect.left + rect.width / 2, y: rect.top, data: tooltipCache[enc._id] || null });
+    if (!tooltipCache[enc._id]) {
+      try {
+        const { data } = await api.get(`/encartes/${enc._id}`);
+        const itens = data.itens || [];
+        // Agrupar por subcategoria
+        const mapasSub = {};
+        itens.forEach(it => {
+          const sub = it.subcategoria || 'Sem categoria';
+          if (!mapasSub[sub]) mapasSub[sub] = { ofertas: [], sellouts: [], uc: [], custoPromos: [], margens: [] };
+          if (it.precoOferta != null) mapasSub[sub].ofertas.push(it.precoOferta);
+          if (it.sellout != null) mapasSub[sub].sellouts.push(it.sellout);
+          // Calcula margem para cada item
+          const uc = Number(it.precoUltimaCompra) || 0;
+          const sell = Number(it.sellout) || 0;
+          const custoPromo = Math.max(0, uc - sell);
+          const oferta = Number(it.precoOferta) || 0;
+          if (custoPromo > 0 && oferta > 0) {
+            const margem = ((oferta - custoPromo) / oferta) * 100;
+            mapasSub[sub].margens.push(margem);
+          }
+          if (uc > 0) mapasSub[sub].uc.push(uc);
+          if (custoPromo > 0) mapasSub[sub].custoPromos.push(custoPromo);
+        });
+        const avg = arr => arr.length ? arr.reduce((a, b) => a + b, 0) / arr.length : null;
+        const categorias = Object.entries(mapasSub).map(([sub, v]) => ({
+          sub,
+          ofertaMedia: avg(v.ofertas),
+          selloutMedio: avg(v.sellouts),
+          custoPromoMedio: avg(v.custoPromos),
+          margemMedia: avg(v.margens),
+          qtd: v.ofertas.length || v.sellouts.length,
+        }));
+        const info = {
+          rede: grupo.redeSubrede || grupo.codigoRede,
+          categorias,
+          totalItens: itens.length,
+        };
+        tooltipCache[enc._id] = info;
+        setTooltip(prev => prev?.id === enc._id ? { ...prev, data: info } : prev);
+      } catch { /* silencioso */ }
+    }
+  }
+
+  function onLeave() { setTooltip(null); }
 
   const nomeMes = new Date(mesAno.ano, mesAno.mes, 1)
     .toLocaleDateString("pt-BR", { month: "long", year: "numeric" });
@@ -198,6 +250,8 @@ function CalendarioRede({ grupo, onClickEncarte }) {
                   const isInicio = isoToYMD(e.periodoInicio) === dia.dataStr;
                   return (
                     <button key={e._id} onClick={() => onClickEncarte(e._id)} title={e.nome}
+                      onMouseEnter={(ev) => onHover(ev, e)}
+                      onMouseLeave={onLeave}
                       className={`w-full rounded-[4px] py-[3px] px-1 text-left text-[9px] font-bold leading-none truncate ${e.cor.bg} ${e.cor.text}`}>
                       {e.nome}
                     </button>
@@ -212,6 +266,42 @@ function CalendarioRede({ grupo, onClickEncarte }) {
       {/* Mensagem quando nao ha encartes */}
       {encartesComCor.length === 0 && (
         <p className="text-slate-400 text-sm text-center py-6">Nenhum encarte cadastrado ainda para esta rede</p>
+      )}
+
+      {/* Tooltip ao passar mouse */}
+      {tooltip && (
+        <div
+          style={{ position: 'fixed', left: tooltip.x, top: tooltip.y - 8, transform: 'translate(-50%, -100%)', zIndex: 9999 }}
+          className="pointer-events-none bg-slate-900 text-white rounded-xl shadow-xl px-3 py-2.5 text-xs min-w-[220px] max-w-[300px]"
+        >
+          {!tooltip.data ? (
+            <div className="text-slate-400 text-center py-1 text-[11px]">Carregando...</div>
+          ) : (
+            <>
+              <div className="font-bold text-sm mb-2">{tooltip.data.rede}</div>
+              {/* Cabeçalho da tabela */}
+              <div className="grid grid-cols-4 gap-x-2 text-[9px] text-slate-400 uppercase tracking-wide border-b border-slate-700 pb-1 mb-1">
+                <div className="col-span-1">Subcategoria</div>
+                <div className="text-right">Preço oferta</div>
+                <div className="text-right">Sellout</div>
+                <div className="text-right">Margem %</div>
+              </div>
+              {/* Linhas por subcategoria */}
+              {tooltip.data.categorias.map(c => (
+                <div key={c.sub} className="grid grid-cols-4 gap-x-2 py-[3px] border-b border-slate-800 last:border-0">
+                  <div className="col-span-1 text-[10px] text-slate-200 leading-tight truncate">{c.sub}</div>
+                  <div className="text-right text-[10px] font-semibold text-emerald-400">{c.ofertaMedia != null ? fmtBRL(c.ofertaMedia) : '—'}</div>
+                  <div className="text-right text-[10px] font-semibold text-amber-400">{c.selloutMedio != null ? fmtBRL(c.selloutMedio) : '—'}</div>
+                  <div className={`text-right text-[10px] font-semibold ${c.margemMedia != null ? (c.margemMedia >= 20 ? 'text-emerald-300' : c.margemMedia >= 10 ? 'text-yellow-300' : 'text-red-300') : 'text-slate-400'}`}>
+                    {c.margemMedia != null ? `${c.margemMedia.toFixed(1)}%` : '—'}
+                  </div>
+                </div>
+              ))}
+              <div className="text-[9px] text-slate-500 mt-1.5 text-right">{tooltip.data.totalItens} produto{tooltip.data.totalItens !== 1 ? 's' : ''}</div>
+            </>
+          )}
+          <div style={{ position: 'absolute', bottom: -5, left: '50%', transform: 'translateX(-50%)', width: 0, height: 0, borderLeft: '5px solid transparent', borderRight: '5px solid transparent', borderTop: '5px solid #0f172a' }} />
+        </div>
       )}
     </div>
   );
