@@ -74,14 +74,18 @@ export default function CalendarioGeralPage() {
       // Buscar lista de supervisores (apenas para admin/diretoria)
       try {
         const { data: userInfo } = await api.get("/user/perfil");
+        console.log("[CalendarioGeral] User role:", userInfo.role);
         setUserRole(userInfo.role);
         
         if (userInfo.role === "admin" || userInfo.role === "diretoria") {
           const { data: supData } = await api.get("/responsaveisRede/supervisores-disponiveis");
+          console.log("[CalendarioGeral] Supervisores carregados:", supData.supervisores);
           setSupervisores(supData.supervisores || []);
+        } else {
+          console.log("[CalendarioGeral] User role não é admin/diretoria, pulando supervisores");
         }
-      } catch {
-        // Se não conseguir buscar, ignora
+      } catch (err) {
+        console.error("[CalendarioGeral] Erro ao buscar supervisores:", err);
       }
     } catch (err) {
       console.error(err);
@@ -290,6 +294,15 @@ export default function CalendarioGeralPage() {
                     <option key={sup._id} value={sup._id}>{sup.nome}</option>
                   ))}
                 </select>
+              </div>
+            )}
+
+            {/* Debug: mostrar status do filtro de supervisor */}
+            {process.env.NODE_ENV === "development" && (
+              <div className="mb-2 p-2 bg-yellow-50 border border-yellow-200 rounded-lg text-xs text-yellow-700">
+                <div>userRole: {userRole}</div>
+                <div>supervisores.length: {supervisores.length}</div>
+                <div>Mostrando dropdown? {((userRole === "admin" || userRole === "diretoria") && supervisores.length > 0) ? "SIM" : "NÃO"}</div>
               </div>
             )}
 
