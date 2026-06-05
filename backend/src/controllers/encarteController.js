@@ -498,15 +498,25 @@ async function performance(req, res) {
     return encartes.map((enc) => {
       let somaMargemOferta = 0, countMargem = 0;
       let somaPrecoOferta = 0, countPreco = 0;
-      const selloutPorSub = {};
+      const subStats = {}; // subcategoria -> { margemSoma, margemCount, selloutSoma, selloutCount }
 
       for (const item of enc.itens || []) {
         if (item.margemOferta != null) { somaMargemOferta += item.margemOferta; countMargem++; }
         if (item.precoOferta != null) { somaPrecoOferta += item.precoOferta; countPreco++; }
+        
         const sub = item.subcategoria || "Sem subcategoria";
-        if (!selloutPorSub[sub]) selloutPorSub[sub] = { soma: 0, count: 0 };
-        if (item.sellout != null) { selloutPorSub[sub].soma += item.sellout; selloutPorSub[sub].count++; }
+        if (!subStats[sub]) subStats[sub] = { margemSoma: 0, margemCount: 0, selloutSoma: 0, selloutCount: 0 };
+        
+        if (item.margemOferta != null) { subStats[sub].margemSoma += item.margemOferta; subStats[sub].margemCount++; }
+        if (item.sellout != null) { subStats[sub].selloutSoma += item.sellout; subStats[sub].selloutCount++; }
       }
+
+      const subcategorias = Object.entries(subStats).map(([subcategoria, stats]) => ({
+        subcategoria,
+        margemMedia: stats.margemCount > 0 ? stats.margemSoma / stats.margemCount : null,
+        selloutMedio: stats.selloutCount > 0 ? stats.selloutSoma / stats.selloutCount : 0,
+        totalItens: stats.margemCount + stats.selloutCount > 0 ? Math.max(stats.margemCount, stats.selloutCount) : 0,
+      })).sort((a, b) => (b.margemMedia ?? 0) - (a.margemMedia ?? 0));
 
       return {
         _id: enc._id,
@@ -520,11 +530,7 @@ async function performance(req, res) {
         totalItens: (enc.itens || []).length,
         margemMediaOferta: countMargem > 0 ? somaMargemOferta / countMargem : null,
         precoMedioOferta: countPreco > 0 ? somaPrecoOferta / countPreco : null,
-        selloutPorSubcategoria: Object.entries(selloutPorSub).map(([subcategoria, { soma, count }]) => ({
-          subcategoria,
-          selloutMedio: count > 0 ? soma / count : 0,
-          totalItens: count,
-        })).sort((a, b) => b.selloutMedio - a.selloutMedio),
+        subcategorias,
         status: new Date(enc.periodoFim) < hoje ? "finalizado" : "ativo",
         periodo: periodoLabel,
       };

@@ -153,6 +153,7 @@ function TabelaSellout({ p1, p2 }) {
 function TabelaEncartes({ encartes, temP2 }) {
   const [ordenacao, setOrdenacao] = useState({ campo: "periodoInicio", dir: -1 });
   const [filtroStatus, setFiltroStatus] = useState("todos");
+  const [expandido, setExpandido] = useState(null);
 
   const ordenados = useMemo(() => {
     let lista = [...encartes];
@@ -207,6 +208,7 @@ function TabelaEncartes({ encartes, temP2 }) {
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-slate-100 text-xs text-slate-500 uppercase tracking-wider">
+              <th className="text-center py-3 px-2 font-semibold w-8">#</th>
               <th className="text-left py-3 px-4 font-semibold">Encarte</th>
               <th className="text-left py-3 px-4 font-semibold">Rede</th>
               {temP2 && <th className="text-center py-3 px-4 font-semibold">Período</th>}
@@ -219,41 +221,89 @@ function TabelaEncartes({ encartes, temP2 }) {
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-50">
-            {ordenados.map((enc) => (
-              <tr key={enc._id} className="hover:bg-slate-50 transition">
-                <td className="py-3 px-4">
-                  <Link href={`/encartes/${enc._id}`} className="font-semibold text-brand hover:underline">
-                    {enc.nome}
-                  </Link>
-                </td>
-                <td className="py-3 px-4 text-slate-600 text-xs">{enc.redeSubrede || enc.codigoRede}</td>
-                {temP2 && (
+            {ordenados.map((enc, idx) => (
+              <>
+                <tr key={enc._id} className={`hover:bg-slate-50 transition cursor-pointer ${expandido === enc._id ? "bg-blue-50" : ""}`} onClick={() => setExpandido(expandido === enc._id ? null : enc._id)}>
+                  <td className="text-center py-3 px-2 text-slate-400 text-xs">{expandido === enc._id ? "▼" : "▶"}</td>
+                  <td className="py-3 px-4">
+                    <Link href={`/encartes/${enc._id}`} className="font-semibold text-brand hover:underline" onClick={(e) => e.stopPropagation()}>
+                      {enc.nome}
+                    </Link>
+                  </td>
+                  <td className="py-3 px-4 text-slate-600 text-xs">{enc.redeSubrede || enc.codigoRede}</td>
+                  {temP2 && (
+                    <td className="py-3 px-4 text-center">
+                      <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${enc.periodo === 1 ? "bg-blue-100 text-blue-700" : "bg-purple-100 text-purple-700"}`}>
+                        P{enc.periodo}
+                      </span>
+                    </td>
+                  )}
+                  <td className="py-3 px-4 text-slate-600 text-xs">{enc.criadoPorNome}</td>
+                  <td className="py-3 px-4 text-slate-500 text-xs whitespace-nowrap">
+                    {fmtData(enc.periodoInicio)} – {fmtData(enc.periodoFim)}
+                  </td>
                   <td className="py-3 px-4 text-center">
-                    <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${enc.periodo === 1 ? "bg-blue-100 text-blue-700" : "bg-purple-100 text-purple-700"}`}>
-                      P{enc.periodo}
+                    <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${enc.status === "ativo" ? "bg-emerald-100 text-emerald-700" : "bg-slate-100 text-slate-500"}`}>
+                      {enc.status === "ativo" ? "Ativo" : "Finalizado"}
                     </span>
                   </td>
+                  <td className="py-3 px-4 text-right text-slate-700">{enc.totalItens}</td>
+                  <td className="py-3 px-4 text-right">
+                    <span className={`font-bold text-sm ${corMargem(enc.margemMediaOferta)}`}>
+                      {fmtPct(enc.margemMediaOferta)}
+                    </span>
+                  </td>
+                  <td className="py-3 px-4 text-right font-mono text-slate-700">{fmtBRL(enc.precoMedioOferta)}</td>
+                </tr>
+
+                {/* Linha expandida com subcategorias */}
+                {expandido === enc._id && (
+                  <tr className="bg-blue-50 border-b-2 border-blue-200">
+                    <td colSpan={temP2 ? 11 : 10} className="p-4">
+                      <div className="space-y-3">
+                        <h3 className="text-sm font-bold text-slate-800">Subcategorias</h3>
+                        <div className="overflow-x-auto">
+                          <table className="w-full text-xs">
+                            <thead>
+                              <tr className="border-b border-blue-200 text-slate-600 font-semibold">
+                                <th className="text-left py-2 px-3">Subcategoria</th>
+                                <th className="text-right py-2 px-3">Margem média</th>
+                                <th className="text-right py-2 px-3">Sellout médio</th>
+                                <th className="text-center py-2 px-3">Nº itens</th>
+                              </tr>
+                            </thead>
+                            <tbody className="divide-y divide-blue-100">
+                              {(enc.subcategorias || []).length > 0 ? (
+                                enc.subcategorias.map((sub) => (
+                                  <tr key={sub.subcategoria} className="hover:bg-blue-100 transition">
+                                    <td className="py-2 px-3 text-slate-700 font-medium">{sub.subcategoria}</td>
+                                    <td className="py-2 px-3 text-right">
+                                      <span className={`font-bold ${corMargem(sub.margemMedia)}`}>
+                                        {fmtPct(sub.margemMedia)}
+                                      </span>
+                                    </td>
+                                    <td className="py-2 px-3 text-right font-mono text-slate-700">{fmtBRL(sub.selloutMedio)}</td>
+                                    <td className="py-2 px-3 text-center text-slate-600">{sub.totalItens}</td>
+                                  </tr>
+                                ))
+                              ) : (
+                                <tr>
+                                  <td colSpan={4} className="py-4 text-center text-slate-400">
+                                    Nenhuma subcategoria
+                                  </td>
+                                </tr>
+                              )}
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
+                    </td>
+                  </tr>
                 )}
-                <td className="py-3 px-4 text-slate-600 text-xs">{enc.criadoPorNome}</td>
-                <td className="py-3 px-4 text-slate-500 text-xs whitespace-nowrap">
-                  {fmtData(enc.periodoInicio)} – {fmtData(enc.periodoFim)}
-                </td>
-                <td className="py-3 px-4 text-center">
-                  <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${enc.status === "ativo" ? "bg-emerald-100 text-emerald-700" : "bg-slate-100 text-slate-500"}`}>
-                    {enc.status === "ativo" ? "Ativo" : "Finalizado"}
-                  </span>
-                </td>
-                <td className="py-3 px-4 text-right text-slate-700">{enc.totalItens}</td>
-                <td className="py-3 px-4 text-right">
-                  <span className={`font-bold text-sm ${corMargem(enc.margemMediaOferta)}`}>
-                    {fmtPct(enc.margemMediaOferta)}
-                  </span>
-                </td>
-                <td className="py-3 px-4 text-right font-mono text-slate-700">{fmtBRL(enc.precoMedioOferta)}</td>
-              </tr>
+              </>
             ))}
             {ordenados.length === 0 && (
-              <tr><td colSpan={9} className="py-8 text-center text-slate-400">Nenhum encarte encontrado.</td></tr>
+              <tr><td colSpan={temP2 ? 11 : 10} className="py-8 text-center text-slate-400">Nenhum encarte encontrado.</td></tr>
             )}
           </tbody>
         </table>
