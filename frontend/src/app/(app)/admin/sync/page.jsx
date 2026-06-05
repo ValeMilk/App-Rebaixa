@@ -1,13 +1,24 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { useAuth } from "@/lib/auth";
 import api from "@/lib/api";
 import { fmtDataHora } from "@/lib/utils";
 
 export default function SyncPage() {
+  const router = useRouter();
+  const { user, loading: authLoading } = useAuth();
   const [status, setStatus] = useState(null);
   const [rodando, setRodando] = useState(false);
   const [msg, setMsg] = useState("");
+
+  // Proteger rota: apenas admin
+  useEffect(() => {
+    if (!authLoading && user && user.role !== "admin") {
+      router.replace("/encartes");
+    }
+  }, [user, authLoading, router]);
 
   async function carregar() {
     const { data } = await api.get("/sync/status");

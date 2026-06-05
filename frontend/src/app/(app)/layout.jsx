@@ -8,25 +8,25 @@ import api from "@/lib/api";
 import { IcoStore, IcoClipboard, IcoGrid, IcoSync, IcoUser, IcoUsers, IcoLogout, IcoTag, IcoCalendar } from "@/components/Icons";
 
 const NAV_SIDEBAR = [
-  { href: "/dashboard", label: "Dashboard", Icon: IcoGrid, roles: ["diretoria", "admin"] }, // Removido supervisor
+  { href: "/dashboard", label: "Dashboard", Icon: IcoGrid, roles: ["admin"] }, // Apenas admin
   { href: "/dashboard/supervisor", label: "Métricas Redes", Icon: IcoGrid, roles: ["supervisor", "diretoria", "admin"] },
-  { href: "/estoque", label: "Lojas", Icon: IcoStore, roles: ["vendedor", "diretoria", "admin"] }, // Removido supervisor
-  { href: "/solicitacoes", label: "Solicitações", Icon: IcoClipboard, roles: ["vendedor", "diretoria", "admin"] }, // Removido supervisor
+  { href: "/estoque", label: "Lojas", Icon: IcoStore, roles: ["vendedor", "admin"] }, // Removido diretoria
+  { href: "/solicitacoes", label: "Solicitações", Icon: IcoClipboard, roles: ["vendedor", "admin"] }, // Removido diretoria
   { href: "/encartes", label: "Encartes", Icon: IcoTag, roles: ["supervisor", "diretoria", "admin"] },
   { href: "/encartes/calendario", label: "Calendário Geral", Icon: IcoCalendar, roles: ["supervisor", "diretoria", "admin"] },
   { href: "/admin/usuarios", label: "Usuários", Icon: IcoUsers, roles: ["admin"] },
   { href: "/admin/responsabilidades", label: "Resp. Rede", Icon: IcoUsers, roles: ["admin"] },
-  { href: "/admin/sync", label: "Sincronização", Icon: IcoSync, roles: ["admin", "diretoria"] },
+  { href: "/admin/sync", label: "Sincronização", Icon: IcoSync, roles: ["admin"] }, // Removido diretoria
 ];
 
 const NAV_BOTTOM = [
-  { href: "/estoque", label: "Lojas", Icon: IcoStore, roles: ["vendedor", "diretoria", "admin"] }, // Removido supervisor
-  { href: "/solicitacoes", label: "Pedidos", Icon: IcoClipboard, roles: ["vendedor", "diretoria", "admin"] }, // Removido supervisor
+  { href: "/estoque", label: "Lojas", Icon: IcoStore, roles: ["vendedor", "admin"] }, // Removido diretoria
+  { href: "/solicitacoes", label: "Pedidos", Icon: IcoClipboard, roles: ["vendedor", "admin"] }, // Removido diretoria
   { href: "/encartes", label: "Encartes", Icon: IcoTag, roles: ["supervisor", "diretoria", "admin"] },
   { href: "/encartes/calendario", label: "Cal. Geral", Icon: IcoCalendar, roles: ["supervisor", "diretoria", "admin"] },
-  { href: "/dashboard", label: "Gráficos", Icon: IcoGrid, roles: ["diretoria", "admin"] }, // Removido supervisor
+  { href: "/dashboard", label: "Gráficos", Icon: IcoGrid, roles: ["admin"] }, // Removido diretoria
   { href: "/dashboard/supervisor", label: "Métricas", Icon: IcoGrid, roles: ["supervisor", "diretoria", "admin"] },
-  { href: "/admin/sync", label: "Sync", Icon: IcoSync, roles: ["admin", "diretoria"] },
+  { href: "/admin/sync", label: "Sync", Icon: IcoSync, roles: ["admin"] }, // Removido diretoria
   { href: "/admin/usuarios", label: "Usuários", Icon: IcoUsers, roles: ["admin"] },
 ];
 

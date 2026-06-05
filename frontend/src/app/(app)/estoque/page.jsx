@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useMemo, useState, useCallback } from "react";
+import { useRouter } from "next/navigation";
+import { useAuth } from "@/lib/auth";
 import api from "@/lib/api";
 import { fmtData } from "@/lib/utils";
 import { IcoSearch, IcoX, IcoChevronDown, IcoStore, IcoAlert, IcoClock, IcoPackage, IcoTrendDown, IcoTag, IcoUsers } from "@/components/Icons";
@@ -812,6 +814,8 @@ function ProdutoRedeCard({ produto, onRebaixar, acaoAtiva }) {
 }
 
 export default function EstoquePage() {
+  const router = useRouter();
+  const { user, loading: authLoading } = useAuth();
   const [itens, setItens] = useState([]);
   const [q, setQ] = useState("");
   const [loading, setLoading] = useState(true);
@@ -821,6 +825,13 @@ export default function EstoquePage() {
   const [formRedeProduto, setFormRedeProduto] = useState(null); // { codigoRede, redeSubrede, produto }
   const [toast, setToast] = useState("");
   const [acoesAtivas, setAcoesAtivas] = useState([]);
+
+  // Proteger rota: apenas vendedor e admin (não diretoria)
+  useEffect(() => {
+    if (!authLoading && user && user.role === "diretoria") {
+      router.replace("/encartes");
+    }
+  }, [user, authLoading, router]);
 
   const carregarAtivas = useCallback(async () => {
     try {

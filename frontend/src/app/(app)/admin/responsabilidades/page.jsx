@@ -1,9 +1,13 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
+import { useAuth } from "@/lib/auth";
 import api from "@/lib/api";
 
 export default function ResponsabilidadesPage() {
+  const router = useRouter();
+  const { user, loading: authLoading } = useAuth();
   const [itens, setItens] = useState([]);
   const [redes, setRedes] = useState([]);
   const [supervisores, setSupervisores] = useState([]);
@@ -11,6 +15,13 @@ export default function ResponsabilidadesPage() {
   const [form, setForm] = useState({ codigoRede: "", supervisorId: "" });
   const [editId, setEditId] = useState(null);
   const [filtroRede, setFiltroRede] = useState("");
+
+  // Proteger rota: apenas admin
+  useEffect(() => {
+    if (!authLoading && user && user.role !== "admin") {
+      router.replace("/encartes");
+    }
+  }, [user, authLoading, router]);
 
   async function carregar() {
     setLoading(true);

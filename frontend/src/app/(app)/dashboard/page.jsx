@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
+import { useRouter } from "next/navigation";
+import { useAuth } from "@/lib/auth";
 import api from "@/lib/api";
 import { fmtData, fmtDataHora } from "@/lib/utils";
 
@@ -154,13 +156,22 @@ function TabelaCriticos({ itens }) {
 
 // ── Page ────────────────────────────────────────────────────────────────────
 export default function DashboardPage() {
+  const router = useRouter();
+  const { user, loading } = useAuth();
   const [resumo, setResumo] = useState(null);
   const [itens, setItens] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [pageLoading, setPageLoading] = useState(true);
   const [atualizado, setAtualizado] = useState(null);
 
+  // Proteger rota: apenas admin
+  useEffect(() => {
+    if (!loading && user && user.role !== "admin") {
+      router.replace("/encartes");
+    }
+  }, [user, loading, router]);
+
   const carregar = useCallback(async () => {
-    setLoading(true);
+    setPageLoading(true);
     try {
       const [r1, r2] = await Promise.all([
         api.get("/estoque/resumo"),
@@ -170,7 +181,7 @@ export default function DashboardPage() {
       setItens(r2.data?.itens ?? []);
       setAtualizado(new Date());
     } catch (_) {}
-    finally { setLoading(false); }
+    finally { setPageLoading(false); }
   }, []);
 
   useEffect(() => { carregar(); }, [carregar]);
@@ -195,10 +206,10 @@ export default function DashboardPage() {
           )}
           <button
             onClick={carregar}
-            disabled={loading}
+            disabled={pageLoading}
             className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-medium text-slate-600 hover:bg-slate-50 transition disabled:opacity-40 flex items-center gap-1.5"
           >
-            <svg className={`h-3.5 w-3.5 ${loading ? "animate-spin" : ""}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+            <svg className={`h-3.5 w-3.5 ${pageLoading ? "animate-spin" : ""}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
               <path d="M4 4v5h5M20 20v-5h-5M4 9a9 9 0 0 1 15-4.2M20 15a9 9 0 0 1-15 4.2" strokeLinecap="round" />
             </svg>
             Atualizar
@@ -206,7 +217,7 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {loading ? (
+      {pageLoading ? (
         <div className="flex items-center justify-center h-64">
           <div className="flex flex-col items-center gap-3">
             <div className="h-7 w-7 rounded-full border-2 border-brand border-t-transparent animate-spin" />

@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { useAuth } from "@/lib/auth";
 import api from "@/lib/api";
 
 const ALL_ROLES = ["vendedor", "supervisor", "diretoria", "admin"];
@@ -9,10 +11,19 @@ const ROLE_LABEL = { vendedor: "Vendedor", supervisor: "Supervisor", diretoria: 
 const formVazio = { nome: "", email: "", codigo: "", role: "supervisor", roles: [] };
 
 export default function UsuariosPage() {
+  const router = useRouter();
+  const { user, loading: authLoading } = useAuth();
   const [users, setUsers] = useState([]);
   const [form, setForm] = useState(formVazio);
   const [editId, setEditId] = useState(null);
   const [loading, setLoading] = useState(true);
+
+  // Proteger rota: apenas admin
+  useEffect(() => {
+    if (!authLoading && user && user.role !== "admin") {
+      router.replace("/encartes");
+    }
+  }, [user, authLoading, router]);
 
   async function carregar() {
     setLoading(true);

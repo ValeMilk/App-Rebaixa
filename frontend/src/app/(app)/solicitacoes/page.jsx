@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import api from "@/lib/api";
 import { fmtDataHora } from "@/lib/utils";
@@ -264,12 +265,20 @@ function RedeCard({ redeGrupo, podeDecidir, decidindo, setDecidindo, motivoDecis
 }
 
 export default function SolicitacoesPage() {
-  const { user } = useAuth();
+  const router = useRouter();
+  const { user, loading: authLoading } = useAuth();
   const [lista, setLista] = useState([]);
   const [status, setStatus] = useState("");
   const [loading, setLoading] = useState(true);
   const [decidindo, setDecidindo] = useState(null);
   const [motivoDecisao, setMotivoDecisao] = useState("");
+
+  // Proteger rota: apenas vendedor e admin (não diretoria)
+  useEffect(() => {
+    if (!authLoading && user && user.role === "diretoria") {
+      router.replace("/encartes");
+    }
+  }, [user, authLoading, router]);
 
   async function carregar(stOverride) {
     setLoading(true);
