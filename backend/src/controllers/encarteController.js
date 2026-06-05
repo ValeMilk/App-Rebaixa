@@ -410,4 +410,147 @@ async function listarSubcategorias(req, res) {
   res.json({ subcategorias: subs.filter(Boolean).sort() });
 }
 
-module.exports = { listar, criar, obter, adicionarItem, removerItem, atualizarItem, atualizar, remover, listarProdutos, listarCategorias, listarSubcategorias };
+/**
+ * Performance de encartes para diretoria/admin.
+ * Suporta comparação entre dois períodos.
+ * Query params:
+ *   p1inicio, p1fim   — período 1 (obrigatório)
+ *   p2inicio, p2fim   — período 2 (opcional, para comparação)
+ *   codigoRede        — filtro de rede (opcional)
+ *   criadoPorId       — filtro de supervisor (opcional)
+ */
+async function performance(req, res) {
+  const { p1inicio, p1fim, p2inicio, p2fim, codigoRede, criadoPorId } = req.query;
+
+  function buildFiltro(inicio, fim) {
+    const f = {};
+    if (inicio || fim) {
+      f.$or = [
+        {
+          periodoInicio: {
+            ...(inicio ? { $gte: new Date(inicio) } : {}),
+            ...(fim ? { $lte: new Date(fim) } : {}),
+          },
+        },
+        {
+          periodoFim: {
+            ...(inicio ? { $gte: new Date(inicio) } : {}),
+            ...(fim ? { $lte: new Date(fim) } : {}),
+          },
+        },
+      ];
+    }
+    if (codigoRede) f.codigoRede = codigoRede;
+    if (criadoPorId) f.criadoPorId = criadoPorId;
+    return f;
+  }
+
+  function calcPeriodoStats(encartes) {
+    const hoje = new Date();
+    let totalItens = 0;
+    let somaMargemOferta = 0;
+    let countMargem = 0;
+    let somaPrecoOferta = 0;
+    let countPreco = 0;
+    const selloutPorSub = {}; // subcategoria -> { soma, count }
+
+    for (const enc of encartes) {
+      for (const item of enc.itens || []) {
+        totalItens++;
+
+        if (item.margemOferta != null) {
+          somaMargemOferta += item.margemOferta;
+          countMargem++;
+        }
+        if (item.precoOferta != null) {
+          somaPrecoOferta += item.precoOferta;
+          countPreco++;
+        }
+
+        const sub = item.subcategoria || "Sem subcategoria";
+        if (!selloutPorSub[sub]) selloutPorSub[sub] = { soma: 0, count: 0 };
+        if (item.sellout != null) {
+          selloutPorSub[sub].soma += item.sellout;
+          selloutPorSub[sub].count++;
+        }
+      }
+    }
+
+    const selloutArr = Object.entries(selloutPorSub)
+      .map(([subcategoria, { soma, count }]) => ({
+        subcategoria,
+        selloutMedio: count > 0 ? soma / count : 0,
+        totalItens: count,
+      }))
+      .sort((a, b) => b.selloutMedio - a.selloutMedio);
+
+    return {
+      totalEncartes: encartes.length,
+      totalItens,
+      margemMediaOferta: countMargem > 0 ? somaMargemOferta / countMargem : null,
+      precoMedioOferta: countPreco > 0 ? somaPrecoOferta / countPreco : null,
+      selloutPorSubcategoria: selloutArr,
+    };
+  }
+
+  function formatEncartes(encartes, periodoLabel) {
+    const hoje = new Date();
+    return encartes.map((enc) => {
+      let somaMargemOferta = 0, countMargem = 0;
+      let somaPrecoOferta = 0, countPreco = 0;
+      const selloutPorSub = {};
+
+      for (const item of enc.itens || []) {
+        if (item.margemOferta != null) { somaMargemOferta += item.margemOferta; countMargem++; }
+        if (item.precoOferta != null) { somaPrecoOferta += item.precoOferta; countPreco++; }
+        const sub = item.subcategoria || "Sem subcategoria";
+        if (!selloutPorSub[sub]) selloutPorSub[sub] = { soma: 0, count: 0 };
+        if (item.sellout != null) { selloutPorSub[sub].soma += item.sellout; selloutPorSub[sub].count++; }
+      }
+
+      return {
+        _id: enc._id,
+        nome: enc.nome,
+        codigoRede: enc.codigoRede,
+        redeSubrede: enc.redeSubrede,
+        periodoInicio: enc.periodoInicio,
+        periodoFim: enc.periodoFim,
+        criadoPorId: enc.criadoPorId,
+        criadoPorNome: enc.criadoPorNome,
+        totalItens: (enc.itens || []).length,
+        margemMediaOferta: countMargem > 0 ? somaMargemOferta / countMargem : null,
+        precoMedioOferta: countPreco > 0 ? somaPrecoOferta / countPreco : null,
+        selloutPorSubcategoria: Object.entries(selloutPorSub).map(([subcategoria, { soma, count }]) => ({
+          subcategoria,
+          selloutMedio: count > 0 ? soma / count : 0,
+          totalItens: count,
+        })).sort((a, b) => b.selloutMedio - a.selloutMedio),
+        status: new Date(enc.periodoFim) < hoje ? "finalizado" : "ativo",
+        periodo: periodoLabel,
+      };
+    });
+  }
+
+  const enc1 = p1inicio || p1fim
+    ? await Encarte.find(buildFiltro(p1inicio, p1fim)).lean()
+    : await Encarte.find(buildFiltro()).lean();
+
+  const stats1 = calcPeriodoStats(enc1);
+  const encartes1 = formatEncartes(enc1, 1);
+
+  let stats2 = null;
+  let encartes2 = [];
+  if (p2inicio || p2fim) {
+    const enc2 = await Encarte.find(buildFiltro(p2inicio, p2fim)).lean();
+    stats2 = calcPeriodoStats(enc2);
+    encartes2 = formatEncartes(enc2, 2);
+  }
+
+  res.json({
+    periodo1: stats1,
+    periodo2: stats2,
+    encartes: [...encartes1, ...encartes2],
+  });
+}
+
+module.exports = { listar, criar, obter, adicionarItem, removerItem, atualizarItem, atualizar, remover, listarProdutos, listarCategorias, listarSubcategorias, performance };

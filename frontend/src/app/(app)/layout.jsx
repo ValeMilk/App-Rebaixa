@@ -5,7 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useRef } from "react";
 import { useAuth } from "@/lib/auth";
 import api from "@/lib/api";
-import { IcoStore, IcoClipboard, IcoGrid, IcoSync, IcoUser, IcoUsers, IcoLogout, IcoTag, IcoCalendar } from "@/components/Icons";
+import { IcoStore, IcoClipboard, IcoGrid, IcoSync, IcoUser, IcoUsers, IcoLogout, IcoTag, IcoCalendar, IcoChart } from "@/components/Icons";
 
 const NAV_SIDEBAR = [
   { href: "/dashboard", label: "Dashboard", Icon: IcoGrid, roles: ["admin"] }, // Apenas admin
@@ -14,6 +14,7 @@ const NAV_SIDEBAR = [
   { href: "/solicitacoes", label: "Solicitações", Icon: IcoClipboard, roles: ["vendedor", "admin"] }, // Removido diretoria
   { href: "/encartes", label: "Encartes", Icon: IcoTag, roles: ["supervisor", "diretoria", "admin"] },
   { href: "/encartes/calendario", label: "Calendário Geral", Icon: IcoCalendar, roles: ["supervisor", "diretoria", "admin"] },
+  { href: "/encartes/performance", label: "Performance", Icon: IcoChart, roles: ["diretoria", "admin"] },
   { href: "/admin/usuarios", label: "Usuários", Icon: IcoUsers, roles: ["admin"] },
   { href: "/admin/responsabilidades", label: "Resp. Rede", Icon: IcoUsers, roles: ["admin"] },
   { href: "/admin/sync", label: "Sincronização", Icon: IcoSync, roles: ["admin"] }, // Removido diretoria
@@ -24,6 +25,7 @@ const NAV_BOTTOM = [
   { href: "/solicitacoes", label: "Pedidos", Icon: IcoClipboard, roles: ["vendedor", "admin"] }, // Removido diretoria
   { href: "/encartes", label: "Encartes", Icon: IcoTag, roles: ["supervisor", "diretoria", "admin"] },
   { href: "/encartes/calendario", label: "Cal. Geral", Icon: IcoCalendar, roles: ["supervisor", "diretoria", "admin"] },
+  { href: "/encartes/performance", label: "Performance", Icon: IcoChart, roles: ["diretoria", "admin"] },
   { href: "/dashboard", label: "Gráficos", Icon: IcoGrid, roles: ["admin"] }, // Removido diretoria
   { href: "/dashboard/supervisor", label: "Métricas", Icon: IcoGrid, roles: ["supervisor", "diretoria", "admin"] },
   { href: "/admin/sync", label: "Sync", Icon: IcoSync, roles: ["admin"] }, // Removido diretoria

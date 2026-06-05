@@ -12,6 +12,7 @@ const {
   listarProdutos,
   listarCategorias,
   listarSubcategorias,
+  performance,
 } = require("../controllers/encarteController");
 
 const router = express.Router();
@@ -27,6 +28,7 @@ router.post("/",                          requireRole("supervisor", "admin"), cr
 router.get("/categorias",                 roles, listarCategorias);
 router.get("/produtos",                   roles, listarProdutos);
 router.get("/subcategorias",              roles, listarSubcategorias);
+router.get("/performance",                requireRole("admin", "diretoria"), performance);
 router.get("/:id",                        roles, obter);
 router.put("/:id",                        roles, atualizar);
 router.delete("/:id",                     roles, remover);
