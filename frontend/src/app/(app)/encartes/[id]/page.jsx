@@ -1055,6 +1055,49 @@ export default function EncarteDetalhe() {
     );
   }
 
+  // Fallback: garante que as margens sejam calculadas se não existirem
+  const encarteComMargens = {
+    ...encarte,
+    itens: encarte.itens.map(it => {
+      let margemPDV = it.margemPDV;
+      let margemOferta = it.margemOferta;
+      let custoPromo = it.custoPromo;
+      let calculouFallback = false;
+      
+      // Se margem não existe, calcula baseado nos preços
+      if (margemPDV == null && it.precoUltimaCompra != null && it.precoPDV != null) {
+        const uc = Number(it.precoUltimaCompra) || 0;
+        const pdv = Number(it.precoPDV) || 0;
+        if (uc > 0 && pdv > 0) {
+          margemPDV = ((pdv - uc) / pdv) * 100;
+          calculouFallback = true;
+        }
+      }
+      
+      if (margemOferta == null && it.precoUltimaCompra != null && it.precoOferta != null) {
+        const uc = Number(it.precoUltimaCompra) || 0;
+        const sell = Number(it.sellout) || 0;
+        custoPromo = Math.max(0, uc - sell);
+        const oferta = Number(it.precoOferta) || 0;
+        if (custoPromo > 0 && oferta > 0) {
+          margemOferta = ((oferta - custoPromo) / oferta) * 100;
+          calculouFallback = true;
+        }
+      }
+      
+      if (calculouFallback) {
+        console.log(`[Margin Fallback] Produto: ${it.produto}, margemPDV: ${margemPDV?.toFixed(1)}%, margemOferta: ${margemOferta?.toFixed(1)}%`);
+      }
+      
+      return {
+        ...it,
+        margemPDV,
+        margemOferta,
+        custoPromo: custoPromo != null ? custoPromo : it.custoPromo
+      };
+    })
+  };
+
   return (
     <div className="flex flex-col min-h-screen bg-slate-50">
       {/* Header */}
@@ -1086,31 +1129,31 @@ export default function EncarteDetalhe() {
         <div className="flex items-center gap-4 mt-2.5 text-[11px] text-slate-500">
           <div className="flex items-center gap-1.5">
             <IcoCalendar className="w-3.5 h-3.5 shrink-0" />
-            <span>{fmtData(encarte.periodoInicio)} → {fmtData(encarte.periodoFim)}</span>
+            <span>{fmtData(encarteComMargens.periodoInicio)} → {fmtData(encarteComMargens.periodoFim)}</span>
           </div>
           <div className="flex items-center gap-1.5">
             <IcoTag className="w-3.5 h-3.5 shrink-0" />
-            <span className="font-semibold text-slate-700">{encarte.itens.length}</span>
-            <span>produto{encarte.itens.length !== 1 ? 's' : ''}</span>
+            <span className="font-semibold text-slate-700">{encarteComMargens.itens.length}</span>
+            <span>produto{encarteComMargens.itens.length !== 1 ? 's' : ''}</span>
           </div>
         </div>
       </div>
 
       {/* Lista de itens - accordion por subcategoria */}
       <div className="flex-1 p-4 pb-24 space-y-2">
-        {encarte.itens.length === 0 ? (
+        {encarteComMargens.itens.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20 text-center">
             <div className="w-12 h-12 rounded-xl bg-slate-100 flex items-center justify-center mb-2">
               <IcoPackage className="w-6 h-6 text-slate-400" />
             </div>
             <p className="text-sm text-slate-600 font-medium">Nenhum produto adicionado</p>
             <p className="text-xs text-slate-400 mt-1 max-w-[200px]">
-              {encarte.podeEditar ? 'Adicione produtos para montar o encarte' : 'Aguardando produtos'}
+              {encarteComMargens.podeEditar ? 'Adicione produtos para montar o encarte' : 'Aguardando produtos'}
             </p>
           </div>
         ) : (() => {
           const grupos = {};
-          for (const it of encarte.itens) {
+          for (const it of encarteComMargens.itens) {
             const key = it.subcategoria || 'Sem subcategoria';
             if (!grupos[key]) grupos[key] = [];
             grupos[key].push(it);
