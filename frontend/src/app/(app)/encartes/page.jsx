@@ -13,17 +13,25 @@ import {
 } from "@/components/Icons";
 
 // ---------------------------------------------------------------------------
-// Paleta de cores para distinguir encartes no calendario
+// Paleta de cores para distinguir encartes no calendario (expandida)
 // ---------------------------------------------------------------------------
 const PALETTE = [
-  { bg: "bg-brand",       text: "text-white", light: "bg-brand/10",    border: "border-brand/25"    },
-  { bg: "bg-emerald-500", text: "text-white", light: "bg-emerald-50",  border: "border-emerald-200" },
-  { bg: "bg-violet-500",  text: "text-white", light: "bg-violet-50",   border: "border-violet-200"  },
-  { bg: "bg-amber-500",   text: "text-white", light: "bg-amber-50",    border: "border-amber-200"   },
-  { bg: "bg-rose-500",    text: "text-white", light: "bg-rose-50",     border: "border-rose-200"    },
-  { bg: "bg-cyan-500",    text: "text-white", light: "bg-cyan-50",     border: "border-cyan-200"    },
-  { bg: "bg-orange-500",  text: "text-white", light: "bg-orange-50",   border: "border-orange-200"  },
-  { bg: "bg-pink-500",    text: "text-white", light: "bg-pink-50",     border: "border-pink-200"    },
+  { bg: "bg-brand",          text: "text-white", light: "bg-brand/10",       border: "border-brand/25"       },
+  { bg: "bg-emerald-500",    text: "text-white", light: "bg-emerald-50",     border: "border-emerald-200"    },
+  { bg: "bg-violet-500",     text: "text-white", light: "bg-violet-50",      border: "border-violet-200"     },
+  { bg: "bg-amber-500",      text: "text-white", light: "bg-amber-50",       border: "border-amber-200"      },
+  { bg: "bg-rose-500",       text: "text-white", light: "bg-rose-50",        border: "border-rose-200"       },
+  { bg: "bg-cyan-500",       text: "text-white", light: "bg-cyan-50",        border: "border-cyan-200"       },
+  { bg: "bg-orange-500",     text: "text-white", light: "bg-orange-50",      border: "border-orange-200"     },
+  { bg: "bg-pink-500",       text: "text-white", light: "bg-pink-50",        border: "border-pink-200"       },
+  { bg: "bg-indigo-500",     text: "text-white", light: "bg-indigo-50",      border: "border-indigo-200"     },
+  { bg: "bg-lime-500",       text: "text-white", light: "bg-lime-50",        border: "border-lime-200"       },
+  { bg: "bg-fuchsia-500",    text: "text-white", light: "bg-fuchsia-50",     border: "border-fuchsia-200"    },
+  { bg: "bg-red-500",        text: "text-white", light: "bg-red-50",         border: "border-red-200"        },
+  { bg: "bg-green-600",      text: "text-white", light: "bg-green-50",       border: "border-green-200"      },
+  { bg: "bg-blue-600",       text: "text-white", light: "bg-blue-50",        border: "border-blue-200"       },
+  { bg: "bg-purple-600",     text: "text-white", light: "bg-purple-50",      border: "border-purple-200"     },
+  { bg: "bg-teal-600",       text: "text-white", light: "bg-teal-50",        border: "border-teal-200"       },
 ];
 
 function isoToYMD(iso) { return iso ? iso.slice(0, 10) : null; }

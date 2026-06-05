@@ -6,17 +6,25 @@ import api from "@/lib/api";
 import { IcoChevronRight, IcoCalendar } from "@/components/Icons";
 
 // ---------------------------------------------------------------------------
-// Paleta: uma cor por rede
+// Paleta: uma cor por rede (expandida para suportar mais redes)
 // ---------------------------------------------------------------------------
 const PALETTE = [
-  { bg: "bg-brand",       text: "text-white" },
-  { bg: "bg-emerald-500", text: "text-white" },
-  { bg: "bg-violet-500",  text: "text-white" },
-  { bg: "bg-amber-500",   text: "text-white" },
-  { bg: "bg-rose-500",    text: "text-white" },
-  { bg: "bg-cyan-500",    text: "text-white" },
-  { bg: "bg-orange-500",  text: "text-white" },
-  { bg: "bg-pink-500",    text: "text-white" },
+  { bg: "bg-brand",          text: "text-white" },
+  { bg: "bg-emerald-500",    text: "text-white" },
+  { bg: "bg-violet-500",     text: "text-white" },
+  { bg: "bg-amber-500",      text: "text-white" },
+  { bg: "bg-rose-500",       text: "text-white" },
+  { bg: "bg-cyan-500",       text: "text-white" },
+  { bg: "bg-orange-500",     text: "text-white" },
+  { bg: "bg-pink-500",       text: "text-white" },
+  { bg: "bg-indigo-500",     text: "text-white" },
+  { bg: "bg-lime-500",       text: "text-white" },
+  { bg: "bg-fuchsia-500",    text: "text-white" },
+  { bg: "bg-red-500",        text: "text-white" },
+  { bg: "bg-green-600",      text: "text-white" },
+  { bg: "bg-blue-600",       text: "text-white" },
+  { bg: "bg-purple-600",     text: "text-white" },
+  { bg: "bg-teal-600",       text: "text-white" },
 ];
 
 const DIAS_SEMANA = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sab"];
@@ -29,22 +37,52 @@ function ymd(ano, mes, dia) {
 // ---------------------------------------------------------------------------
 // Componente principal
 // ---------------------------------------------------------------------------
+const STORAGE_KEY_SUPERVISOR = "calendario_supervisor_sel";
+
 export default function CalendarioGeralPage() {
   const router = useRouter();
   const [grupos, setGrupos] = useState([]);
   const [loading, setLoading] = useState(true);
   const [tooltip, setTooltip] = useState(null);
   const [redeFiltrada, setRedeFiltrada] = useState(null); // Nome da rede filtrada
+  const [supervisores, setSupervisores] = useState([]); // Lista de supervisores
+  const [supervisorFiltrado, setSupervisorFiltrado] = useState(() => {
+    if (typeof window !== "undefined") return sessionStorage.getItem(STORAGE_KEY_SUPERVISOR) || null;
+    return null;
+  }); // ID ou null
+  const [userRole, setUserRole] = useState(null); // admin ou diretoria
   const tooltipCache = useMemo(() => ({}), []);
 
   const hoje = new Date();
   const [mesAno, setMesAno] = useState({ ano: hoje.getFullYear(), mes: hoje.getMonth() });
+
+  // Salva filtro de supervisor em sessionStorage
+  useEffect(() => {
+    if (supervisorFiltrado) {
+      sessionStorage.setItem(STORAGE_KEY_SUPERVISOR, supervisorFiltrado);
+    } else {
+      sessionStorage.removeItem(STORAGE_KEY_SUPERVISOR);
+    }
+  }, [supervisorFiltrado]);
 
   const carregar = useCallback(async () => {
     setLoading(true);
     try {
       const { data } = await api.get("/encartes");
       setGrupos(data.grupos || []);
+      
+      // Buscar lista de supervisores (apenas para admin/diretoria)
+      try {
+        const { data: userInfo } = await api.get("/user/perfil");
+        setUserRole(userInfo.role);
+        
+        if (userInfo.role === "admin" || userInfo.role === "diretoria") {
+          const { data: supData } = await api.get("/responsaveisRede/supervisores-disponiveis");
+          setSupervisores(supData.supervisores || []);
+        }
+      } catch {
+        // Se não conseguir buscar, ignora
+      }
     } catch (err) {
       console.error(err);
     } finally {
@@ -66,18 +104,25 @@ export default function CalendarioGeralPage() {
     return mapa;
   }, [grupos]);
 
-  // Achata todos os encartes — usa mapa fixo de cores
+  // Achata todos os encartes — usa mapa fixo de cores, aplica filtro de supervisor
   const encartesFlat = useMemo(() => {
     const result = [];
     grupos.forEach((g) => {
       const redeNome = g.redeSubrede || g.codigoRede;
       const cor = mapeoCores[redeNome] || PALETTE[0];
       g.encartes.forEach((e) => {
-        result.push({ ...e, cor, redeNome });
+        // Filtro de supervisor: se tem supervisor filtrado, verifica se o encarte foi criado por ele
+        if (supervisorFiltrado) {
+          if (String(e.criadoPorId) === supervisorFiltrado) {
+            result.push({ ...e, cor, redeNome });
+          }
+        } else {
+          result.push({ ...e, cor, redeNome });
+        }
       });
     });
     return result;
-  }, [grupos, mapeoCores]);
+  }, [grupos, mapeoCores, supervisorFiltrado]);
 
   // Redes que têm pelo menos 1 encarte (para legenda)
   const redesComEncartes = useMemo(() =>
@@ -228,6 +273,23 @@ export default function CalendarioGeralPage() {
                     </button>
                   ))}
                 </div>
+              </div>
+            )}
+
+            {/* Filtro de supervisor — apenas para admin/diretoria */}
+            {(userRole === "admin" || userRole === "diretoria") && supervisores.length > 0 && (
+              <div className="mb-4 p-3 bg-white rounded-2xl border border-slate-100 shadow-sm">
+                <div className="text-xs text-slate-500 font-semibold uppercase tracking-wide mb-2">Filtrar por supervisor</div>
+                <select
+                  value={supervisorFiltrado || ""}
+                  onChange={(e) => setSupervisorFiltrado(e.target.value || null)}
+                  className="w-full md:w-64 px-3 py-2 rounded-lg border border-slate-200 text-sm bg-white focus:outline-none focus:border-brand focus:ring-2 focus:ring-brand/20 transition"
+                >
+                  <option value="">Todos os supervisores</option>
+                  {supervisores.map((sup) => (
+                    <option key={sup._id} value={sup._id}>{sup.nome}</option>
+                  ))}
+                </select>
               </div>
             )}
 
