@@ -285,6 +285,53 @@ async function removerItem(req, res) {
 }
 
 /**
+ * Atualiza precificacao de um item no encarte.
+ */
+async function atualizarItem(req, res) {
+  const { id, itemId } = req.params;
+  const { precoPDV, precoOferta, sellout } = req.body || {};
+
+  const enc = await Encarte.findById(id);
+  if (!enc) return res.status(404).json({ error: "Encarte nao encontrado" });
+
+  if (!(await podeEditar(req.user, enc))) {
+    return res.status(403).json({ error: "Apenas o supervisor responsavel pode editar este encarte" });
+  }
+
+  const item = enc.itens.find((it) => String(it._id) === itemId);
+  if (!item) return res.status(404).json({ error: "Item nao encontrado" });
+
+  // Atualiza os preços
+  if (precoPDV != null) item.precoPDV = Number(precoPDV);
+  if (precoOferta != null) item.precoOferta = Number(precoOferta);
+  if (sellout != null) item.sellout = Number(sellout);
+
+  // Recalcula margens e custoPromo
+  const uc = Number(item.precoUltimaCompra) || 0;
+  const pdv = Number(item.precoPDV) || 0;
+  const oferta = Number(item.precoOferta) || 0;
+  const sell = Number(item.sellout) || 0;
+
+  if (uc > 0 && pdv > 0) {
+    item.margemPDV = ((pdv - uc) / pdv) * 100;
+  } else {
+    item.margemPDV = null;
+  }
+
+  const custoPromo = uc - sell;
+  if (custoPromo > 0 && oferta > 0) {
+    item.margemOferta = ((oferta - custoPromo) / oferta) * 100;
+    item.custoPromo = custoPromo;
+  } else {
+    item.margemOferta = null;
+    item.custoPromo = null;
+  }
+
+  await enc.save();
+  res.json(enc);
+}
+
+/**
  * Atualiza cabecalho do encarte (nome, periodo).
  */
 async function atualizar(req, res) {
@@ -363,4 +410,4 @@ async function listarSubcategorias(req, res) {
   res.json({ subcategorias: subs.filter(Boolean).sort() });
 }
 
-module.exports = { listar, criar, obter, adicionarItem, removerItem, atualizar, remover, listarProdutos, listarCategorias, listarSubcategorias };
+module.exports = { listar, criar, obter, adicionarItem, removerItem, atualizarItem, atualizar, remover, listarProdutos, listarCategorias, listarSubcategorias };

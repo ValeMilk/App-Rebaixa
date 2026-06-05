@@ -287,7 +287,7 @@ function AdicionarProdutoModal({ encarteId, codigoRede, onClose, onAdicionado })
     if (produtosSelecionados.length === 0) { setErro("Selecione pelo menos um produto"); return; }
     // Tarefa 3: bloquear se margem oferta > margem PDV
     if (margemOfertaPreview !== null && margemPDVPreview !== null && margemOfertaPreview > margemPDVPreview) {
-      setErro(`Margem Oferta (${margemOfertaPreview.toFixed(1)}%) não pode ser maior que Margem PDV (${margemPDVPreview.toFixed(1)}%). Ajuste o preço de oferta ou sellout.`);
+      setErro(`Margem Oferta (${margemOfertaPreview.toFixed(1)}%) não pode ser maior ou igual que Margem PDV (${margemPDVPreview.toFixed(1)}%). Ajuste o preço de oferta ou sellout.`);
       return;
     }
     setSalvando(true);
@@ -780,12 +780,217 @@ function AdicionarProdutoModal({ encarteId, codigoRede, onClose, onAdicionado })
   );
 }
 
+/** Modal para editar precificação de um produto já adicionado */
+function EditarPrecificacaoModal({ item, encarteId, onClose, onAtualizado }) {
+  const [precoPDV, setPrecoPDV] = useState(String(item.precoPDV || ""));
+  const [precoOferta, setPrecoOferta] = useState(String(item.precoOferta || ""));
+  const [sellout, setSellout] = useState(String(item.sellout || ""));
+  
+  const [editandoMargemPDV, setEditandoMargemPDV] = useState(false);
+  const [editandoMargemOferta, setEditandoMargemOferta] = useState(false);
+  const [margemPDVInput, setMargemPDVInput] = useState("");
+  const [margemOfertaInput, setMargemOfertaInput] = useState("");
+  
+  const [salvando, setSalvando] = useState(false);
+  const [erro, setErro] = useState("");
+
+  const pdvNum = Number(precoPDV) || 0;
+  const ofertaNum = Number(precoOferta) || 0;
+  const selloutNum = Number(sellout) || 0;
+  const ucNum = Number(item.precoUltimaCompra) || 0;
+
+  const margemPDV = (ucNum > 0 && pdvNum > 0)
+    ? ((pdvNum - ucNum) / pdvNum) * 100
+    : null;
+  
+  const custoPromoCalc = ucNum - selloutNum;
+  const margemOferta = (custoPromoCalc > 0 && ofertaNum > 0)
+    ? ((ofertaNum - custoPromoCalc) / ofertaNum) * 100
+    : null;
+
+  function calcularPrecoPorMargemPDV(margemDesejada) {
+    if (!ucNum || margemDesejada >= 100 || margemDesejada < 0) return;
+    const precoCalculado = ucNum / (1 - margemDesejada / 100);
+    setPrecoPDV(precoCalculado.toFixed(2));
+  }
+
+  function calcularPrecoPorMargemOferta(margemDesejada) {
+    if (!custoPromoCalc || margemDesejada >= 100 || margemDesejada < 0) return;
+    const precoCalculado = custoPromoCalc / (1 - margemDesejada / 100);
+    setPrecoOferta(precoCalculado.toFixed(2));
+  }
+
+  function handleMargemPDVClick() {
+    if (margemPDV != null) {
+      setMargemPDVInput(margemPDV.toFixed(1));
+      setEditandoMargemPDV(true);
+    }
+  }
+
+  function handleMargemOfertaClick() {
+    if (margemOferta != null) {
+      setMargemOfertaInput(margemOferta.toFixed(1));
+      setEditandoMargemOferta(true);
+    }
+  }
+
+  function aplicarMargemPDV() {
+    const margem = Number(margemPDVInput);
+    if (!isNaN(margem)) calcularPrecoPorMargemPDV(margem);
+    setEditandoMargemPDV(false);
+  }
+
+  function aplicarMargemOferta() {
+    const margem = Number(margemOfertaInput);
+    if (!isNaN(margem)) calcularPrecoPorMargemOferta(margem);
+    setEditandoMargemOferta(false);
+  }
+
+  async function handleSalvar() {
+    setErro("");
+    if (!precoPDV) { setErro("Informe o Preço PDV"); return; }
+    if (!precoOferta) { setErro("Informe o Preço Oferta"); return; }
+    if (margemOferta !== null && margemPDV !== null && margemOferta > margemPDV) {
+      setErro(`Margem Oferta (${margemOferta.toFixed(1)}%) não pode ser maior ou igual que Margem PDV (${margemPDV.toFixed(1)}%). Ajuste o preço de oferta ou sellout.`);
+      return;
+    }
+
+    setSalvando(true);
+    try {
+      const { data } = await api.put(`/encartes/${encarteId}/itens/${item._id}`, {
+        precoPDV: Number(precoPDV),
+        precoOferta: Number(precoOferta),
+        sellout: Number(sellout) || null,
+      });
+      onAtualizado(data);
+      onClose();
+    } catch (err) {
+      setErro(err.response?.data?.error || "Erro ao atualizar item");
+    } finally {
+      setSalvando(false);
+    }
+  }
+
+  return (
+    <div className="fixed inset-0 bg-black/50 z-50 flex items-end lg:items-center lg:justify-center overflow-y-auto safe-area-pt">
+      <div className="bg-white rounded-t-3xl lg:rounded-2xl w-full lg:w-[90%] lg:max-w-2xl max-h-[95vh] lg:max-h-[90vh] flex flex-col shadow-2xl">
+        {/* Header */}
+        <div className="shrink-0 flex items-center justify-between px-4 lg:px-6 py-4 border-b border-slate-200">
+          <h2 className="font-bold text-lg text-slate-900">Editar Precificação</h2>
+          <button onClick={onClose} disabled={salvando} className="h-8 w-8 rounded-lg bg-slate-100 hover:bg-slate-200 flex items-center justify-center text-slate-600 transition disabled:opacity-50">
+            <IcoX className="w-5 h-5" />
+          </button>
+        </div>
+
+        {/* Conteúdo */}
+        <div className="flex-1 overflow-y-auto px-4 lg:px-6 py-4 space-y-4">
+          {/* Produto info */}
+          <div className="bg-slate-50 rounded-xl p-3 border border-slate-200">
+            <div className="text-xs text-slate-500 font-medium uppercase tracking-wide mb-1">Produto</div>
+            <div className="font-semibold text-slate-900">{item.produto}</div>
+            <div className="text-xs text-slate-400 mt-1">#{item.produtoCodigo}</div>
+          </div>
+
+          {/* Última compra */}
+          <div className="bg-blue-50 rounded-xl p-3 border border-blue-200">
+            <div className="text-xs text-blue-700 font-semibold uppercase tracking-wide mb-1">Última Compra (Custo)</div>
+            <div className="text-2xl font-bold text-blue-900">{fmtBRL(item.precoUltimaCompra)}</div>
+          </div>
+
+          {/* Preço PDV */}
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <label className="text-xs font-semibold text-slate-600 uppercase tracking-wide">Preço PDV</label>
+              <MargemBadge 
+                pct={margemPDV}
+                onClick={handleMargemPDVClick}
+                editando={editandoMargemPDV}
+                inputValue={margemPDVInput}
+                onInputChange={setMargemPDVInput}
+                onBlur={aplicarMargemPDV}
+                onKeyDown={(e) => { if (e.key === 'Enter') aplicarMargemPDV(); }}
+              />
+            </div>
+            <input
+              type="number" inputMode="decimal" step="0.01"
+              className="w-full border-2 border-slate-200 rounded-lg px-3 py-2.5 text-sm font-medium focus:outline-none focus:border-brand focus:ring-2 focus:ring-brand/20"
+              placeholder="0,00" value={precoPDV} onChange={(e) => setPrecoPDV(e.target.value)}
+            />
+          </div>
+
+          {/* Preço Oferta */}
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <label className="text-xs font-semibold text-slate-600 uppercase tracking-wide">Preço Oferta</label>
+              <MargemBadge 
+                pct={margemOferta}
+                onClick={handleMargemOfertaClick}
+                editando={editandoMargemOferta}
+                inputValue={margemOfertaInput}
+                onInputChange={setMargemOfertaInput}
+                onBlur={aplicarMargemOferta}
+                onKeyDown={(e) => { if (e.key === 'Enter') aplicarMargemOferta(); }}
+              />
+            </div>
+            <input
+              type="number" inputMode="decimal" step="0.01"
+              className="w-full border-2 border-slate-200 rounded-lg px-3 py-2.5 text-sm font-medium focus:outline-none focus:border-brand focus:ring-2 focus:ring-brand/20"
+              placeholder="0,00" value={precoOferta} onChange={(e) => setPrecoOferta(e.target.value)}
+            />
+          </div>
+
+          {/* Sellout */}
+          <div className="space-y-2">
+            <label className="text-xs font-semibold text-slate-600 uppercase tracking-wide">Sellout</label>
+            <input
+              type="number" inputMode="decimal" step="0.01"
+              className="w-full border-2 border-slate-200 rounded-lg px-3 py-2.5 text-sm font-medium focus:outline-none focus:border-brand focus:ring-2 focus:ring-brand/20"
+              placeholder="0,00" value={sellout} onChange={(e) => setSellout(e.target.value)}
+            />
+          </div>
+
+          {/* Custo Promo */}
+          {custoPromoCalc > 0 && (
+            <div className="bg-emerald-50 rounded-xl px-4 py-3 border-2 border-emerald-200">
+              <div className="text-xs font-semibold text-emerald-700 uppercase tracking-wide mb-1">Custo Promo</div>
+              <div className="text-2xl font-bold text-emerald-700">{fmtBRL(custoPromoCalc)}</div>
+            </div>
+          )}
+
+          {erro && (
+            <div className="bg-red-50 border-2 border-red-200 rounded-xl px-3 py-2 text-xs font-medium text-red-700">
+              {erro}
+            </div>
+          )}
+        </div>
+
+        {/* Footer */}
+        <div className="shrink-0 px-4 lg:px-6 pb-4 lg:pb-4 pt-3 border-t border-slate-200 bg-gradient-to-t from-slate-50 to-white rounded-b-2xl flex gap-2">
+          <button
+            onClick={onClose}
+            disabled={salvando}
+            className="flex-1 py-3 rounded-lg border-2 border-slate-200 text-slate-700 font-semibold hover:bg-slate-50 active:scale-[0.98] transition disabled:opacity-50">
+            Cancelar
+          </button>
+          <button
+            onClick={handleSalvar}
+            disabled={salvando}
+            className="flex-1 py-3 rounded-lg bg-brand hover:bg-brand-600 text-white font-semibold active:scale-[0.98] transition disabled:opacity-50 disabled:cursor-not-allowed">
+            {salvando ? "Salvando..." : "✓ Salvar"}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function EncarteDetalhe() {
   const { id } = useParams();
   const router = useRouter();
   const [encarte, setEncarte] = useState(null);
   const [loading, setLoading] = useState(true);
   const [modalAberto, setModalAberto] = useState(false);
+  const [itemEditando, setItemEditando] = useState(null); // { _id, produtoCodigo, subcategoria, precoPDV, precoOferta, sellout, margemPDV, margemOferta, precoUltimaCompra }
   const [removendoId, setRemovendoId] = useState(null);
   const [excluindo, setExcluindo] = useState(false);
   const [erro, setErro] = useState("");
@@ -939,19 +1144,30 @@ export default function EncarteDetalhe() {
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 p-3">
                     {itens.map((it) => (
                       <div key={it._id} className="border border-slate-200 rounded-lg px-4 py-3 hover:bg-slate-50/50 hover:border-slate-300 transition">
-                        {/* Nome + Botão remover */}
+                        {/* Nome + Botões editar e remover */}
                         <div className="flex items-start justify-between gap-3 mb-3">
                           <div className="flex-1 min-w-0">
                             <div className="font-semibold text-slate-900 text-sm leading-snug">{it.produto}</div>
                             <div className="text-xs text-slate-400 mt-0.5">#{it.produtoCodigo || '—'}</div>
                           </div>
                           {encarte.podeEditar && (
-                            <button
-                              onClick={() => removerItem(String(it._id))}
-                              disabled={removendoId === String(it._id)}
-                              className="h-7 w-7 rounded-lg bg-slate-100 hover:bg-red-50 flex items-center justify-center text-slate-400 hover:text-red-500 transition disabled:opacity-40 shrink-0">
-                              <TrashIcon className="w-3.5 h-3.5" />
-                            </button>
+                            <div className="flex gap-1.5 shrink-0">
+                              <button
+                                onClick={() => setItemEditando(it)}
+                                className="h-7 w-7 rounded-lg bg-blue-50 hover:bg-blue-100 flex items-center justify-center text-blue-600 hover:text-blue-700 transition disabled:opacity-40 shrink-0"
+                                title="Editar precificação">
+                                <svg viewBox="0 0 24 24" className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round">
+                                  <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                                  <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+                                </svg>
+                              </button>
+                              <button
+                                onClick={() => removerItem(String(it._id))}
+                                disabled={removendoId === String(it._id)}
+                                className="h-7 w-7 rounded-lg bg-slate-100 hover:bg-red-50 flex items-center justify-center text-slate-400 hover:text-red-500 transition disabled:opacity-40 shrink-0">
+                                <TrashIcon className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
                           )}
                         </div>
 
@@ -1048,6 +1264,18 @@ export default function EncarteDetalhe() {
           codigoRede={encarte.codigoRede}
           onClose={() => setModalAberto(false)}
           onAdicionado={(enc) => setEncarte({ ...enc, podeEditar: enc.podeEditar ?? encarte.podeEditar })}
+        />
+      )}
+
+      {itemEditando && (
+        <EditarPrecificacaoModal
+          item={itemEditando}
+          encarteId={id}
+          onClose={() => setItemEditando(null)}
+          onAtualizado={(enc) => {
+            setEncarte({ ...enc, podeEditar: enc.podeEditar ?? encarte.podeEditar });
+            setItemEditando(null);
+          }}
         />
       )}
     </div>

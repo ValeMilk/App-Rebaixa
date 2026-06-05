@@ -6,6 +6,7 @@ const {
   obter,
   adicionarItem,
   removerItem,
+  atualizarItem,
   atualizar,
   remover,
   listarProdutos,
@@ -30,6 +31,7 @@ router.get("/:id",                        roles, obter);
 router.put("/:id",                        roles, atualizar);
 router.delete("/:id",                     roles, remover);
 router.post("/:id/itens",                 roles, adicionarItem);
+router.put("/:id/itens/:itemId",          roles, atualizarItem);
 router.delete("/:id/itens/:itemId",       roles, removerItem);
 
 module.exports = router;
