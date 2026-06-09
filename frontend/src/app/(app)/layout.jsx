@@ -82,14 +82,14 @@ export default function AppLayout({ children }) {
             </div>
 
             {/* Nav links — desktop */}
-            <nav className="hidden lg:flex items-center gap-1 flex-1 max-w-4xl mx-8">
+            <nav className="hidden lg:flex items-center gap-1 flex-1 min-w-0 overflow-x-auto mx-4 xl:mx-8 no-scrollbar">
               {navLinks.map(({ href, label, Icon }) => {
                 const active = pathname === href || pathname.startsWith(href + "/");
                 return (
                   <Link
                     key={href}
                     href={href}
-                    className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition ${
+                    className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition whitespace-nowrap ${
                       active
                         ? "bg-brand text-white shadow-sm"
                         : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
