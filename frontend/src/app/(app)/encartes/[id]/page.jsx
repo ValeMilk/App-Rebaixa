@@ -396,7 +396,12 @@ function AdicionarProdutoModal({ encarteId, codigoRede, onClose, onAdicionado })
                 <div className="text-center">
                   <div className="text-[10px] text-slate-500 uppercase tracking-wide mb-0.5">Últ. Compra</div>
                   {stats.mediaUC != null
-                    ? <div className="font-bold text-brand">{fmtBRL(stats.mediaUC)}</div>
+                    ? <>
+                        <div className="font-bold text-brand">{fmtBRL(stats.mediaUC)}</div>
+                        {stats.ucMaisRecente && (
+                          <div className="text-[9px] text-slate-400 mt-0.5">{new Date(stats.ucMaisRecente).toLocaleDateString('pt-BR')}</div>
+                        )}
+                      </>
                     : ucBuscado ? <div className="text-slate-300 text-xs">sem compra</div> : <div className="text-slate-300 text-xs">buscando...</div>
                   }
                 </div>
@@ -426,12 +431,17 @@ function AdicionarProdutoModal({ encarteId, codigoRede, onClose, onAdicionado })
                   <span className="font-semibold text-violet-600">{fmtBRL(stats.mediaPrecoPromo)}</span>
                 </div>
               )}
-              <div className="flex justify-between text-xs border-t border-slate-200 pt-1 mt-1">
-                <span className="text-slate-500">Última compra</span>
-                {stats.mediaUC != null
-                  ? <span className="font-bold text-brand">{fmtBRL(stats.mediaUC)}</span>
-                  : ucBuscado ? <span className="text-slate-300 text-xs">sem compra</span> : <span className="text-slate-300 text-xs">buscando...</span>
-                }
+              <div className="border-t border-slate-200 pt-1 mt-1">
+                <div className="flex justify-between text-xs">
+                  <span className="text-slate-500">Última compra</span>
+                  {stats.mediaUC != null
+                    ? <span className="font-bold text-brand">{fmtBRL(stats.mediaUC)}</span>
+                    : ucBuscado ? <span className="text-slate-300 text-xs">sem compra</span> : <span className="text-slate-300 text-xs">buscando...</span>
+                  }
+                </div>
+                {stats.mediaUC != null && stats.ucMaisRecente && (
+                  <div className="text-[10px] text-slate-400 text-right mt-0.5">{new Date(stats.ucMaisRecente).toLocaleDateString('pt-BR')}</div>
+                )}
               </div>
             </div>
           )}

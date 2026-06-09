@@ -103,19 +103,19 @@ export default function AppLayout({ children }) {
             </nav>
 
             {/* User menu — desktop */}
-            <div className="hidden lg:flex items-center gap-3">
-              <div className="flex items-center gap-2.5 px-3 py-1.5 rounded-lg bg-slate-50 border border-slate-200">
-                <div className="h-8 w-8 rounded-full bg-gradient-to-br from-brand to-brand-600 flex items-center justify-center text-xs font-bold text-white">
+            <div className="hidden lg:flex items-center gap-3 shrink-0">
+              <div className="flex items-center gap-2.5 px-3 py-1.5 rounded-lg bg-slate-50 border border-slate-200 max-w-[200px]">
+                <div className="h-8 w-8 rounded-full bg-gradient-to-br from-brand to-brand-600 flex items-center justify-center text-xs font-bold text-white shrink-0">
                   {initials}
                 </div>
-                <div className="min-w-0">
-                  <div className="text-sm font-semibold text-slate-900 truncate max-w-[120px]">{user.nome}</div>
-                  <div className="text-xs text-slate-500 capitalize">{user.role}</div>
+                <div className="min-w-0 overflow-hidden">
+                  <div className="text-sm font-semibold text-slate-900 truncate">{user.nome}</div>
+                  <div className="text-xs text-slate-500 capitalize truncate">{user.role}</div>
                 </div>
               </div>
               <button
                 onClick={logout}
-                className="h-10 px-4 flex items-center gap-2 text-sm font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition"
+                className="h-10 px-4 flex items-center gap-2 text-sm font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition shrink-0"
               >
                 <IcoLogout className="w-4 h-4" />
                 <span className="hidden xl:inline">Sair</span>
