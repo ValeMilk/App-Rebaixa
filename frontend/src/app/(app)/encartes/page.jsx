@@ -135,11 +135,18 @@ function CalendarioRede({ grupo, onClickEncarte }) {
   const hoje = new Date();
   const [mesAno, setMesAno] = useState({ ano: hoje.getFullYear(), mes: hoje.getMonth() });
   const [tooltip, setTooltip] = useState(null);
+  const [filtroNegociacao, setFiltroNegociacao] = useState("todos"); // "todos", "negociados", "nao-negociados"
   const tooltipCache = useMemo(() => ({}), []);
 
   const encartesComCor = useMemo(() =>
-    grupo.encartes.map((e, i) => ({ ...e, cor: PALETTE[i % PALETTE.length] })),
-    [grupo.encartes]
+    grupo.encartes
+      .filter(e => {
+        if (filtroNegociacao === "negociados") return e.negociado === true;
+        if (filtroNegociacao === "nao-negociados") return e.negociado !== true;
+        return true;
+      })
+      .map((e, i) => ({ ...e, cor: PALETTE[i % PALETTE.length] })),
+    [grupo.encartes, filtroNegociacao]
   );
 
   const diasDoMes = useMemo(() => {
@@ -201,6 +208,7 @@ function CalendarioRede({ grupo, onClickEncarte }) {
           rede: grupo.redeSubrede || grupo.codigoRede,
           categorias,
           totalItens: itens.length,
+          dataUltimaCompra: enc.dataUltimaCompraRecente || null,
         };
         tooltipCache[enc._id] = info;
         setTooltip(prev => prev?.id === enc._id ? { ...prev, data: info } : prev);
@@ -223,6 +231,20 @@ function CalendarioRede({ grupo, onClickEncarte }) {
 
   return (
     <div>
+      {/* Dropdown de filtro de negociacao */}
+      <div className="mb-4 flex items-center gap-2">
+        <label className="text-xs font-semibold text-slate-600">Filtrar:</label>
+        <select
+          value={filtroNegociacao}
+          onChange={(e) => setFiltroNegociacao(e.target.value)}
+          className="px-3 py-1.5 text-xs border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand/40 bg-white"
+        >
+          <option value="todos">Todos ({grupo.encartes.length})</option>
+          <option value="negociados">Negociados ({grupo.encartes.filter(e => e.negociado).length})</option>
+          <option value="nao-negociados">Não negociados ({grupo.encartes.filter(e => !e.negociado).length})</option>
+        </select>
+      </div>
+
       {/* Navegacao de mes */}
       <div className="flex items-center justify-between mb-4">
         <button onClick={prevMes}
@@ -261,7 +283,7 @@ function CalendarioRede({ grupo, onClickEncarte }) {
                       onMouseEnter={(ev) => onHover(ev, e)}
                       onMouseLeave={onLeave}
                       className={`w-full rounded-[4px] py-[3px] px-1 text-left text-[9px] font-bold leading-none truncate ${e.cor.bg} ${e.cor.text}`}>
-                      {e.nome}
+                      {e.negociado ? "✅ " : ""}{e.nome}
                     </button>
                   );
                 })}
@@ -286,7 +308,10 @@ function CalendarioRede({ grupo, onClickEncarte }) {
             <div className="text-slate-400 text-center py-1 text-[11px]">Carregando...</div>
           ) : (
             <>
-              <div className="font-bold text-sm mb-2">{tooltip.data.rede}</div>
+              <div className="font-bold text-sm mb-1">{tooltip.data.rede}</div>
+              {tooltip.data.dataUltimaCompra && (
+                <div className="text-slate-400 text-[9px] mb-2">Última compra: {new Date(tooltip.data.dataUltimaCompra).toLocaleDateString('pt-BR')}</div>
+              )}
               {/* Cabeçalho da tabela */}
               <div className="grid grid-cols-4 gap-x-2 text-[9px] text-slate-400 uppercase tracking-wide border-b border-slate-700 pb-1 mb-1">
                 <div className="col-span-1">Subcategoria</div>

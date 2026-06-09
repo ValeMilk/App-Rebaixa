@@ -74,7 +74,7 @@ async function listar(req, res) {
 
   const encartes = await Encarte.find(filtro)
     .sort({ codigoRede: 1, periodoInicio: -1 })
-    .select("-itens")
+    .select("_id nome codigoRede redeSubrede periodoInicio periodoFim criadoPorId criadoPorCodigo criadoPorNome itens createdAt")
     .lean();
 
   // Mapa de overrides para calculo de podeEditar
@@ -108,7 +108,26 @@ async function listar(req, res) {
     } else {
       podeEdit = String(e.criadoPorId) === id || e.criadoPorCodigo === codigo;
     }
-    grupos[e.codigoRede].encartes.push({ ...e, podeEditar: podeEdit });
+    
+    // Calcula negociado (tem itens) e dataUltimaCompraRecente
+    const negociado = Array.isArray(e.itens) && e.itens.length > 0;
+    let dataUltimaCompraRecente = null;
+    if (negociado) {
+      const datasValidas = e.itens
+        .filter(it => it.dataUltimaCompra)
+        .map(it => new Date(it.dataUltimaCompra).getTime());
+      if (datasValidas.length > 0) {
+        dataUltimaCompraRecente = new Date(Math.max(...datasValidas));
+      }
+    }
+    
+    grupos[e.codigoRede].encartes.push({ 
+      ...e, 
+      podeEditar: podeEdit,
+      negociado,
+      dataUltimaCompraRecente,
+      itens: undefined  // Remove itens do resultado final
+    });
   }
 
   // Resolve podeEditar para criacao de novo encarte em cada grupo (sem encarte ainda)

@@ -37,6 +37,7 @@ WHERE
         '000 - L82-EXTRA ROTA'
     )
     AND (seg.A16_DESC NOT LIKE '%INATIVO%' OR seg.A16_DESC IS NULL)
+    AND (seg.A16_ID NOT IN (22, 58, 124, 160, 1, 37, 52, 72) OR seg.A16_ID IS NULL)
 `;
 
 async function buscarCarteiraDoErp() {

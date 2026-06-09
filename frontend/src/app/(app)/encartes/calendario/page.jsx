@@ -50,6 +50,7 @@ export default function CalendarioGeralPage() {
     if (typeof window !== "undefined") return sessionStorage.getItem(STORAGE_KEY_SUPERVISOR) || null;
     return null;
   }); // ID ou null
+  const [filtroNegociacao, setFiltroNegociacao] = useState("todos"); // "todos", "negociados", "nao-negociados"
   const [userRole, setUserRole] = useState(null); // admin ou diretoria
   const tooltipCache = useMemo(() => ({}), []);
 
@@ -105,7 +106,7 @@ export default function CalendarioGeralPage() {
     return mapa;
   }, [grupos]);
 
-  // Achata todos os encartes — usa mapa fixo de cores, aplica filtro de supervisor
+  // Achata todos os encartes — usa mapa fixo de cores, aplica filtro de supervisor e negociacao
   const encartesFlat = useMemo(() => {
     const result = [];
     grupos.forEach((g) => {
@@ -113,17 +114,23 @@ export default function CalendarioGeralPage() {
       const cor = mapeoCores[redeNome] || PALETTE[0];
       g.encartes.forEach((e) => {
         // Filtro de supervisor: se tem supervisor filtrado, verifica se o encarte foi criado por ele
+        let passaSupervisor = true;
         if (supervisorFiltrado) {
-          if (String(e.criadoPorId) === supervisorFiltrado) {
-            result.push({ ...e, cor, redeNome });
-          }
-        } else {
+          passaSupervisor = String(e.criadoPorId) === supervisorFiltrado;
+        }
+        
+        // Filtro de negociação
+        let passaNegociacao = true;
+        if (filtroNegociacao === "negociados") passaNegociacao = e.negociado === true;
+        if (filtroNegociacao === "nao-negociados") passaNegociacao = e.negociado !== true;
+        
+        if (passaSupervisor && passaNegociacao) {
           result.push({ ...e, cor, redeNome });
         }
       });
     });
     return result;
-  }, [grupos, mapeoCores, supervisorFiltrado]);
+  }, [grupos, mapeoCores, supervisorFiltrado, filtroNegociacao]);
 
   // Redes que têm pelo menos 1 encarte (para legenda)
   const redesComEncartes = useMemo(() =>
@@ -195,6 +202,7 @@ export default function CalendarioGeralPage() {
           rede: enc.redeNome,
           categorias,
           totalItens: itens.length,
+          dataUltimaCompra: enc.dataUltimaCompraRecente || null,
         };
         tooltipCache[enc._id] = info;
         setTooltip(prev => prev?.id === enc._id ? { ...prev, data: info } : prev);
@@ -294,6 +302,20 @@ export default function CalendarioGeralPage() {
               </div>
             )}
 
+            {/* Filtro de negociação */}
+            <div className="mb-4 p-3 bg-white rounded-2xl border border-slate-100 shadow-sm">
+              <div className="text-xs text-slate-500 font-semibold uppercase tracking-wide mb-2">Filtrar por status</div>
+              <select
+                value={filtroNegociacao}
+                onChange={(e) => setFiltroNegociacao(e.target.value)}
+                className="w-full md:w-64 px-3 py-2 rounded-lg border border-slate-200 text-sm bg-white focus:outline-none focus:border-brand focus:ring-2 focus:ring-brand/20 transition"
+              >
+                <option value="todos">Todos ({encartesFlat.length})</option>
+                <option value="negociados">Negociados ({encartesFlat.filter(e => e.negociado).length})</option>
+                <option value="nao-negociados">Não negociados ({encartesFlat.filter(e => !e.negociado).length})</option>
+              </select>
+            </div>
+
             <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-4">
               {/* Navegação de mês */}
               <div className="flex items-center justify-between mb-4">
@@ -338,7 +360,7 @@ export default function CalendarioGeralPage() {
                               className={`w-full rounded-[4px] py-[3px] px-1 text-left text-[9px] font-bold leading-none truncate transition ${e.cor.bg} ${e.cor.text} ${
                                 selecionado ? "opacity-100" : "opacity-30"
                               }`}>
-                              {e.nome}
+                              {e.negociado ? "✅ " : ""}{e.nome}
                             </button>
                           );
                         })}
@@ -370,7 +392,10 @@ export default function CalendarioGeralPage() {
             <div className="text-slate-400 text-center py-1 text-[11px]">Carregando...</div>
           ) : (
             <>
-              <div className="font-bold text-sm mb-2">{tooltip.data.rede}</div>
+              <div className="font-bold text-sm mb-1">{tooltip.data.rede}</div>
+              {tooltip.data.dataUltimaCompra && (
+                <div className="text-slate-400 text-[9px] mb-2">Última compra: {new Date(tooltip.data.dataUltimaCompra).toLocaleDateString('pt-BR')}</div>
+              )}
               {/* Cabeçalho da tabela */}
               <div className="grid grid-cols-4 gap-x-2 text-[9px] text-slate-400 uppercase tracking-wide border-b border-slate-700 pb-1 mb-1">
                 <div className="col-span-1">Subcategoria</div>
