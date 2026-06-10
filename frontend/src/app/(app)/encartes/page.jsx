@@ -41,9 +41,75 @@ function ymd(ano, mes, dia) {
 }
 
 // ---------------------------------------------------------------------------
-// Modal Novo Encarte
+// Modal Seleção de Tipo de Ação
 // ---------------------------------------------------------------------------
-function NovoEncarteModal({ codigoRede, redeSubrede, onClose, onCriado }) {
+function SelecaoTipoModal({ onClose, onSelecionar }) {
+  const [tipoSel, setTipoSel] = useState(null);
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 animate-fade-in">
+      <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={onClose} />
+      <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 animate-slide-up">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="font-bold text-slate-900 text-lg">Selecione o tipo de ação</h2>
+          <button onClick={onClose} className="h-8 w-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-500 hover:bg-slate-200 transition">
+            <IcoX className="w-4 h-4" />
+          </button>
+        </div>
+        <div className="space-y-3">
+          <button
+            onClick={() => setTipoSel("oferta_interna")}
+            className={`w-full p-4 rounded-xl border-2 text-left transition ${
+              tipoSel === "oferta_interna"
+                ? "border-brand bg-brand/5"
+                : "border-slate-200 hover:border-slate-300"
+            }`}
+          >
+            <div className="font-semibold text-slate-900">Oferta Interna</div>
+            <div className="text-xs text-slate-500 mt-1">Ação promocional interna da rede</div>
+          </button>
+          <button
+            onClick={() => setTipoSel("encarte")}
+            className={`w-full p-4 rounded-xl border-2 text-left transition ${
+              tipoSel === "encarte"
+                ? "border-brand bg-brand/5"
+                : "border-slate-200 hover:border-slate-300"
+            }`}
+          >
+            <div className="font-semibold text-slate-900">Encarte</div>
+            <div className="text-xs text-slate-500 mt-1">Encarte promocional tradicional</div>
+          </button>
+        </div>
+        <div className="flex gap-2 pt-4">
+          <button
+            type="button"
+            onClick={onClose}
+            className="flex-1 py-2 rounded-xl border border-slate-200 text-sm text-slate-600 hover:bg-slate-50 transition"
+          >
+            Cancelar
+          </button>
+          <button
+            onClick={() => tipoSel && onSelecionar(tipoSel)}
+            disabled={!tipoSel}
+            className="flex-1 py-2 rounded-xl bg-brand text-white text-sm font-semibold hover:opacity-90 active:scale-95 transition disabled:opacity-40 disabled:cursor-not-allowed"
+          >
+            Continuar
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Modal Novo Encarte / Nova Oferta Interna
+// ---------------------------------------------------------------------------
+function NovoEncarteModal({ codigoRede, redeSubrede, tipo, onClose, onCriado }) {
+  const isOfertaInterna = tipo === "oferta_interna";
+  const titulo = isOfertaInterna ? "Nova Oferta Interna" : "Novo Encarte";
+  const labelNome = isOfertaInterna ? "Nome da oferta interna" : "Nome do encarte";
+  const placeholderNome = isOfertaInterna ? "Ex: Oferta Junho 2026" : "Ex: Encarte Junho 2026";
+
   const [nome, setNome] = useState("");
   const [inicio, setInicio] = useState("");
   const [fim, setFim] = useState("");
@@ -53,7 +119,10 @@ function NovoEncarteModal({ codigoRede, redeSubrede, onClose, onCriado }) {
   async function handleSubmit(e) {
     e.preventDefault();
     setErro("");
-    if (!nome.trim()) { setErro("Informe o nome do encarte"); return; }
+    if (!nome.trim()) {
+      setErro(`Informe o ${isOfertaInterna ? "nome da oferta interna" : "nome do encarte"}`);
+      return;
+    }
     if (!inicio || !fim) { setErro("Informe o periodo (inicio e fim)"); return; }
     if (fim < inicio) { setErro("Fim nao pode ser anterior ao inicio"); return; }
     setSalvando(true);
@@ -61,13 +130,14 @@ function NovoEncarteModal({ codigoRede, redeSubrede, onClose, onCriado }) {
       const { data } = await api.post("/encartes", {
         nome: nome.trim(),
         codigoRede,
+        tipo,
         periodoInicio: inicio,
         periodoFim: fim,
       });
       onCriado(data);
       onClose();
     } catch (err) {
-      setErro(err.response?.data?.error || "Erro ao criar encarte");
+      setErro(err.response?.data?.error || `Erro ao criar ${isOfertaInterna ? "oferta interna" : "encarte"}`);
     } finally {
       setSalvando(false);
     }
@@ -79,7 +149,7 @@ function NovoEncarteModal({ codigoRede, redeSubrede, onClose, onCriado }) {
       <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 animate-slide-up">
         <div className="flex items-center justify-between mb-4">
           <div>
-            <div className="text-[10px] font-semibold text-brand uppercase tracking-wider">Novo Encarte</div>
+            <div className="text-[10px] font-semibold text-brand uppercase tracking-wider">{titulo}</div>
             <h2 className="font-bold text-slate-900 text-base">{redeSubrede || codigoRede}</h2>
           </div>
           <button onClick={onClose} className="h-8 w-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-500 hover:bg-slate-200 transition">
@@ -88,11 +158,11 @@ function NovoEncarteModal({ codigoRede, redeSubrede, onClose, onCriado }) {
         </div>
         <form onSubmit={handleSubmit} className="space-y-3">
           <div>
-            <label className="block text-xs font-semibold text-slate-600 mb-1">Nome do encarte</label>
+            <label className="block text-xs font-semibold text-slate-600 mb-1">{labelNome}</label>
             <input
               autoFocus
               className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand/40"
-              placeholder="Ex: Encarte Junho 2026"
+              placeholder={placeholderNome}
               value={nome}
               onChange={(e) => setNome(e.target.value)}
             />
@@ -136,17 +206,29 @@ function CalendarioRede({ grupo, onClickEncarte }) {
   const [mesAno, setMesAno] = useState({ ano: hoje.getFullYear(), mes: hoje.getMonth() });
   const [tooltip, setTooltip] = useState(null);
   const [filtroNegociacao, setFiltroNegociacao] = useState("todos"); // "todos", "negociados", "nao-negociados"
+  const [filtroTipo, setFiltroTipo] = useState("todos"); // "todos", "encartes", "ofertas_internas"
   const tooltipCache = useMemo(() => ({}), []);
+
+  // Cor fixa para ofertas internas (preto)
+  const COR_OFERTA_INTERNA = { bg: "bg-slate-900", text: "text-white", light: "bg-slate-100", border: "border-slate-300" };
 
   const encartesComCor = useMemo(() =>
     grupo.encartes
       .filter(e => {
-        if (filtroNegociacao === "negociados") return e.negociado === true;
-        if (filtroNegociacao === "nao-negociados") return e.negociado !== true;
+        // Filtro negociação
+        if (filtroNegociacao === "negociados" && e.negociado !== true) return false;
+        if (filtroNegociacao === "nao-negociados" && e.negociado === true) return false;
+        // Filtro tipo
+        if (filtroTipo === "encartes" && e.tipo !== "encarte") return false;
+        if (filtroTipo === "ofertas_internas" && e.tipo !== "oferta_interna") return false;
         return true;
       })
-      .map((e, i) => ({ ...e, cor: PALETTE[i % PALETTE.length] })),
-    [grupo.encartes, filtroNegociacao]
+      .map((e, i) => {
+        // Se for oferta_interna, usa cor preta fixa; senão usa paleta
+        const cor = e.tipo === "oferta_interna" ? COR_OFERTA_INTERNA : PALETTE[i % PALETTE.length];
+        return { ...e, cor };
+      }),
+    [grupo.encartes, filtroNegociacao, filtroTipo]
   );
 
   const diasDoMes = useMemo(() => {
@@ -231,18 +313,35 @@ function CalendarioRede({ grupo, onClickEncarte }) {
 
   return (
     <div>
-      {/* Dropdown de filtro de negociacao */}
-      <div className="mb-4 flex items-center gap-2">
-        <label className="text-xs font-semibold text-slate-600">Filtrar:</label>
-        <select
-          value={filtroNegociacao}
-          onChange={(e) => setFiltroNegociacao(e.target.value)}
-          className="px-3 py-1.5 text-xs border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand/40 bg-white"
-        >
-          <option value="todos">Todos ({grupo.encartes.length})</option>
-          <option value="negociados">Negociados ({grupo.encartes.filter(e => e.negociado).length})</option>
-          <option value="nao-negociados">Não negociados ({grupo.encartes.filter(e => !e.negociado).length})</option>
-        </select>
+      {/* Dropdowns de filtro */}
+      <div className="mb-4 flex flex-wrap items-center gap-3">
+        {/* Filtro negociação */}
+        <div className="flex items-center gap-2">
+          <label className="text-xs font-semibold text-slate-600">Negociação:</label>
+          <select
+            value={filtroNegociacao}
+            onChange={(e) => setFiltroNegociacao(e.target.value)}
+            className="px-3 py-1.5 text-xs border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand/40 bg-white"
+          >
+            <option value="todos">Todos ({grupo.encartes.length})</option>
+            <option value="negociados">Negociados ({grupo.encartes.filter(e => e.negociado).length})</option>
+            <option value="nao-negociados">Não negociados ({grupo.encartes.filter(e => !e.negociado).length})</option>
+          </select>
+        </div>
+
+        {/* Filtro tipo */}
+        <div className="flex items-center gap-2">
+          <label className="text-xs font-semibold text-slate-600">Tipo:</label>
+          <select
+            value={filtroTipo}
+            onChange={(e) => setFiltroTipo(e.target.value)}
+            className="px-3 py-1.5 text-xs border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand/40 bg-white"
+          >
+            <option value="todos">Todos ({grupo.encartes.length})</option>
+            <option value="encartes">Encartes ({grupo.encartes.filter(e => e.tipo === "encarte" || !e.tipo).length})</option>
+            <option value="ofertas_internas">Ofertas Internas ({grupo.encartes.filter(e => e.tipo === "oferta_interna").length})</option>
+          </select>
+        </div>
       </div>
 
       {/* Navegacao de mes */}
@@ -354,7 +453,9 @@ export default function EncartesPage() {
     if (typeof window !== "undefined") return sessionStorage.getItem(STORAGE_KEY) || "";
     return "";
   });
-  const [modalAberto, setModalAberto] = useState(false);
+  const [modalSelecaoTipo, setModalSelecaoTipo] = useState(false);
+  const [modalCriacao, setModalCriacao] = useState(false);
+  const [tipoSelecionado, setTipoSelecionado] = useState(null);
 
   const carregar = useCallback(async () => {
     setLoading(true);
@@ -398,6 +499,17 @@ export default function EncartesPage() {
     router.push(`/encartes/${novoEncarte._id}`);
   }
 
+  function handleSelecaoTipo(tipo) {
+    setTipoSelecionado(tipo);
+    setModalSelecaoTipo(false);
+    setModalCriacao(true);
+  }
+
+  function handleFecharCriacao() {
+    setModalCriacao(false);
+    setTipoSelecionado(null);
+  }
+
   return (
     <div className="flex flex-col min-h-screen bg-slate-50">
       {/* Header com título + botão Novo Encarte */}
@@ -416,9 +528,9 @@ export default function EncartesPage() {
             </Link>
             {grupoSel?.podeEditar && (
               <button
-                onClick={() => setModalAberto(true)}
+                onClick={() => setModalSelecaoTipo(true)}
                 className="shrink-0 h-9 px-4 rounded-xl bg-brand text-white text-xs font-bold hover:opacity-90 active:scale-95 transition shadow-sm shadow-brand/20">
-                + Novo Encarte
+                + Nova Ação
               </button>
             )}
           </div>
@@ -462,11 +574,19 @@ export default function EncartesPage() {
         )}
       </div>
 
-      {modalAberto && grupoSel && (
+      {modalSelecaoTipo && grupoSel && (
+        <SelecaoTipoModal
+          onClose={() => setModalSelecaoTipo(false)}
+          onSelecionar={handleSelecaoTipo}
+        />
+      )}
+
+      {modalCriacao && grupoSel && tipoSelecionado && (
         <NovoEncarteModal
           codigoRede={grupoSel.codigoRede}
           redeSubrede={grupoSel.redeSubrede}
-          onClose={() => setModalAberto(false)}
+          tipo={tipoSelecionado}
+          onClose={handleFecharCriacao}
           onCriado={handleCriado}
         />
       )}

@@ -1118,7 +1118,14 @@ export default function EncarteDetalhe() {
             <IcoChevronRight className="w-4 h-4 rotate-180" />
           </button>
           <div className="flex-1 min-w-0">
-            <div className="text-[10px] text-slate-500 mb-0.5 truncate">{encarte.redeSubrede || encarte.codigoRede}</div>
+            <div className="flex items-center gap-2 mb-0.5">
+              <div className="text-[10px] text-slate-500 truncate">{encarte.redeSubrede || encarte.codigoRede}</div>
+              {encarte.tipo === "oferta_interna" && (
+                <span className="text-[9px] bg-slate-900 text-white font-bold px-2 py-0.5 rounded-md uppercase tracking-wide">
+                  Oferta Interna
+                </span>
+              )}
+            </div>
             <h1 className="font-semibold text-slate-900 text-base leading-tight truncate">{encarte.nome}</h1>
           </div>
           {encarte.podeEditar ? (

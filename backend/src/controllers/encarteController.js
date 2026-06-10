@@ -156,13 +156,16 @@ async function listar(req, res) {
  * ou ser o responsavel definido.
  */
 async function criar(req, res) {
-  const { nome, codigoRede, periodoInicio, periodoFim } = req.body || {};
+  const { nome, codigoRede, periodoInicio, periodoFim, tipo } = req.body || {};
   if (!nome || !codigoRede || !periodoInicio || !periodoFim) {
     return res.status(400).json({ error: "nome, codigoRede, periodoInicio e periodoFim sao obrigatorios" });
   }
   if (new Date(periodoFim) < new Date(periodoInicio)) {
     return res.status(400).json({ error: "periodoFim nao pode ser anterior a periodoInicio" });
   }
+
+  // Validar tipo se fornecido
+  const tipoFinal = tipo && ["encarte", "oferta_interna"].includes(tipo) ? tipo : "encarte";
 
   const { codigo, nome: nomeUser, id, role } = req.user;
 
@@ -181,6 +184,7 @@ async function criar(req, res) {
 
   const encarte = await Encarte.create({
     nome: nome.trim(),
+    tipo: tipoFinal,
     codigoRede,
     redeSubrede,
     periodoInicio: new Date(periodoInicio),

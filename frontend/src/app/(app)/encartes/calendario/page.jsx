@@ -27,6 +27,9 @@ const PALETTE = [
   { bg: "bg-teal-600",       text: "text-white" },
 ];
 
+// Cor fixa para ofertas internas (preto)
+const COR_OFERTA_INTERNA = { bg: "bg-slate-900", text: "text-white" };
+
 const DIAS_SEMANA = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sab"];
 
 function isoToYMD(iso) { return iso ? iso.slice(0, 10) : null; }
@@ -51,6 +54,7 @@ export default function CalendarioGeralPage() {
     return null;
   }); // ID ou null
   const [filtroNegociacao, setFiltroNegociacao] = useState("todos"); // "todos", "negociados", "nao-negociados"
+  const [filtroTipo, setFiltroTipo] = useState("todos"); // "todos", "encartes", "ofertas_internas"
   const [userRole, setUserRole] = useState(null); // admin ou diretoria
   const tooltipCache = useMemo(() => ({}), []);
 
@@ -106,12 +110,12 @@ export default function CalendarioGeralPage() {
     return mapa;
   }, [grupos]);
 
-  // Achata todos os encartes — usa mapa fixo de cores, aplica filtro de supervisor e negociacao
+  // Achata todos os encartes — usa mapa fixo de cores (ou preto para ofertas internas), aplica filtros
   const encartesFlat = useMemo(() => {
     const result = [];
     grupos.forEach((g) => {
       const redeNome = g.redeSubrede || g.codigoRede;
-      const cor = mapeoCores[redeNome] || PALETTE[0];
+      const corRede = mapeoCores[redeNome] || PALETTE[0];
       g.encartes.forEach((e) => {
         // Filtro de supervisor: se tem supervisor filtrado, verifica se o encarte foi criado por ele
         let passaSupervisor = true;
@@ -124,13 +128,20 @@ export default function CalendarioGeralPage() {
         if (filtroNegociacao === "negociados") passaNegociacao = e.negociado === true;
         if (filtroNegociacao === "nao-negociados") passaNegociacao = e.negociado !== true;
         
-        if (passaSupervisor && passaNegociacao) {
+        // Filtro de tipo
+        let passaTipo = true;
+        if (filtroTipo === "encartes") passaTipo = e.tipo === "encarte" || !e.tipo;
+        if (filtroTipo === "ofertas_internas") passaTipo = e.tipo === "oferta_interna";
+        
+        if (passaSupervisor && passaNegociacao && passaTipo) {
+          // Se for oferta_interna, usa cor preta; senão usa cor da rede
+          const cor = e.tipo === "oferta_interna" ? COR_OFERTA_INTERNA : corRede;
           result.push({ ...e, cor, redeNome });
         }
       });
     });
     return result;
-  }, [grupos, mapeoCores, supervisorFiltrado, filtroNegociacao]);
+  }, [grupos, mapeoCores, supervisorFiltrado, filtroNegociacao, filtroTipo]);
 
   // Redes que têm pelo menos 1 encarte (para legenda)
   const redesComEncartes = useMemo(() =>
@@ -302,18 +313,38 @@ export default function CalendarioGeralPage() {
               </div>
             )}
 
-            {/* Filtro de negociação */}
+            {/* Filtros de negociação e tipo */}
             <div className="mb-4 p-3 bg-white rounded-2xl border border-slate-100 shadow-sm">
-              <div className="text-xs text-slate-500 font-semibold uppercase tracking-wide mb-2">Filtrar por status</div>
-              <select
-                value={filtroNegociacao}
-                onChange={(e) => setFiltroNegociacao(e.target.value)}
-                className="w-full md:w-64 px-3 py-2 rounded-lg border border-slate-200 text-sm bg-white focus:outline-none focus:border-brand focus:ring-2 focus:ring-brand/20 transition"
-              >
-                <option value="todos">Todos ({encartesFlat.length})</option>
-                <option value="negociados">Negociados ({encartesFlat.filter(e => e.negociado).length})</option>
-                <option value="nao-negociados">Não negociados ({encartesFlat.filter(e => !e.negociado).length})</option>
-              </select>
+              <div className="text-xs text-slate-500 font-semibold uppercase tracking-wide mb-2">Filtros</div>
+              <div className="flex flex-wrap gap-3">
+                {/* Filtro de negociação */}
+                <div className="flex-1 min-w-[200px]">
+                  <label className="block text-xs text-slate-600 mb-1 font-medium">Negociação</label>
+                  <select
+                    value={filtroNegociacao}
+                    onChange={(e) => setFiltroNegociacao(e.target.value)}
+                    className="w-full px-3 py-2 rounded-lg border border-slate-200 text-sm bg-white focus:outline-none focus:border-brand focus:ring-2 focus:ring-brand/20 transition"
+                  >
+                    <option value="todos">Todos ({encartesFlat.length})</option>
+                    <option value="negociados">Negociados ({encartesFlat.filter(e => e.negociado).length})</option>
+                    <option value="nao-negociados">Não negociados ({encartesFlat.filter(e => !e.negociado).length})</option>
+                  </select>
+                </div>
+                
+                {/* Filtro de tipo */}
+                <div className="flex-1 min-w-[200px]">
+                  <label className="block text-xs text-slate-600 mb-1 font-medium">Tipo</label>
+                  <select
+                    value={filtroTipo}
+                    onChange={(e) => setFiltroTipo(e.target.value)}
+                    className="w-full px-3 py-2 rounded-lg border border-slate-200 text-sm bg-white focus:outline-none focus:border-brand focus:ring-2 focus:ring-brand/20 transition"
+                  >
+                    <option value="todos">Todos ({grupos.flatMap(g => g.encartes).length})</option>
+                    <option value="encartes">Encartes ({grupos.flatMap(g => g.encartes).filter(e => e.tipo === "encarte" || !e.tipo).length})</option>
+                    <option value="ofertas_internas">Ofertas Internas ({grupos.flatMap(g => g.encartes).filter(e => e.tipo === "oferta_interna").length})</option>
+                  </select>
+                </div>
+              </div>
             </div>
 
             <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-4">
