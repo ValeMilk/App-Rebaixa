@@ -344,6 +344,24 @@ function CalendarioRede({ grupo, onClickEncarte }) {
         </div>
       </div>
 
+      {/* Legenda de cores */}
+      <div className="mb-4 p-3 bg-gradient-to-r from-slate-50 to-slate-100 rounded-xl border border-slate-200">
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+          <div className="flex items-center gap-2">
+            <div className="w-4 h-4 rounded bg-slate-900 shrink-0"></div>
+            <span className="text-xs text-slate-600 font-medium">Oferta Interna</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="w-4 h-4 rounded bg-gradient-to-r from-brand via-emerald-500 to-violet-500 shrink-0"></div>
+            <span className="text-xs text-slate-600 font-medium">Encarte</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="text-base shrink-0">✅</span>
+            <span className="text-xs text-slate-600 font-medium">Negociado</span>
+          </div>
+        </div>
+      </div>
+
       {/* Navegacao de mes */}
       <div className="flex items-center justify-between mb-4">
         <button onClick={prevMes}
@@ -381,8 +399,9 @@ function CalendarioRede({ grupo, onClickEncarte }) {
                     <button key={e._id} onClick={() => onClickEncarte(e._id)} title={e.nome}
                       onMouseEnter={(ev) => onHover(ev, e)}
                       onMouseLeave={onLeave}
-                      className={`w-full rounded-[4px] py-[3px] px-1 text-left text-[9px] font-bold leading-none truncate ${e.cor.bg} ${e.cor.text}`}>
-                      {e.negociado ? "✅ " : ""}{e.nome}
+                      className={`w-full rounded-[4px] py-[3px] px-1 text-left text-[9px] font-bold leading-none truncate ${e.cor.bg} ${e.cor.text} flex items-center gap-0.5`}>
+                      {e.negociado && <span className="text-[11px] shrink-0 drop-shadow-sm">✅</span>}
+                      <span className="truncate">{e.nome}</span>
                     </button>
                   );
                 })}

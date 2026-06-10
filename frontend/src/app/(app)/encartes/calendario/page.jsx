@@ -347,6 +347,25 @@ export default function CalendarioGeralPage() {
               </div>
             </div>
 
+            {/* Legenda de cores */}
+            <div className="mb-4 p-3 bg-gradient-to-r from-slate-50 to-slate-100 rounded-xl border border-slate-200">
+              <div className="text-xs text-slate-500 font-semibold uppercase tracking-wide mb-2">Legenda</div>
+              <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+                <div className="flex items-center gap-2">
+                  <div className="w-4 h-4 rounded bg-slate-900 shrink-0"></div>
+                  <span className="text-xs text-slate-600 font-medium">Oferta Interna</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-4 h-4 rounded bg-gradient-to-r from-brand via-emerald-500 to-violet-500 shrink-0"></div>
+                  <span className="text-xs text-slate-600 font-medium">Encarte (varia por rede)</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-base shrink-0">✅</span>
+                  <span className="text-xs text-slate-600 font-medium">Negociado</span>
+                </div>
+              </div>
+            </div>
+
             <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-4">
               {/* Navegação de mês */}
               <div className="flex items-center justify-between mb-4">
@@ -388,10 +407,11 @@ export default function CalendarioGeralPage() {
                               onClick={() => router.push(`/encartes/${e._id}`)}
                               onMouseEnter={(ev) => onHover(ev, e)}
                               onMouseLeave={onLeave}
-                              className={`w-full rounded-[4px] py-[3px] px-1 text-left text-[9px] font-bold leading-none truncate transition ${e.cor.bg} ${e.cor.text} ${
+                              className={`w-full rounded-[4px] py-[3px] px-1 text-left text-[9px] font-bold leading-none transition ${e.cor.bg} ${e.cor.text} ${
                                 selecionado ? "opacity-100" : "opacity-30"
-                              }`}>
-                              {e.negociado ? "✅ " : ""}{e.nome}
+                              } flex items-center gap-0.5`}>
+                              {e.negociado && <span className="text-[11px] shrink-0 drop-shadow-sm">✅</span>}
+                              <span className="truncate">{e.nome}</span>
                             </button>
                           );
                         })}
