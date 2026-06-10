@@ -74,7 +74,7 @@ async function listar(req, res) {
 
   const encartes = await Encarte.find(filtro)
     .sort({ codigoRede: 1, periodoInicio: -1 })
-    .select("_id nome codigoRede redeSubrede periodoInicio periodoFim criadoPorId criadoPorCodigo criadoPorNome itens createdAt")
+    .select("_id nome tipo codigoRede redeSubrede periodoInicio periodoFim criadoPorId criadoPorCodigo criadoPorNome itens createdAt")
     .lean();
 
   // Mapa de overrides para calculo de podeEditar
