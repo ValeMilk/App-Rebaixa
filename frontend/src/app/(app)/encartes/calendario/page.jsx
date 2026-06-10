@@ -357,7 +357,6 @@ export default function CalendarioGeralPage() {
                 </div>
                 <div className="flex items-center gap-2">
                   <div className="w-4 h-4 rounded bg-gradient-to-r from-brand via-emerald-500 to-violet-500 shrink-0"></div>
-                  <span className="text-xs text-slate-600 font-medium">Encarte (varia por rede)</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <span className="text-base shrink-0">✅</span>
