@@ -55,29 +55,25 @@ async function sincronizarCarteira() {
     return { atualizados: 0, total: 0, observacao: "Nenhum registro retornado pelo ERP" };
   }
 
-  const ops = linhas.map((l) => ({
-    replaceOne: {
-      filter: {
-        clienteCodigo: String(l.clienteCodigo),
-      },
-      replacement: {
-        clienteCodigo:    String(l.clienteCodigo),
-        clienteNome:      l.clienteNome     || "",
-        vendedorCodigo:   String(l.vendedorCodigo  || ""),
-        vendedorNome:     l.vendedorNome    || "",
-        supervisorCodigo: String(l.supervisorCodigo || ""),
-        supervisorNome:   l.supervisorNome  || "",
-        codigoRede:       l.codigoRede ? String(l.codigoRede) : null,
-        redeSubrede:      l.redeSubrede    || null,
-        sincronizadoEm:   new Date(),
-      },
-      upsert: true,
-    },
+  // Limpar coleção antes de sincronizar para evitar duplicatas e conflitos de índice
+  await Carteira.deleteMany({});
+
+  // Inserir todos os registros novos em uma única operação
+  const docs = linhas.map((l) => ({
+    clienteCodigo:    String(l.clienteCodigo),
+    clienteNome:      l.clienteNome     || "",
+    vendedorCodigo:   String(l.vendedorCodigo  || ""),
+    vendedorNome:     l.vendedorNome    || "",
+    supervisorCodigo: String(l.supervisorCodigo || ""),
+    supervisorNome:   l.supervisorNome  || "",
+    codigoRede:       l.codigoRede ? String(l.codigoRede) : null,
+    redeSubrede:      l.redeSubrede    || null,
+    sincronizadoEm:   new Date(),
   }));
 
-  const r = await Carteira.bulkWrite(ops, { ordered: false });
+  const r = await Carteira.insertMany(docs);
   return {
-    atualizados: (r.modifiedCount || 0) + (r.upsertedCount || 0),
+    atualizados: r.length,
     total: linhas.length,
   };
 }

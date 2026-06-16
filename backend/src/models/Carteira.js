@@ -3,6 +3,7 @@ const mongoose = require("mongoose");
 /**
  * Carteira: relacionamento Cliente <-> Vendedor <-> Supervisor.
  * Preenchida via query do ERP (SQL Server na VPS).
+ * Sincronização: deleta todos os registros e reinsere dados do ERP a cada sincronização.
  */
 const carteiraSchema = new mongoose.Schema(
   {
@@ -18,7 +19,5 @@ const carteiraSchema = new mongoose.Schema(
   },
   { timestamps: true }
 );
-
-carteiraSchema.index({ clienteCodigo: 1, vendedorCodigo: 1 }, { unique: true });
 
 module.exports = mongoose.model("Carteira", carteiraSchema);
