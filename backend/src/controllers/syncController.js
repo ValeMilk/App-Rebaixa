@@ -30,27 +30,49 @@ async function rodarSyncEstoque(req, res) {
     const r = await sincronizarEstoque();
     ultimaExecucao = { tipo: "estoque", em: new Date(), resultado: r };
     res.json({ ok: true, ...r });
+  } catch (err) {
+    console.error("[sync/estoque] erro:", err);
+    ultimaExecucao = { tipo: "estoque", em: new Date(), resultado: { erro: err.message } };
+    res.status(500).json({ error: err.message || "Erro ao sincronizar estoque" });
   } finally {
     executando = false;
   }
 }
 
 async function rodarSyncCarteira(_req, res) {
-  const r = await sincronizarCarteira();
-  ultimaExecucao = { tipo: "carteira", em: new Date(), resultado: r };
-  res.json({ ok: true, ...r });
+  try {
+    const r = await sincronizarCarteira();
+    ultimaExecucao = { tipo: "carteira", em: new Date(), resultado: r };
+    res.json({ ok: true, ...r });
+  } catch (err) {
+    console.error("[sync/carteira] erro:", err);
+    ultimaExecucao = { tipo: "carteira", em: new Date(), resultado: { erro: err.message } };
+    res.status(500).json({ error: err.message || "Erro ao sincronizar carteira" });
+  }
 }
 
 async function rodarSyncProdutos(_req, res) {
-  const r = await sincronizarProdutos();
-  ultimaExecucao = { tipo: "produtos", em: new Date(), resultado: r };
-  res.json({ ok: true, ...r });
+  try {
+    const r = await sincronizarProdutos();
+    ultimaExecucao = { tipo: "produtos", em: new Date(), resultado: r };
+    res.json({ ok: true, ...r });
+  } catch (err) {
+    console.error("[sync/produtos] erro:", err);
+    ultimaExecucao = { tipo: "produtos", em: new Date(), resultado: { erro: err.message } };
+    res.status(500).json({ error: err.message || "Erro ao sincronizar produtos" });
+  }
 }
 
 async function rodarSyncERP(_req, res) {
-  const r = await sincronizarERP();
-  ultimaExecucao = { tipo: "erp_completo", em: new Date(), resultado: r };
-  res.json({ ok: true, ...r });
+  try {
+    const r = await sincronizarERP();
+    ultimaExecucao = { tipo: "erp_completo", em: new Date(), resultado: r };
+    res.json({ ok: true, ...r });
+  } catch (err) {
+    console.error("[sync/erp] erro:", err);
+    ultimaExecucao = { tipo: "erp_completo", em: new Date(), resultado: { erro: err.message } };
+    res.status(500).json({ error: err.message || "Erro ao sincronizar ERP completo" });
+  }
 }
 
 function status(_req, res) {
