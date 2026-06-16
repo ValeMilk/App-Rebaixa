@@ -56,23 +56,20 @@ async function sincronizarCarteira() {
   }
 
   const ops = linhas.map((l) => ({
-    updateOne: {
+    replaceOne: {
       filter: {
         clienteCodigo: String(l.clienteCodigo),
-        vendedorCodigo: String(l.vendedorCodigo || ""),
       },
-      update: {
-        $set: {
-          clienteCodigo:    String(l.clienteCodigo),
-          clienteNome:      l.clienteNome     || "",
-          vendedorCodigo:   String(l.vendedorCodigo  || ""),
-          vendedorNome:     l.vendedorNome    || "",
-          supervisorCodigo: String(l.supervisorCodigo || ""),
-          supervisorNome:   l.supervisorNome  || "",
-          codigoRede:       l.codigoRede ? String(l.codigoRede) : null,
-          redeSubrede:      l.redeSubrede    || null,
-          sincronizadoEm:   new Date(),
-        },
+      replacement: {
+        clienteCodigo:    String(l.clienteCodigo),
+        clienteNome:      l.clienteNome     || "",
+        vendedorCodigo:   String(l.vendedorCodigo  || ""),
+        vendedorNome:     l.vendedorNome    || "",
+        supervisorCodigo: String(l.supervisorCodigo || ""),
+        supervisorNome:   l.supervisorNome  || "",
+        codigoRede:       l.codigoRede ? String(l.codigoRede) : null,
+        redeSubrede:      l.redeSubrede    || null,
+        sincronizadoEm:   new Date(),
       },
       upsert: true,
     },
