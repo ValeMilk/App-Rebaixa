@@ -41,14 +41,7 @@ async function gerarPdfRede(req, res) {
   }
 }
 
-    // Retornar como anexo
-    res.setHeader("Content-Type", "application/pdf");
-    res.setHeader("Content-Disposition", `attachment; filename="Encartes_${codigoRede}_${new Date().getTime()}.pdf"`);
-    res.send(pdfBuffer);
-  } catch (err) {
-    console.error("[PDF] Erro ao gerar PDF:", err);
-    res.status(500).json({ error: err.message || "Erro ao gerar PDF" });
-  }
-}
+module.exports = { gerarPdfRede };
+
 
 module.exports = { gerarPdfRede };
