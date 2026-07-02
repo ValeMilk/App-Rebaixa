@@ -203,82 +203,32 @@ function FiltroPeriodusPdfModal({ grupoSel, onGerar, onClose }) {
   const [periodoInicio, setPeriodoInicio] = useState("");
   const [periodoFim, setPeriodoFim] = useState("");
 
-  // Extrair períodos únicos dos encartes
-  const periodosUnicos = useMemo(() => {
-    const set = new Set();
-    grupoSel.encartes?.forEach(e => {
-      if (e.periodoInicio) set.add(new Date(e.periodoInicio).toISOString().slice(0, 10));
-      if (e.periodoFim) set.add(new Date(e.periodoFim).toISOString().slice(0, 10));
-    });
-    return Array.from(set).sort();
-  }, [grupoSel.encartes]);
-
   function handleGerarPdf() {
     onGerar(periodoInicio || null, periodoFim || null);
   }
 
   return (
     <div className="space-y-4">
+      <p className="text-xs text-slate-500">Deixe em branco para incluir todas as ações ativas</p>
+      
       <div>
-        <label className="block text-xs font-semibold text-slate-600 mb-2">Período Inicial (opcional)</label>
+        <label className="block text-xs font-semibold text-slate-600 mb-2">Data Inicial (opcional)</label>
         <input
           type="date"
           value={periodoInicio}
           onChange={(e) => setPeriodoInicio(e.target.value)}
           className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand/40"
         />
-        {periodosUnicos.length > 0 && (
-          <div className="mt-2 text-xs text-slate-500">
-            <p className="font-semibold mb-1">Períodos disponíveis:</p>
-            <div className="flex flex-wrap gap-1">
-              {periodosUnicos.map(p => (
-                <button
-                  key={p}
-                  onClick={() => setPeriodoInicio(p)}
-                  type="button"
-                  className={`px-2 py-1 rounded text-xs transition ${
-                    periodoInicio === p
-                      ? "bg-brand text-white"
-                      : "bg-slate-100 text-slate-600 hover:bg-slate-200"
-                  }`}
-                >
-                  {new Date(p).toLocaleDateString("pt-BR")}
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
       </div>
 
       <div>
-        <label className="block text-xs font-semibold text-slate-600 mb-2">Período Final (opcional)</label>
+        <label className="block text-xs font-semibold text-slate-600 mb-2">Data Final (opcional)</label>
         <input
           type="date"
           value={periodoFim}
           onChange={(e) => setPeriodoFim(e.target.value)}
           className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand/40"
         />
-        {periodosUnicos.length > 0 && (
-          <div className="mt-2 text-xs text-slate-500">
-            <p className="font-semibold mb-1">Períodos disponíveis:</p>
-            <div className="flex flex-wrap gap-1">
-              {periodosUnicos.map(p => (
-                <button
-                  key={p}
-                  onClick={() => setPeriodoFim(p)}
-                  type="button"
-                  className={`px-2 py-1 rounded text-xs transition ${
-                    periodoFim === p
-                      ? "bg-brand text-white"
-                      : "bg-slate-100 text-slate-600 hover:bg-slate-200"
-                  }`}
-                >
-                  {new Date(p).toLocaleDateString("pt-BR")}
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
       </div>
 
       <div className="flex gap-2 pt-2">
