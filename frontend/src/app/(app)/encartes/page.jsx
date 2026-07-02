@@ -510,6 +510,25 @@ export default function EncartesPage() {
 
   const grupoSel = grupos.find((g) => g.codigoRede === redeSel) || null;
 
+  async function baixarPdfRede() {
+    if (!grupoSel) return;
+    try {
+      const response = await fetch(`/api/encartes/pdf/rede/${grupoSel.codigoRede}`);
+      if (!response.ok) throw new Error("Erro ao gerar PDF");
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `Encartes_${grupoSel.codigoRede}_${new Date().getTime()}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      alert("Erro ao baixar PDF: " + err.message);
+    }
+  }
+
   function handleCriado(novoEncarte) {
     router.push(`/encartes/${novoEncarte._id}`);
   }
@@ -546,6 +565,13 @@ export default function EncartesPage() {
                 onClick={() => setModalSelecaoTipo(true)}
                 className="shrink-0 h-9 px-4 rounded-xl bg-brand text-white text-xs font-bold hover:opacity-90 active:scale-95 transition shadow-sm shadow-brand/20">
                 + Nova Ação
+              </button>
+            )}
+            {grupoSel && (
+              <button
+                onClick={baixarPdfRede}
+                className="shrink-0 h-9 px-4 rounded-xl bg-slate-700 text-white text-xs font-bold hover:bg-slate-800 active:scale-95 transition shadow-sm shadow-slate-700/20">
+                📥 PDF
               </button>
             )}
           </div>

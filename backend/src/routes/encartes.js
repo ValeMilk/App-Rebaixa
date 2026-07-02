@@ -14,6 +14,7 @@ const {
   listarSubcategorias,
   performance,
 } = require("../controllers/encarteController");
+const { gerarPdfRede } = require("../controllers/pdfController");
 
 const router = express.Router();
 
@@ -29,6 +30,7 @@ router.get("/categorias",                 roles, listarCategorias);
 router.get("/produtos",                   roles, listarProdutos);
 router.get("/subcategorias",              roles, listarSubcategorias);
 router.get("/performance",                requireRole("admin", "diretoria"), performance);
+router.get("/pdf/rede/:codigoRede",       roles, gerarPdfRede);
 router.get("/:id",                        roles, obter);
 router.put("/:id",                        roles, atualizar);
 router.delete("/:id",                     roles, remover);
