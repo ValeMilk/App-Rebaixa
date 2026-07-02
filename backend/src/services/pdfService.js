@@ -2,14 +2,25 @@ const PDFDocument = require("pdfkit");
 const path = require("path");
 const fs = require("fs");
 
+// Cores da paleta do sistema
+const COLORS = {
+  brand: "#0066CC",      // Azul principal
+  brandLight: "#E6F2FF", // Azul claro para backgrounds
+  text: "#1a1a1a",       // Texto principal
+  textGray: "#666666",   // Texto secundário
+  success: "#10B981",    // Verde para negociado
+  border: "#E5E7EB",     // Bordas
+  white: "#FFFFFF"
+};
+
 /**
  * Gera PDF personalizado com encartes/ofertas internas de uma rede.
- * Inclui: logo, nome do usuário, data/hora, e agrupamento por período.
+ * Inclui: logo, nome do usuário, data/hora, produtos com preços.
  */
 async function gerarPdfRede(nomeRede, userName, encartes, logoPath) {
   return new Promise((resolve, reject) => {
     try {
-      const doc = new PDFDocument({ size: "A4", margin: 40 });
+      const doc = new PDFDocument({ size: "A4", margin: 50 });
       
       // Coleta o PDF em buffer
       const chunks = [];
@@ -19,32 +30,31 @@ async function gerarPdfRede(nomeRede, userName, encartes, logoPath) {
       });
       doc.on("error", reject);
 
-      // ========== HEADER ==========
-      const logoY = 30;
+      // ========== HEADER COM FUNDO COLORIDO ==========
+      doc.rect(0, 0, 595, 100).fill(COLORS.brand);
       
-      // Adicionar logo se existe
-      if (logoPath && fs.existsSync(logoPath)) {
+      // Logo (se existir)
+      const logoBackendPath = path.join(__dirname, "../assets/logo.png");
+      if (fs.existsSync(logoBackendPath)) {
         try {
-          doc.image(logoPath, 40, logoY, { width: 60, height: 60 });
+          doc.image(logoBackendPath, 50, 25, { width: 50, height: 50 });
         } catch (err) {
           console.warn("[PDF] Erro ao carregar logo:", err.message);
         }
       }
 
-      // Informações do header (lado direito)
-      const infoX = 120;
-      doc.fontSize(16).font("Helvetica-Bold").text(nomeRede, infoX, logoY, { width: 400 });
+      // Informações do header (branco sobre azul)
+      doc.fillColor(COLORS.white).fontSize(18).font("Helvetica-Bold")
+        .text(nomeRede, 120, 30, { width: 400 });
       
       const now = new Date();
       const dataFormatada = now.toLocaleDateString("pt-BR");
       const horaFormatada = now.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
       
-      doc.fontSize(11).font("Helvetica").text(`Impresso por: ${userName}`, infoX, logoY + 30, { width: 400 });
-      doc.fontSize(11).text(`Data: ${dataFormatada}  Hora: ${horaFormatada}`, infoX, logoY + 48, { width: 400 });
+      doc.fontSize(10).font("Helvetica")
+        .text(`Impresso por: ${userName}`, 120, 55, { width: 400 })
+        .text(`${dataFormatada} às ${horaFormatada}`, 120, 70, { width: 400 });
 
-      // Linha separadora
-      doc.moveTo(40, 110).lineTo(555, 110).stroke();
-      
       // ========== CORPO DO PDF ==========
       let currentY = 130;
 
@@ -52,7 +62,8 @@ async function gerarPdfRede(nomeRede, userName, encartes, logoPath) {
       const periodos = agruparPorPeriodo(encartes);
 
       if (periodos.length === 0) {
-        doc.fontSize(12).text("Nenhum encarte ou oferta interna para este período.", 40, currentY);
+        doc.fillColor(COLORS.text).fontSize(12)
+          .text("Nenhum encarte ou oferta interna para este período.", 50, currentY);
         doc.end();
         return;
       }
@@ -60,67 +71,127 @@ async function gerarPdfRede(nomeRede, userName, encartes, logoPath) {
       // Iterar por períodos
       periodos.forEach((periodo, idx) => {
         // Verificar se precisa de nova página
-        if (currentY > 700) {
+        if (currentY > 680) {
           doc.addPage();
-          currentY = 40;
+          currentY = 50;
         }
 
-        // Título do período
-        doc.fontSize(13).font("Helvetica-Bold")
-          .text(`Período: ${formatarData(periodo.inicio)} - ${formatarData(periodo.fim)}`, 40, currentY);
-        currentY += 25;
+        // Box do período
+        doc.roundedRect(50, currentY, 495, 35, 5).fill(COLORS.brandLight);
+        
+        doc.fillColor(COLORS.brand).fontSize(13).font("Helvetica-Bold")
+          .text(`Período: ${formatarData(periodo.inicio)} - ${formatarData(periodo.fim)}`, 
+                60, currentY + 12);
+        
+        currentY += 50;
 
-        // ENCARTES (coloridos)
+        // ENCARTES
         const encartesDoPeriodo = periodo.itens.filter(e => e.tipo !== "oferta_interna");
         if (encartesDoPeriodo.length > 0) {
-          doc.fontSize(11).font("Helvetica-Bold").fillColor("#333333")
-            .text("ENCARTES", 45, currentY);
-          currentY += 18;
+          doc.fillColor(COLORS.text).fontSize(11).font("Helvetica-Bold")
+            .text("📋 ENCARTES", 60, currentY);
+          currentY += 20;
 
           encartesDoPeriodo.forEach((encarte) => {
-            if (currentY > 720) {
+            if (currentY > 700) {
               doc.addPage();
-              currentY = 40;
+              currentY = 50;
             }
 
-            // Bullet + dados
-            doc.fontSize(10).font("Helvetica").fillColor("#000000");
-            const texto = `• ${encarte.nome} (${encarte.itensQtd || 0} produtos)`;
-            doc.text(texto, 50, currentY);
-            
+            // Nome do encarte
+            doc.fillColor(COLORS.text).fontSize(10).font("Helvetica-Bold")
+              .text(encarte.nome, 70, currentY);
             currentY += 15;
+
+            // Produtos do encarte
+            if (encarte.itens && encarte.itens.length > 0) {
+              encarte.itens.forEach((item) => {
+                if (currentY > 720) {
+                  doc.addPage();
+                  currentY = 50;
+                }
+
+                const produtoNome = item.produtoNome || "Produto sem nome";
+                const precoAcao = item.precoAcao ? formatarPreco(item.precoAcao) : "N/A";
+                const negociado = item.negociado ? "✓" : "";
+
+                doc.fillColor(COLORS.textGray).fontSize(9).font("Helvetica")
+                  .text(`   • ${produtoNome}`, 80, currentY, { continued: true })
+                  .fillColor(COLORS.success).font("Helvetica-Bold")
+                  .text(` R$ ${precoAcao} ${negociado}`, { align: "left" });
+                
+                currentY += 14;
+              });
+              currentY += 5;
+            } else {
+              doc.fillColor(COLORS.textGray).fontSize(9).font("Helvetica-Oblique")
+                .text("   Sem produtos cadastrados", 80, currentY);
+              currentY += 18;
+            }
           });
         }
 
-        // OFERTAS INTERNAS (preto)
+        // OFERTAS INTERNAS
         const ofertasDoPeriodo = periodo.itens.filter(e => e.tipo === "oferta_interna");
         if (ofertasDoPeriodo.length > 0) {
-          if (encartesDoPeriodo.length > 0) currentY += 8;
+          if (encartesDoPeriodo.length > 0) currentY += 10;
           
-          doc.fontSize(11).font("Helvetica-Bold").fillColor("#1a1a1a")
-            .text("OFERTAS INTERNAS", 45, currentY);
-          currentY += 18;
+          doc.fillColor(COLORS.text).fontSize(11).font("Helvetica-Bold")
+            .text("🎯 OFERTAS INTERNAS", 60, currentY);
+          currentY += 20;
 
           ofertasDoPeriodo.forEach((oferta) => {
-            if (currentY > 720) {
+            if (currentY > 700) {
               doc.addPage();
-              currentY = 40;
+              currentY = 50;
             }
 
-            doc.fontSize(10).font("Helvetica").fillColor("#000000");
-            const texto = `• ${oferta.nome} (${oferta.itensQtd || 0} produtos)`;
-            doc.text(texto, 50, currentY);
-            
+            // Nome da oferta
+            doc.fillColor(COLORS.text).fontSize(10).font("Helvetica-Bold")
+              .text(oferta.nome, 70, currentY);
             currentY += 15;
+
+            // Produtos da oferta
+            if (oferta.itens && oferta.itens.length > 0) {
+              oferta.itens.forEach((item) => {
+                if (currentY > 720) {
+                  doc.addPage();
+                  currentY = 50;
+                }
+
+                const produtoNome = item.produtoNome || "Produto sem nome";
+                const precoAcao = item.precoAcao ? formatarPreco(item.precoAcao) : "N/A";
+                const negociado = item.negociado ? "✓" : "";
+
+                doc.fillColor(COLORS.textGray).fontSize(9).font("Helvetica")
+                  .text(`   • ${produtoNome}`, 80, currentY, { continued: true })
+                  .fillColor(COLORS.success).font("Helvetica-Bold")
+                  .text(` R$ ${precoAcao} ${negociado}`, { align: "left" });
+                
+                currentY += 14;
+              });
+              currentY += 5;
+            } else {
+              doc.fillColor(COLORS.textGray).fontSize(9).font("Helvetica-Oblique")
+                .text("   Sem produtos cadastrados", 80, currentY);
+              currentY += 18;
+            }
           });
         }
 
-        currentY += 15; // Espaço entre períodos
+        currentY += 20; // Espaço entre períodos
       });
 
       // ========== RODAPÉ ==========
-      doc.fontSize(9).fillColor("#999999")
-        .text("Gerado automaticamente pelo sistema Rebaixa", 40, 750, { align: "center" });
+      const pageCount = doc.bufferedPageRange().count;
+      for (let i = 0; i < pageCount; i++) {
+        doc.switchToPage(i);
+        doc.fontSize(8).fillColor(COLORS.textGray)
+          .text("Gerado automaticamente pelo Sistema Rebaixa", 50, 770, { 
+            align: "center",
+            width: 495
+          });
+      }
 
       doc.end();
     } catch (err) {
@@ -131,6 +202,7 @@ async function gerarPdfRede(nomeRede, userName, encartes, logoPath) {
 
 /**
  * Agrupa encartes por período (periodoInicio → periodoFim).
+ * Mantém os itens (produtos) dentro de cada encarte.
  */
 function agruparPorPeriodo(encartes) {
   const periodos = {};
@@ -147,7 +219,7 @@ function agruparPorPeriodo(encartes) {
     periodos[key].itens.push({
       nome: e.nome,
       tipo: e.tipo,
-      itensQtd: (e.itens && e.itens.length) || 0,
+      itens: e.itens || [], // Array de produtos
     });
   });
 
@@ -166,6 +238,14 @@ function formatarData(dataStr) {
   if (!dataStr) return "N/A";
   const date = new Date(dataStr);
   return date.toLocaleDateString("pt-BR");
+}
+
+/**
+ * Formata preço para exibição (ex: 12.50 → "12,50").
+ */
+function formatarPreco(valor) {
+  if (!valor && valor !== 0) return "N/A";
+  return Number(valor).toFixed(2).replace(".", ",");
 }
 
 module.exports = {
