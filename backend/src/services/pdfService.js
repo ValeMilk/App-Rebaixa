@@ -111,14 +111,14 @@ async function gerarPdfRede(nomeRede, userName, encartes, logoPath) {
                   currentY = 50;
                 }
 
-                const produtoNome = item.produtoNome || "Produto sem nome";
-                const precoAcao = item.precoAcao ? formatarPreco(item.precoAcao) : "N/A";
-                const negociado = item.negociado ? "✓" : "";
+                const produtoNome = item.produto || "Produto sem nome";
+                const precoOferta = item.precoOferta ? formatarPreco(item.precoOferta) : "N/A";
+                const negociado = item.negociado ? " ✓" : "";
 
                 doc.fillColor(COLORS.textGray).fontSize(9).font("Helvetica")
                   .text(`   • ${produtoNome}`, 80, currentY, { continued: true })
                   .fillColor(COLORS.success).font("Helvetica-Bold")
-                  .text(` R$ ${precoAcao} ${negociado}`, { align: "left" });
+                  .text(` - R$ ${precoOferta}${negociado}`, { align: "left" });
                 
                 currentY += 14;
               });
@@ -159,14 +159,14 @@ async function gerarPdfRede(nomeRede, userName, encartes, logoPath) {
                   currentY = 50;
                 }
 
-                const produtoNome = item.produtoNome || "Produto sem nome";
-                const precoAcao = item.precoAcao ? formatarPreco(item.precoAcao) : "N/A";
-                const negociado = item.negociado ? "✓" : "";
+                const produtoNome = item.produto || "Produto sem nome";
+                const precoOferta = item.precoOferta ? formatarPreco(item.precoOferta) : "N/A";
+                const negociado = item.negociado ? " ✓" : "";
 
                 doc.fillColor(COLORS.textGray).fontSize(9).font("Helvetica")
                   .text(`   • ${produtoNome}`, 80, currentY, { continued: true })
                   .fillColor(COLORS.success).font("Helvetica-Bold")
-                  .text(` R$ ${precoAcao} ${negociado}`, { align: "left" });
+                  .text(` - R$ ${precoOferta}${negociado}`, { align: "left" });
                 
                 currentY += 14;
               });

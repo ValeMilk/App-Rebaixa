@@ -470,6 +470,7 @@ export default function EncartesPage() {
   });
   const [modalSelecaoTipo, setModalSelecaoTipo] = useState(false);
   const [modalCriacao, setModalCriacao] = useState(false);
+  const [pdfPreviewUrl, setPdfPreviewUrl] = useState(null);
   const [tipoSelecionado, setTipoSelecionado] = useState(null);
 
   const carregar = useCallback(async () => {
@@ -510,7 +511,7 @@ export default function EncartesPage() {
 
   const grupoSel = grupos.find((g) => g.codigoRede === redeSel) || null;
 
-  async function baixarPdfRede() {
+  async function abrirPreviewPdf() {
     if (!grupoSel) return;
     try {
       const response = await api.get(`/encartes/pdf/rede/${grupoSel.codigoRede}`, {
@@ -518,16 +519,27 @@ export default function EncartesPage() {
       });
       const blob = response.data;
       const url = window.URL.createObjectURL(blob);
-      const link = document.createElement("a");
-      link.href = url;
-      link.download = `Encartes_${grupoSel.codigoRede}_${new Date().getTime()}.pdf`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      window.URL.revokeObjectURL(url);
+      setPdfPreviewUrl(url);
     } catch (err) {
-      alert("Erro ao baixar PDF: " + err.message);
+      alert("Erro ao gerar PDF: " + err.message);
     }
+  }
+
+  function baixarPdfAtual() {
+    if (!pdfPreviewUrl || !grupoSel) return;
+    const link = document.createElement("a");
+    link.href = pdfPreviewUrl;
+    link.download = `Encartes_${grupoSel.codigoRede}_${new Date().getTime()}.pdf`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  }
+
+  function fecharPreviewPdf() {
+    if (pdfPreviewUrl) {
+      window.URL.revokeObjectURL(pdfPreviewUrl);
+    }
+    setPdfPreviewUrl(null);
   }
 
   function handleCriado(novoEncarte) {
@@ -570,7 +582,7 @@ export default function EncartesPage() {
             )}
             {grupoSel && (
               <button
-                onClick={baixarPdfRede}
+                onClick={abrirPreviewPdf}
                 className="shrink-0 h-9 px-4 rounded-xl bg-slate-700 text-white text-xs font-bold hover:bg-slate-800 active:scale-95 transition shadow-sm shadow-slate-700/20">
                 📥 PDF
               </button>
@@ -631,6 +643,38 @@ export default function EncartesPage() {
           onClose={handleFecharCriacao}
           onCriado={handleCriado}
         />
+      )}
+
+      {pdfPreviewUrl && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-5xl h-[90vh] flex flex-col">
+            {/* Header */}
+            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200">
+              <h3 className="text-lg font-bold text-slate-900">Pré-visualização do PDF</h3>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={baixarPdfAtual}
+                  className="h-9 px-4 rounded-xl bg-brand text-white text-xs font-bold hover:opacity-90 active:scale-95 transition shadow-sm">
+                  📥 Baixar PDF
+                </button>
+                <button
+                  onClick={fecharPreviewPdf}
+                  className="h-9 w-9 rounded-xl bg-slate-100 text-slate-600 hover:bg-slate-200 active:scale-95 transition flex items-center justify-center">
+                  <IcoX className="w-5 h-5" />
+                </button>
+              </div>
+            </div>
+
+            {/* Preview */}
+            <div className="flex-1 overflow-hidden">
+              <iframe
+                src={pdfPreviewUrl}
+                className="w-full h-full border-0"
+                title="Preview do PDF"
+              />
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
