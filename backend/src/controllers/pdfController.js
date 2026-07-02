@@ -1,5 +1,5 @@
 const Encarte = require("../models/Encarte");
-const { gerarPdfRede } = require("../services/pdfService");
+const pdfService = require("../services/pdfService");
 const path = require("path");
 
 /**
@@ -32,7 +32,7 @@ async function gerarPdfRede(req, res) {
     const logoPath = path.join(__dirname, "../../frontend/public/logo.png");
 
     // Gerar PDF
-    const pdfBuffer = await gerarPdfRede(nomeRede, userName, encartes, logoPath);
+    const pdfBuffer = await pdfService.gerarPdfRede(nomeRede, userName, encartes, logoPath);
 
     // Retornar como anexo
     res.setHeader("Content-Type", "application/pdf");
