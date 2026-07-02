@@ -89,7 +89,7 @@ async function gerarPdfRede(nomeRede, userName, encartes, logoPath) {
         const encartesDoPeriodo = periodo.itens.filter(e => e.tipo !== "oferta_interna");
         if (encartesDoPeriodo.length > 0) {
           doc.fillColor(COLORS.text).fontSize(11).font("Helvetica-Bold")
-            .text("📋 ENCARTES", 60, currentY);
+            .text("ENCARTES", 60, currentY);
           currentY += 20;
 
           encartesDoPeriodo.forEach((encarte) => {
@@ -137,7 +137,7 @@ async function gerarPdfRede(nomeRede, userName, encartes, logoPath) {
           if (encartesDoPeriodo.length > 0) currentY += 10;
           
           doc.fillColor(COLORS.text).fontSize(11).font("Helvetica-Bold")
-            .text("🎯 OFERTAS INTERNAS", 60, currentY);
+            .text("OFERTAS INTERNAS", 60, currentY);
           currentY += 20;
 
           ofertasDoPeriodo.forEach((oferta) => {
