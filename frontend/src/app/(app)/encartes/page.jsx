@@ -513,9 +513,10 @@ export default function EncartesPage() {
   async function baixarPdfRede() {
     if (!grupoSel) return;
     try {
-      const response = await fetch(`/api/encartes/pdf/rede/${grupoSel.codigoRede}`);
-      if (!response.ok) throw new Error("Erro ao gerar PDF");
-      const blob = await response.blob();
+      const response = await api.get(`/encartes/pdf/rede/${grupoSel.codigoRede}`, {
+        responseType: 'blob'
+      });
+      const blob = response.data;
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement("a");
       link.href = url;
