@@ -22,7 +22,8 @@ async function gerarPdfRede(req, res) {
     }
 
     // Construir filtros para buscar encartes/ofertas
-    const filters = { codigoRede: Number(codigoRede) };
+    // IMPORTANTE: codigoRede é String no banco, não Number
+    const filters = { codigoRede: String(codigoRede) };
     
     // Filtrar por período se informado
     // Lógica: busca encartes que se SOBREPÕEM ao período selecionado
@@ -74,7 +75,7 @@ async function gerarPdfRede(req, res) {
     }
 
     // Buscar nome da rede no Carteira (se existir)
-    const carteira = await Carteira.findOne({ codigoRede: Number(codigoRede) }).select("redeSubrede").lean();
+    const carteira = await Carteira.findOne({ codigoRede: String(codigoRede) }).select("redeSubrede").lean();
     const nomeRede = carteira?.redeSubrede || `Rede ${codigoRede}`;
 
     console.log("[PDF] Nome da rede:", nomeRede);
