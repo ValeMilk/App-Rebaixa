@@ -15,27 +15,42 @@ async function gerarPdfRede(req, res) {
     const { periodo_inicio, periodo_fim } = req.query;
     const { nome: userName } = req.user || { nome: "Usuário" };
 
-    console.log("[PDF] Iniciando geração:", { codigoRede, periodo_inicio, periodo_fim });
+    console.log("[PDF] Iniciando geração:", { codigoRede, periodo_inicio, periodo_fim, userName });
 
     if (!codigoRede) {
       return res.status(400).json({ error: "codigoRede é obrigatório" });
     }
 
     // Construir filtros para buscar encartes/ofertas
-    const filters = { codigoRede };
+    const filters = { codigoRede: Number(codigoRede) };
     
     // Filtrar por período se informado
-    if (periodo_inicio || periodo_fim) {
+    // Lógica: busca encartes que se SOBREPÕEM ao período selecionado
+    // Um encarte se sobrepõe se: periodoFim >= periodo_inicio E periodoInicio <= periodo_fim
+    if (periodo_inicio && periodo_fim) {
       console.log("[PDF] Aplicando filtro de período");
-      if (periodo_inicio) {
-        filters.periodoFim = { $gte: new Date(periodo_inicio) };
-      }
-      if (periodo_fim) {
-        filters.periodoInicio = { $lte: new Date(periodo_fim) };
+      try {
+        const dataInicio = new Date(periodo_inicio);
+        const dataFim = new Date(periodo_fim);
+        
+        if (isNaN(dataInicio.getTime()) || isNaN(dataFim.getTime())) {
+          return res.status(400).json({ error: "Datas inválidas fornecidas" });
+        }
+        
+        filters.periodoFim = { $gte: dataInicio };
+        filters.periodoInicio = { $lte: dataFim };
+        
+        console.log("[PDF] Filtros de data aplicados:", {
+          dataInicio: dataInicio.toISOString(),
+          dataFim: dataFim.toISOString()
+        });
+      } catch (err) {
+        console.error("[PDF] Erro ao parsear datas:", err);
+        return res.status(400).json({ error: "Erro ao processar datas" });
       }
     }
 
-    console.log("[PDF] Filtros:", filters);
+    console.log("[PDF] Filtros finais:", JSON.stringify(filters, null, 2));
 
     // Buscar encartes/ofertas da rede com os produtos
     const encartes = await Encarte.find(filters)
@@ -43,21 +58,32 @@ async function gerarPdfRede(req, res) {
       .lean();
 
     console.log("[PDF] Encartes encontrados:", encartes.length);
+    
+    if (encartes.length > 0) {
+      console.log("[PDF] Primeiro encarte:", {
+        nome: encartes[0].nome,
+        tipo: encartes[0].tipo,
+        periodoInicio: encartes[0].periodoInicio,
+        periodoFim: encartes[0].periodoFim,
+        itensCount: encartes[0].itens?.length || 0
+      });
+    }
 
     if (!encartes.length) {
       return res.status(404).json({ error: "Nenhum encarte ou oferta interna encontrado para esta rede e período" });
     }
 
     // Buscar nome da rede no Carteira (se existir)
-    const carteira = await Carteira.findOne({ codigoRede }).select("redeSubrede").lean();
+    const carteira = await Carteira.findOne({ codigoRede: Number(codigoRede) }).select("redeSubrede").lean();
     const nomeRede = carteira?.redeSubrede || `Rede ${codigoRede}`;
 
+    console.log("[PDF] Nome da rede:", nomeRede);
     console.log("[PDF] Gerando PDF...");
 
     // Gerar PDF
     const pdfBuffer = await pdfService.gerarPdfRede(nomeRede, userName, encartes);
 
-    console.log("[PDF] PDF gerado com sucesso, enviando...");
+    console.log("[PDF] PDF gerado com sucesso, tamanho:", pdfBuffer.length, "bytes");
 
     // Retornar como anexo
     res.setHeader("Content-Type", "application/pdf");
@@ -66,7 +92,7 @@ async function gerarPdfRede(req, res) {
   } catch (err) {
     console.error("[PDF] ERRO COMPLETO:", err);
     console.error("[PDF] Stack trace:", err.stack);
-    res.status(500).json({ error: err.message || "Erro ao gerar PDF", stack: err.stack });
+    res.status(500).json({ error: err.message || "Erro ao gerar PDF", details: err.stack });
   }
 }
 

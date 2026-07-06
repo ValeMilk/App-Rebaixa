@@ -214,6 +214,11 @@ function agruparPorPeriodo(encartes) {
   const periodos = {};
 
   encartes.forEach((e) => {
+    if (!e.periodoInicio || !e.periodoFim) {
+      console.warn("[pdfService] Encarte sem período:", e._id, e.nome);
+      return; // Pula encartes sem período definido
+    }
+    
     const key = `${e.periodoInicio}__${e.periodoFim}`;
     if (!periodos[key]) {
       periodos[key] = {
@@ -223,9 +228,9 @@ function agruparPorPeriodo(encartes) {
       };
     }
     periodos[key].itens.push({
-      nome: e.nome,
-      tipo: e.tipo,
-      itens: e.itens || [], // Array de produtos
+      nome: e.nome || "Sem nome",
+      tipo: e.tipo || "encarte",
+      itens: Array.isArray(e.itens) ? e.itens : [], // Array de produtos
     });
   });
 
