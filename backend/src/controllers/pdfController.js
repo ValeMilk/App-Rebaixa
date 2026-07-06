@@ -19,26 +19,23 @@ async function gerarPdfRede(req, res) {
       return res.status(400).json({ error: "codigoRede é obrigatório" });
     }
 
-    // Buscar encartes/ofertas da rede com os produtos
-    let query = Encarte.find({ codigoRede })
-      .select("_id nome tipo periodoInicio periodoFim itens")
-      .lean();
-
+    // Construir filtros para buscar encartes/ofertas
+    const filters = { codigoRede };
+    
     // Filtrar por período se informado
     if (periodo_inicio || periodo_fim) {
-      const filters = {};
       if (periodo_inicio) {
         filters.periodoFim = { $gte: new Date(periodo_inicio) };
       }
       if (periodo_fim) {
         filters.periodoInicio = { $lte: new Date(periodo_fim) };
       }
-      query = Encarte.find({ codigoRede, ...filters })
-        .select("_id nome tipo periodoInicio periodoFim itens")
-        .lean();
     }
 
-    const encartes = await query;
+    // Buscar encartes/ofertas da rede com os produtos
+    const encartes = await Encarte.find(filters)
+      .select("_id nome tipo periodoInicio periodoFim itens")
+      .lean();
 
     if (!encartes.length) {
       return res.status(404).json({ error: "Nenhum encarte ou oferta interna encontrado para esta rede e período" });
@@ -60,8 +57,5 @@ async function gerarPdfRede(req, res) {
     res.status(500).json({ error: err.message || "Erro ao gerar PDF" });
   }
 }
-
-module.exports = { gerarPdfRede };
-
 
 module.exports = { gerarPdfRede };
