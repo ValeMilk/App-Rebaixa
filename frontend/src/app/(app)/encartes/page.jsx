@@ -569,7 +569,7 @@ export default function EncartesPage() {
   async function abrirPreviewPdf(periodInicio, periodFim) {
     if (!grupoSel) return;
     try {
-      let url = `/encartes/pdf/rede/${grupoSel.codigoRede}`;
+      let url = `/api/encartes/pdf/rede/${grupoSel.codigoRede}`;
       if (periodInicio && periodFim) {
         url += `?periodo_inicio=${periodInicio}&periodo_fim=${periodFim}`;
       }
