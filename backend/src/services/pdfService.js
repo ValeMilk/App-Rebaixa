@@ -20,15 +20,21 @@ const COLORS = {
 async function gerarPdfRede(nomeRede, userName, encartes, logoPath) {
   return new Promise((resolve, reject) => {
     try {
+      console.log("[pdfService] Iniciando geração com", encartes.length, "encartes");
+      
       const doc = new PDFDocument({ size: "A4", margin: 50 });
       
       // Coleta o PDF em buffer
       const chunks = [];
       doc.on("data", (chunk) => chunks.push(chunk));
       doc.on("end", () => {
+        console.log("[pdfService] PDF finalizado");
         resolve(Buffer.concat(chunks));
       });
-      doc.on("error", reject);
+      doc.on("error", (err) => {
+        console.error("[pdfService] Erro no PDF document:", err);
+        reject(err);
+      });
 
       // ========== HEADER COM FUNDO COLORIDO ==========
       doc.rect(0, 0, 595, 100).fill(COLORS.brand);
