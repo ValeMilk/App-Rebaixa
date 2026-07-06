@@ -20,7 +20,12 @@ const COLORS = {
 async function gerarPdfRede(nomeRede, userName, encartes, logoPath) {
   return new Promise((resolve, reject) => {
     try {
-      console.log("[pdfService] Iniciando geração com", encartes.length, "encartes");
+      console.log("[pdfService] ========================================");
+      console.log("[pdfService] INICIANDO GERAÇÃO DO PDF");
+      console.log("[pdfService] Rede:", nomeRede);
+      console.log("[pdfService] Usuário:", userName);
+      console.log("[pdfService] Total de encartes:", encartes.length);
+      console.log("[pdfService] ========================================");
       
       const doc = new PDFDocument({ size: "A4", margin: 50 });
       
@@ -28,11 +33,11 @@ async function gerarPdfRede(nomeRede, userName, encartes, logoPath) {
       const chunks = [];
       doc.on("data", (chunk) => chunks.push(chunk));
       doc.on("end", () => {
-        console.log("[pdfService] PDF finalizado");
+        console.log("[pdfService] ✅ PDF finalizado, buffer criado");
         resolve(Buffer.concat(chunks));
       });
       doc.on("error", (err) => {
-        console.error("[pdfService] Erro no PDF document:", err);
+        console.error("[pdfService] ❌ Erro no PDF document:", err);
         reject(err);
       });
 
@@ -64,18 +69,23 @@ async function gerarPdfRede(nomeRede, userName, encartes, logoPath) {
       // ========== CORPO DO PDF ==========
       let currentY = 130;
 
+      console.log("[pdfService] Agrupando encartes por período...");
       // Agrupar encartes por período
       const periodos = agruparPorPeriodo(encartes);
+      console.log(`[pdfService] Períodos agrupados: ${periodos.length}`);
 
       if (periodos.length === 0) {
+        console.log("[pdfService] ⚠️ Nenhum período após agrupamento");
         doc.fillColor(COLORS.text).fontSize(12)
           .text("Nenhum encarte ou oferta interna para este período.", 50, currentY);
         doc.end();
         return;
       }
 
+      console.log("[pdfService] Gerando conteúdo do PDF...");
       // Iterar por períodos
       periodos.forEach((periodo, idx) => {
+        console.log(`[pdfService]   Período ${idx + 1}/${periodos.length}: ${periodo.inicio} - ${periodo.fim}`);
         // Verificar se precisa de nova página
         if (currentY > 680) {
           doc.addPage();
@@ -188,8 +198,10 @@ async function gerarPdfRede(nomeRede, userName, encartes, logoPath) {
         currentY += 20; // Espaço entre períodos
       });
 
+      console.log("[pdfService] Conteúdo gerado, adicionando rodapé...");
       // ========== RODAPÉ ==========
       const pageCount = doc.bufferedPageRange().count;
+      console.log(`[pdfService] Total de páginas: ${pageCount}`);
       for (let i = 0; i < pageCount; i++) {
         doc.switchToPage(i);
         doc.fontSize(8).fillColor(COLORS.textGray)
@@ -199,8 +211,11 @@ async function gerarPdfRede(nomeRede, userName, encartes, logoPath) {
           });
       }
 
+      console.log("[pdfService] Finalizando documento PDF...");
       doc.end();
     } catch (err) {
+      console.error("[pdfService] ❌❌❌ ERRO NA GERAÇÃO:", err.message);
+      console.error("[pdfService] Stack:", err.stack);
       reject(err);
     }
   });
