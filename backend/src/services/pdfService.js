@@ -200,9 +200,10 @@ async function gerarPdfRede(nomeRede, userName, encartes, logoPath) {
 
       console.log("[pdfService] Conteúdo gerado, adicionando rodapé...");
       // ========== RODAPÉ ==========
-      const pageCount = doc.bufferedPageRange().count;
-      console.log(`[pdfService] Total de páginas: ${pageCount}`);
-      for (let i = 0; i < pageCount; i++) {
+      const range = doc.bufferedPageRange();
+      const pageCount = range.count;
+      console.log(`[pdfService] Total de páginas: ${pageCount} (buffer: ${range.start}-${range.start + range.count - 1})`);
+      for (let i = range.start; i < range.start + range.count; i++) {
         doc.switchToPage(i);
         doc.fontSize(8).fillColor(COLORS.textGray)
           .text("Gerado automaticamente pelo Sistema Rebaixa", 50, 770, { 
