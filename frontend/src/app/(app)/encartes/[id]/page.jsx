@@ -27,6 +27,17 @@ function TrashIcon(props) {
   );
 }
 
+// Ícone de editar (lápis)
+function EditIcon(props) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}
+      strokeLinecap="round" strokeLinejoin="round" {...props}>
+      <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+      <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+    </svg>
+  );
+}
+
 function fmtBRL(v) {
   if (v == null || v === "") return "—";
   return Number(v).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
@@ -790,6 +801,121 @@ function AdicionarProdutoModal({ encarteId, codigoRede, onClose, onAdicionado })
   );
 }
 
+/** Modal para editar nome e período da ação */
+function EditarInfoModal({ encarte, encarteId, onClose, onAtualizado }) {
+  const [nome, setNome] = useState(encarte.nome);
+  const [periodoInicio, setPeriodoInicio] = useState(encarte.periodoInicio?.slice(0, 10) || "");
+  const [periodoFim, setPeriodoFim] = useState(encarte.periodoFim?.slice(0, 10) || "");
+  const [salvando, setSalvando] = useState(false);
+  const [erro, setErro] = useState("");
+
+  async function salvar() {
+    if (!nome.trim()) {
+      setErro("Nome é obrigatório");
+      return;
+    }
+    if (!periodoInicio || !periodoFim) {
+      setErro("Período início e fim são obrigatórios");
+      return;
+    }
+    if (new Date(periodoFim) < new Date(periodoInicio)) {
+      setErro("Data final não pode ser anterior à data inicial");
+      return;
+    }
+
+    setSalvando(true);
+    setErro("");
+    try {
+      const { data } = await api.put(`/encartes/${encarteId}`, {
+        nome: nome.trim(),
+        periodoInicio,
+        periodoFim,
+      });
+      onAtualizado(data);
+    } catch (err) {
+      setErro(err.response?.data?.error || "Erro ao atualizar encarte");
+      setSalvando(false);
+    }
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 animate-slide-up">
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-lg font-bold text-slate-900">Editar Ação</h3>
+          <button
+            onClick={onClose}
+            disabled={salvando}
+            className="h-8 w-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-500 hover:bg-slate-200 transition disabled:opacity-40">
+            <IcoX className="w-4 h-4" />
+          </button>
+        </div>
+
+        {erro && (
+          <div className="mb-4 p-3 rounded-lg bg-red-50 border border-red-200">
+            <p className="text-xs text-red-700 font-semibold">{erro}</p>
+          </div>
+        )}
+
+        <div className="space-y-4">
+          {/* Nome */}
+          <div>
+            <label className="block text-xs font-semibold text-slate-600 uppercase tracking-wide mb-2">Nome da Ação</label>
+            <input
+              type="text"
+              value={nome}
+              onChange={(e) => setNome(e.target.value)}
+              disabled={salvando}
+              className="w-full border-2 border-slate-200 rounded-lg px-3 py-2.5 text-sm font-medium focus:outline-none focus:border-brand focus:ring-2 focus:ring-brand/20 disabled:opacity-50 disabled:cursor-not-allowed"
+              placeholder="Ex: QUARTA MALUCA"
+            />
+          </div>
+
+          {/* Data Início */}
+          <div>
+            <label className="block text-xs font-semibold text-slate-600 uppercase tracking-wide mb-2">Data Inicial</label>
+            <input
+              type="date"
+              value={periodoInicio}
+              onChange={(e) => setPeriodoInicio(e.target.value)}
+              disabled={salvando}
+              className="w-full border-2 border-slate-200 rounded-lg px-3 py-2.5 text-sm font-medium focus:outline-none focus:border-brand focus:ring-2 focus:ring-brand/20 disabled:opacity-50 disabled:cursor-not-allowed"
+            />
+          </div>
+
+          {/* Data Fim */}
+          <div>
+            <label className="block text-xs font-semibold text-slate-600 uppercase tracking-wide mb-2">Data Final</label>
+            <input
+              type="date"
+              value={periodoFim}
+              onChange={(e) => setPeriodoFim(e.target.value)}
+              disabled={salvando}
+              className="w-full border-2 border-slate-200 rounded-lg px-3 py-2.5 text-sm font-medium focus:outline-none focus:border-brand focus:ring-2 focus:ring-brand/20 disabled:opacity-50 disabled:cursor-not-allowed"
+            />
+          </div>
+
+          {/* Botões */}
+          <div className="flex gap-2 pt-4">
+            <button
+              onClick={onClose}
+              disabled={salvando}
+              className="flex-1 py-2.5 rounded-lg bg-slate-100 text-slate-700 font-semibold hover:bg-slate-200 transition disabled:opacity-50">
+              Cancelar
+            </button>
+            <button
+              onClick={salvar}
+              disabled={salvando}
+              className="flex-1 py-2.5 rounded-lg bg-brand text-white font-semibold hover:opacity-90 active:scale-95 transition disabled:opacity-50">
+              {salvando ? "Salvando..." : "Salvar"}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 /** Modal para editar precificação de um produto já adicionado */
 function EditarPrecificacaoModal({ item, encarteId, onClose, onAtualizado }) {
   const [precoPDV, setPrecoPDV] = useState(String(item.precoPDV || ""));
@@ -1005,6 +1131,7 @@ export default function EncarteDetalhe() {
   const [excluindo, setExcluindo] = useState(false);
   const [erro, setErro] = useState("");
   const [gruposAbertos, setGruposAbertos] = useState({});
+  const [editandoInfo, setEditandoInfo] = useState(false); // Modal de editar nome/período
 
   const carregar = useCallback(async () => {
     setLoading(true);
@@ -1030,6 +1157,10 @@ export default function EncarteDetalhe() {
       alert(err.response?.data?.error || "Erro ao excluir encarte");
       setExcluindo(false);
     }
+  }
+
+  function abrirModalEditar() {
+    setEditandoInfo(true);
   }
 
   async function removerItem(itemId) {
@@ -1129,12 +1260,20 @@ export default function EncarteDetalhe() {
             <h1 className="font-semibold text-slate-900 text-base leading-tight truncate">{encarte.nome}</h1>
           </div>
           {encarte.podeEditar ? (
-            <button
-              onClick={excluirEncarte}
-              disabled={excluindo}
-              className="shrink-0 h-8 w-8 rounded-lg bg-slate-100 hover:bg-red-50 flex items-center justify-center text-slate-500 hover:text-red-500 transition disabled:opacity-40">
-              <TrashIcon className="w-4 h-4" />
-            </button>
+            <div className="flex gap-1.5 shrink-0">
+              <button
+                onClick={abrirModalEditar}
+                className="shrink-0 h-8 w-8 rounded-lg bg-blue-50 hover:bg-blue-100 flex items-center justify-center text-blue-600 hover:text-blue-700 transition"
+                title="Editar nome e período">
+                <EditIcon className="w-4 h-4" />
+              </button>
+              <button
+                onClick={excluirEncarte}
+                disabled={excluindo}
+                className="shrink-0 h-8 w-8 rounded-lg bg-slate-100 hover:bg-red-50 flex items-center justify-center text-slate-500 hover:text-red-500 transition disabled:opacity-40">
+                <TrashIcon className="w-4 h-4" />
+              </button>
+            </div>
           ) : (
             <span className="text-[9px] bg-slate-100 text-slate-500 font-semibold px-2 py-1 rounded-md shrink-0">
               VISUALIZAÇÃO
@@ -1335,6 +1474,18 @@ export default function EncarteDetalhe() {
           onAtualizado={(enc) => {
             setEncarte({ ...enc, podeEditar: enc.podeEditar ?? encarte.podeEditar });
             setItemEditando(null);
+          }}
+        />
+      )}
+
+      {editandoInfo && encarte && (
+        <EditarInfoModal
+          encarte={encarte}
+          encarteId={id}
+          onClose={() => setEditandoInfo(false)}
+          onAtualizado={(encAtualizado) => {
+            setEncarte({ ...encAtualizado, podeEditar: encAtualizado.podeEditar ?? encarte.podeEditar });
+            setEditandoInfo(false);
           }}
         />
       )}
