@@ -116,4 +116,77 @@ async function gerarPdfRede(req, res) {
   }
 }
 
-module.exports = { gerarPdfRede };
+/**
+ * GET /api/encartes/pdf/geral?codigos_rede=1,2,3&periodo_inicio=YYYY-MM-DD&periodo_fim=YYYY-MM-DD
+ * Gera um único PDF com os encartes/ofertas internas de várias redes selecionadas
+ * (uma seção por rede). Query params:
+ *   - codigos_rede: obrigatório, lista de códigos de rede separados por vírgula
+ *   - periodo_inicio / periodo_fim: opcionais, mesmo filtro de sobreposição usado no PDF por rede
+ */
+async function gerarPdfGeral(req, res) {
+  try {
+    const { codigos_rede, periodo_inicio, periodo_fim } = req.query;
+    const { nome: userName } = req.user || { nome: "Usuário" };
+
+    if (!codigos_rede) {
+      return res.status(400).json({ error: "codigos_rede é obrigatório" });
+    }
+
+    const codigos = String(codigos_rede)
+      .split(",")
+      .map((c) => c.trim())
+      .filter(Boolean);
+
+    if (codigos.length === 0) {
+      return res.status(400).json({ error: "Informe ao menos uma rede" });
+    }
+
+    let filtroPeriodo = null;
+    if (periodo_inicio && periodo_fim) {
+      const dataInicio = new Date(periodo_inicio);
+      const dataFim = new Date(periodo_fim);
+      if (isNaN(dataInicio.getTime()) || isNaN(dataFim.getTime())) {
+        return res.status(400).json({ error: "Datas inválidas fornecidas" });
+      }
+      filtroPeriodo = {
+        periodoFim: { $gte: dataInicio },
+        periodoInicio: { $lte: dataFim },
+      };
+    }
+
+    // Nomes das redes (para o cabeçalho de cada seção)
+    const carteiras = await Carteira.find({ codigoRede: { $in: codigos } })
+      .select("codigoRede redeSubrede")
+      .lean();
+    const nomesPorCodigo = {};
+    carteiras.forEach((c) => {
+      if (!nomesPorCodigo[c.codigoRede]) nomesPorCodigo[c.codigoRede] = c.redeSubrede;
+    });
+
+    // Busca os encartes de cada rede em paralelo
+    const redesData = await Promise.all(
+      codigos.map(async (codigoRede) => {
+        const filters = { codigoRede: String(codigoRede), ...(filtroPeriodo || {}) };
+        const encartes = await Encarte.find(filters)
+          .select("_id nome tipo periodoInicio periodoFim itens")
+          .lean();
+        return {
+          codigoRede,
+          nomeRede: nomesPorCodigo[codigoRede] || `Rede ${codigoRede}`,
+          encartes,
+        };
+      })
+    );
+
+    const pdfBuffer = await pdfService.gerarPdfGeral(userName, redesData);
+
+    res.setHeader("Content-Type", "application/pdf");
+    res.setHeader("Content-Disposition", `attachment; filename="Encartes_Geral_${new Date().getTime()}.pdf"`);
+    res.send(pdfBuffer);
+  } catch (err) {
+    console.error("[PDF geral] Erro:", err.message, err.stack);
+    res.status(500).json({ error: err.message || "Erro ao gerar PDF geral" });
+  }
+}
+
+module.exports = { gerarPdfRede, gerarPdfGeral };

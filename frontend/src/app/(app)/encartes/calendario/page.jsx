@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import api from "@/lib/api";
-import { IcoChevronRight, IcoCalendar } from "@/components/Icons";
+import { IcoChevronRight, IcoCalendar, IcoX } from "@/components/Icons";
 
 // ---------------------------------------------------------------------------
 // Paleta: uma cor por rede (expandida para suportar mais redes)
@@ -38,6 +38,105 @@ function ymd(ano, mes, dia) {
 }
 
 // ---------------------------------------------------------------------------
+// Modal de seleção de redes para o PDF geral
+// ---------------------------------------------------------------------------
+function SelecaoRedesPdfModal({ redes, onGerar, onClose, gerando }) {
+  const [selecionadas, setSelecionadas] = useState(() => redes.map((r) => r.codigoRede));
+  const [periodoInicio, setPeriodoInicio] = useState("");
+  const [periodoFim, setPeriodoFim] = useState("");
+
+  const todasSelecionadas = selecionadas.length === redes.length;
+
+  function toggleRede(codigo) {
+    setSelecionadas((prev) =>
+      prev.includes(codigo) ? prev.filter((c) => c !== codigo) : [...prev, codigo]
+    );
+  }
+
+  function toggleTodas() {
+    setSelecionadas(todasSelecionadas ? [] : redes.map((r) => r.codigoRede));
+  }
+
+  function handleGerar() {
+    if (selecionadas.length === 0) return;
+    onGerar(selecionadas, periodoInicio || null, periodoFim || null);
+  }
+
+  return (
+    <div className="space-y-4">
+      <p className="text-xs text-slate-500">Selecione as redes que devem entrar no PDF geral</p>
+
+      <div className="flex items-center justify-between">
+        <label className="flex items-center gap-2 text-xs font-semibold text-slate-700 cursor-pointer">
+          <input
+            type="checkbox"
+            checked={todasSelecionadas}
+            onChange={toggleTodas}
+            className="w-4 h-4 rounded accent-brand"
+          />
+          Selecionar todas ({redes.length})
+        </label>
+        <span className="text-xs text-slate-400">{selecionadas.length} selecionada(s)</span>
+      </div>
+
+      <div className="max-h-56 overflow-y-auto border border-slate-200 rounded-xl divide-y divide-slate-100">
+        {redes.map((r) => (
+          <label
+            key={r.codigoRede}
+            className="flex items-center gap-2.5 px-3 py-2 text-sm cursor-pointer hover:bg-slate-50 transition"
+          >
+            <input
+              type="checkbox"
+              checked={selecionadas.includes(r.codigoRede)}
+              onChange={() => toggleRede(r.codigoRede)}
+              className="w-4 h-4 rounded accent-brand shrink-0"
+            />
+            <span className={`inline-block w-2.5 h-2.5 rounded-sm shrink-0 ${r.cor.bg}`} />
+            <span className="text-slate-700 truncate">{r.nome}</span>
+          </label>
+        ))}
+      </div>
+
+      <div>
+        <label className="block text-xs font-semibold text-slate-600 mb-2">Período (opcional)</label>
+        <div className="flex gap-2">
+          <input
+            type="date"
+            value={periodoInicio}
+            onChange={(e) => setPeriodoInicio(e.target.value)}
+            className="flex-1 border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand/40"
+          />
+          <input
+            type="date"
+            value={periodoFim}
+            onChange={(e) => setPeriodoFim(e.target.value)}
+            className="flex-1 border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand/40"
+          />
+        </div>
+        <p className="text-[11px] text-slate-400 mt-1">Deixe em branco para incluir todos os períodos</p>
+      </div>
+
+      <div className="flex gap-2 pt-2">
+        <button
+          type="button"
+          onClick={onClose}
+          className="flex-1 py-2 rounded-xl border border-slate-200 text-sm text-slate-600 hover:bg-slate-50 transition"
+        >
+          Cancelar
+        </button>
+        <button
+          onClick={handleGerar}
+          disabled={selecionadas.length === 0 || gerando}
+          className="flex-1 py-2 rounded-xl bg-brand text-white text-sm font-semibold hover:opacity-90 active:scale-95 transition disabled:opacity-50 disabled:pointer-events-none"
+        >
+          {gerando ? "Gerando..." : "Gerar PDF"}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
 // Componente principal
 // ---------------------------------------------------------------------------
 const STORAGE_KEY_SUPERVISOR = "calendario_supervisor_sel";
@@ -56,6 +155,9 @@ export default function CalendarioGeralPage() {
   const [filtroNegociacao, setFiltroNegociacao] = useState("todos"); // "todos", "negociados", "nao-negociados"
   const [filtroTipo, setFiltroTipo] = useState("todos"); // "todos", "encartes", "ofertas_internas"
   const [userRole, setUserRole] = useState(null); // admin ou diretoria
+  const [modalPdfGeral, setModalPdfGeral] = useState(false);
+  const [pdfGeralPreviewUrl, setPdfGeralPreviewUrl] = useState(null);
+  const [gerandoPdfGeral, setGerandoPdfGeral] = useState(false);
   const tooltipCache = useMemo(() => ({}), []);
 
   const hoje = new Date();
@@ -154,6 +256,17 @@ export default function CalendarioGeralPage() {
     [grupos, mapeoCores]
   );
 
+  // Mesma lista, mas com codigoRede — usada no seletor de redes do PDF geral
+  const redesParaPdfGeral = useMemo(() =>
+    grupos
+      .filter((g) => g.encartes.length > 0)
+      .map((g) => {
+        const redeNome = g.redeSubrede || g.codigoRede;
+        return { codigoRede: g.codigoRede, nome: redeNome, cor: mapeoCores[redeNome] || PALETTE[0] };
+      }),
+    [grupos, mapeoCores]
+  );
+
   const diasDoMes = useMemo(() => {
     const { ano, mes } = mesAno;
     const totalDias = new Date(ano, mes + 1, 0).getDate();
@@ -234,21 +347,66 @@ export default function CalendarioGeralPage() {
     setMesAno((p) => { const d = new Date(p.ano, p.mes + 1, 1); return { ano: d.getFullYear(), mes: d.getMonth() }; });
   }
 
+  async function gerarPdfGeral(codigosRede, periodoInicio, periodoFim) {
+    if (!codigosRede || codigosRede.length === 0) return;
+    setGerandoPdfGeral(true);
+    try {
+      let url = `/encartes/pdf/geral?codigos_rede=${codigosRede.join(",")}`;
+      if (periodoInicio && periodoFim) {
+        url += `&periodo_inicio=${periodoInicio}&periodo_fim=${periodoFim}`;
+      }
+      const response = await api.get(url, { responseType: "blob" });
+      const objectUrl = window.URL.createObjectURL(response.data);
+      setPdfGeralPreviewUrl(objectUrl);
+      setModalPdfGeral(false);
+    } catch (err) {
+      alert("Erro ao gerar PDF geral: " + err.message);
+    } finally {
+      setGerandoPdfGeral(false);
+    }
+  }
+
+  function baixarPdfGeral() {
+    if (!pdfGeralPreviewUrl) return;
+    const link = document.createElement("a");
+    link.href = pdfGeralPreviewUrl;
+    link.download = `Encartes_Geral_${new Date().getTime()}.pdf`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  }
+
+  function fecharPreviewPdfGeral() {
+    if (pdfGeralPreviewUrl) {
+      window.URL.revokeObjectURL(pdfGeralPreviewUrl);
+      setPdfGeralPreviewUrl(null);
+    }
+  }
+
   return (
     <>
     <div className="flex flex-col min-h-screen bg-slate-50">
       {/* Header */}
       <div className="bg-white border-b border-slate-100 px-4 py-3 safe-area-pt">
-        <div className="flex items-center gap-3">
-          <button
-            onClick={() => router.back()}
-            className="h-9 w-9 rounded-xl bg-slate-100 flex items-center justify-center text-slate-600 hover:bg-slate-200 transition shrink-0">
-            <IcoChevronRight className="w-5 h-5 rotate-180" />
-          </button>
-          <div>
-            <h1 className="font-bold text-slate-900 text-lg leading-tight">Calendário Geral</h1>
-            <p className="text-slate-500 text-xs mt-0.5">Todos os encartes de todas as redes</p>
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex items-center gap-3 min-w-0">
+            <button
+              onClick={() => router.back()}
+              className="h-9 w-9 rounded-xl bg-slate-100 flex items-center justify-center text-slate-600 hover:bg-slate-200 transition shrink-0">
+              <IcoChevronRight className="w-5 h-5 rotate-180" />
+            </button>
+            <div className="min-w-0">
+              <h1 className="font-bold text-slate-900 text-lg leading-tight">Calendário Geral</h1>
+              <p className="text-slate-500 text-xs mt-0.5">Todos os encartes de todas as redes</p>
+            </div>
           </div>
+          {redesParaPdfGeral.length > 0 && (
+            <button
+              onClick={() => setModalPdfGeral(true)}
+              className="shrink-0 h-9 px-4 rounded-xl bg-slate-700 text-white text-xs font-bold hover:bg-slate-800 active:scale-95 transition shadow-sm shadow-slate-700/20">
+              📥 PDF Geral
+            </button>
+          )}
         </div>
       </div>
 
@@ -465,6 +623,59 @@ export default function CalendarioGeralPage() {
             </>
           )}
           <div style={{ position: 'absolute', bottom: -5, left: '50%', transform: 'translateX(-50%)', width: 0, height: 0, borderLeft: '5px solid transparent', borderRight: '5px solid transparent', borderTop: '5px solid #0f172a' }} />
+        </div>
+      )}
+
+      {modalPdfGeral && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 animate-fade-in">
+          <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={() => setModalPdfGeral(false)} />
+          <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 animate-slide-up">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-bold text-slate-900">Gerar PDF Geral</h3>
+              <button
+                onClick={() => setModalPdfGeral(false)}
+                className="h-8 w-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-500 hover:bg-slate-200 transition">
+                <IcoX className="w-4 h-4" />
+              </button>
+            </div>
+
+            <SelecaoRedesPdfModal
+              redes={redesParaPdfGeral}
+              gerando={gerandoPdfGeral}
+              onGerar={(codigos, inicio, fim) => gerarPdfGeral(codigos, inicio, fim)}
+              onClose={() => setModalPdfGeral(false)}
+            />
+          </div>
+        </div>
+      )}
+
+      {pdfGeralPreviewUrl && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-5xl h-[90vh] flex flex-col">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200">
+              <h3 className="text-lg font-bold text-slate-900">Pré-visualização do PDF Geral</h3>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={baixarPdfGeral}
+                  className="h-9 px-4 rounded-xl bg-brand text-white text-xs font-bold hover:opacity-90 active:scale-95 transition shadow-sm">
+                  📥 Baixar PDF
+                </button>
+                <button
+                  onClick={fecharPreviewPdfGeral}
+                  className="h-9 w-9 rounded-xl bg-slate-100 text-slate-600 hover:bg-slate-200 active:scale-95 transition flex items-center justify-center">
+                  <IcoX className="w-5 h-5" />
+                </button>
+              </div>
+            </div>
+
+            <div className="flex-1 overflow-hidden">
+              <iframe
+                src={pdfGeralPreviewUrl}
+                className="w-full h-full border-0"
+                title="Preview do PDF Geral"
+              />
+            </div>
+          </div>
         </div>
       )}
     </>
