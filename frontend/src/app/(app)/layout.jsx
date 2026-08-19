@@ -2,11 +2,12 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useAuth } from "@/lib/auth";
 import api from "@/lib/api";
-import { IcoStore, IcoClipboard, IcoGrid, IcoSync, IcoUser, IcoUsers, IcoLogout, IcoTag, IcoCalendar, IcoChart } from "@/components/Icons";
+import { IcoStore, IcoClipboard, IcoGrid, IcoSync, IcoUser, IcoUsers, IcoLogout, IcoTag, IcoCalendar, IcoChart, IcoChevronDown } from "@/components/Icons";
 
+// Links principais da navbar desktop (linha rolável, sem os de admin — esses vão no dropdown "Admin")
 const NAV_SIDEBAR = [
   { href: "/dashboard", label: "Dashboard", Icon: IcoGrid, roles: ["admin"] }, // Apenas admin
   { href: "/dashboard/supervisor", label: "Métricas Redes", Icon: IcoGrid, roles: ["supervisor", "diretoria", "admin"] },
@@ -15,6 +16,10 @@ const NAV_SIDEBAR = [
   { href: "/encartes", label: "Encartes", Icon: IcoTag, roles: ["supervisor", "diretoria", "admin"] },
   { href: "/encartes/calendario", label: "Calendário Geral", Icon: IcoCalendar, roles: ["supervisor", "diretoria", "admin"] },
   { href: "/encartes/performance", label: "Performance", Icon: IcoChart, roles: ["diretoria", "admin"] },
+];
+
+// Telas exclusivas de admin — agrupadas num dropdown fixo para não serem cortadas pelo overflow da navbar
+const NAV_ADMIN = [
   { href: "/admin/usuarios", label: "Usuários", Icon: IcoUsers, roles: ["admin"] },
   { href: "/admin/responsabilidades", label: "Resp. Rede", Icon: IcoUsers, roles: ["admin"] },
   { href: "/admin/sync", label: "Sincronização", Icon: IcoSync, roles: ["admin"] }, // Removido diretoria
@@ -30,6 +35,7 @@ const NAV_BOTTOM = [
   { href: "/dashboard/supervisor", label: "Métricas", Icon: IcoGrid, roles: ["supervisor", "diretoria", "admin"] },
   { href: "/admin/sync", label: "Sync", Icon: IcoSync, roles: ["admin"] }, // Removido diretoria
   { href: "/admin/usuarios", label: "Usuários", Icon: IcoUsers, roles: ["admin"] },
+  { href: "/admin/responsabilidades", label: "Resp. Rede", Icon: IcoUsers, roles: ["admin"] },
 ];
 
 export default function AppLayout({ children }) {
@@ -37,9 +43,23 @@ export default function AppLayout({ children }) {
   const pathname = usePathname();
   const { user, token, init, loading, logout } = useAuth();
   const syncedRef = useRef(false);
+  const [adminMenuOpen, setAdminMenuOpen] = useState(false);
+  const adminMenuRef = useRef(null);
 
   useEffect(() => { init(); }, [init]);
   useEffect(() => { if (!loading && !token) router.replace("/login"); }, [loading, token, router]);
+
+  // Fecha o dropdown "Admin" ao clicar fora ou trocar de rota
+  useEffect(() => {
+    function onClickOutside(ev) {
+      if (adminMenuRef.current && !adminMenuRef.current.contains(ev.target)) {
+        setAdminMenuOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", onClickOutside);
+    return () => document.removeEventListener("mousedown", onClickOutside);
+  }, []);
+  useEffect(() => { setAdminMenuOpen(false); }, [pathname]);
 
   useEffect(() => {
     if (user && token && !syncedRef.current) {
@@ -61,6 +81,7 @@ export default function AppLayout({ children }) {
 
   const effectiveRoles = [user.role, ...(user.roles || [])];
   const navLinks = NAV_SIDEBAR.filter((n) => n.roles.some((r) => effectiveRoles.includes(r)));
+  const adminLinks = NAV_ADMIN.filter((n) => n.roles.some((r) => effectiveRoles.includes(r)));
   const bottomLinks = NAV_BOTTOM.filter((n) => n.roles.some((r) => effectiveRoles.includes(r)));
   const initials = (user.nome || "?").split(" ").map(p => p[0]).slice(0, 2).join("").toUpperCase();
 
@@ -101,6 +122,45 @@ export default function AppLayout({ children }) {
                 );
               })}
             </nav>
+
+            {/* Dropdown Admin — desktop, fora da área rolável para nunca ficar escondido */}
+            {adminLinks.length > 0 && (
+              <div className="hidden lg:block relative shrink-0 mr-3" ref={adminMenuRef}>
+                <button
+                  onClick={() => setAdminMenuOpen((v) => !v)}
+                  className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition whitespace-nowrap ${
+                    adminLinks.some((l) => pathname === l.href || pathname.startsWith(l.href + "/"))
+                      ? "bg-brand text-white shadow-sm"
+                      : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
+                  }`}
+                >
+                  <IcoUsers className="w-4 h-4" />
+                  <span>Admin</span>
+                  <IcoChevronDown className={`w-3.5 h-3.5 transition-transform ${adminMenuOpen ? "rotate-180" : ""}`} />
+                </button>
+
+                {adminMenuOpen && (
+                  <div className="absolute right-0 top-full mt-1.5 w-56 bg-white rounded-xl border border-slate-200 shadow-lg py-1.5 z-50">
+                    {adminLinks.map(({ href, label, Icon }) => {
+                      const active = pathname === href || pathname.startsWith(href + "/");
+                      return (
+                        <Link
+                          key={href}
+                          href={href}
+                          onClick={() => setAdminMenuOpen(false)}
+                          className={`flex items-center gap-2.5 px-3.5 py-2 text-sm font-medium transition ${
+                            active ? "text-brand bg-brand/5" : "text-slate-600 hover:bg-slate-50"
+                          }`}
+                        >
+                          <Icon className="w-4 h-4" />
+                          {label}
+                        </Link>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            )}
 
             {/* User menu — desktop */}
             <div className="hidden lg:flex items-center gap-3 shrink-0">
