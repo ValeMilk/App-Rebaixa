@@ -13,13 +13,37 @@ export default function DashboardSupervisor() {
   const [filtroCobertura, setFiltroCobertura] = useState("todas"); // todas | criticas | atencao | boas
   const [ordenacao, setOrdenacao] = useState("cobertura-desc"); // cobertura-desc | cobertura-asc | nome-asc | nome-desc
   const [expandidos, setExpandidos] = useState(new Set());
+  const [userRole, setUserRole] = useState(null);
+  const [supervisores, setSupervisores] = useState([]);
+  const [supervisorFiltrado, setSupervisorFiltrado] = useState(""); // codigo do supervisor, ou "" = todos
+  const [tipoFiltro, setTipoFiltro] = useState("todos"); // todos | encarte | oferta_interna
+
+  // Descobre o role do usuário e, se admin/diretoria, carrega a lista de supervisores para o filtro
+  useEffect(() => {
+    api.get("/auth/me")
+      .then(({ data }) => {
+        const role = data.user?.role;
+        setUserRole(role);
+        if (role === "admin" || role === "diretoria") {
+          api.get("/responsaveis-rede/supervisores-disponiveis")
+            .then(({ data: supData }) => setSupervisores(supData.supervisores || []))
+            .catch(() => {});
+        }
+      })
+      .catch(() => {});
+  }, []);
 
   useEffect(() => {
-    api.get("/dashboard/supervisor")
+    setLoading(true);
+    const params = {};
+    if (supervisorFiltrado) params.supervisorCodigo = supervisorFiltrado;
+    if (tipoFiltro !== "todos") params.tipo = tipoFiltro;
+
+    api.get("/dashboard/supervisor", { params })
       .then(({ data }) => setMetricas(data.metricas || []))
       .catch(() => setMetricas([]))
       .finally(() => setLoading(false));
-  }, []);
+  }, [supervisorFiltrado, tipoFiltro]);
 
   // Filtragem e ordenação
   const metricasFiltradas = useMemo(() => {
@@ -77,7 +101,8 @@ export default function DashboardSupervisor() {
     router.push(`/encartes?rede=${encodeURIComponent(codigoRede)}`);
   };
 
-  if (loading) {
+  // Spinner de tela cheia só na primeira carga; trocas de filtro mantêm a lista atual visível
+  if (loading && metricas.length === 0) {
     return (
       <div className="flex items-center justify-center h-screen bg-slate-50">
         <div className="text-center">
@@ -140,12 +165,47 @@ export default function DashboardSupervisor() {
                 <option value="nome-desc">Nome: Z → A</option>
               </select>
             </div>
+
+            {/* Filtro por supervisor — apenas admin/diretoria */}
+            {(userRole === "admin" || userRole === "diretoria") && supervisores.length > 0 && (
+              <div>
+                <select
+                  value={supervisorFiltrado}
+                  onChange={(e) => setSupervisorFiltrado(e.target.value)}
+                  className="w-full px-3 py-2.5 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand transition bg-white"
+                >
+                  <option value="">Supervisor: Todos</option>
+                  {supervisores.map((sup) => (
+                    <option key={sup._id} value={sup.codigo}>{sup.nome}</option>
+                  ))}
+                </select>
+              </div>
+            )}
+
+            {/* Filtro por tipo: encarte ou oferta interna */}
+            <div>
+              <select
+                value={tipoFiltro}
+                onChange={(e) => setTipoFiltro(e.target.value)}
+                className="w-full px-3 py-2.5 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand transition bg-white"
+              >
+                <option value="todos">Tipo: Todos</option>
+                <option value="encarte">Tipo: Encartes</option>
+                <option value="oferta_interna">Tipo: Ofertas internas</option>
+              </select>
+            </div>
           </div>
         </div>
 
         {/* Contador */}
-        <div className="mt-3 text-xs text-slate-500">
-          <span className="font-semibold text-slate-700">{metricasFiltradas.length}</span> {metricasFiltradas.length === 1 ? 'rede encontrada' : 'redes encontradas'}
+        <div className="mt-3 text-xs text-slate-500 flex items-center gap-2">
+          <span><span className="font-semibold text-slate-700">{metricasFiltradas.length}</span> {metricasFiltradas.length === 1 ? 'rede encontrada' : 'redes encontradas'}</span>
+          {loading && metricas.length > 0 && (
+            <span className="flex items-center gap-1.5 text-slate-400">
+              <span className="w-3 h-3 rounded-full border-2 border-slate-200 border-t-brand animate-spin" />
+              atualizando...
+            </span>
+          )}
         </div>
       </div>
 

@@ -10,25 +10,30 @@ const ResponsavelRede = require("../models/ResponsavelRede");
  */
 async function dashboardSupervisor(req, res) {
   const { role, codigo } = req.user;
+  const { supervisorCodigo: supervisorFiltro, tipo: tipoFiltro } = req.query;
 
   if (role !== "supervisor" && role !== "admin" && role !== "diretoria") {
     return res.status(403).json({ error: "Acesso restrito a supervisores" });
   }
 
-  // 1. Buscar redes do supervisor
+  // Admin/diretoria podem restringir a um supervisor específico via filtro;
+  // supervisor sempre vê apenas as próprias redes.
+  const codigoParaFiltro = role === "supervisor" ? codigo : (supervisorFiltro || null);
+
+  // 1. Buscar redes do supervisor (próprio, filtrado, ou todas para admin/diretoria sem filtro)
   let redesCodigo = [];
-  if (role === "supervisor") {
-    // Redes da carteira + redes responsáveis
+  if (codigoParaFiltro) {
+    // Redes da carteira + redes responsáveis (override) do supervisor em questão
     const carteira = await Carteira.find(
       {
-        supervisorCodigo: codigo,
+        supervisorCodigo: codigoParaFiltro,
         codigoRede: { $ne: null },
         $or: [{ redeSubrede: { $not: /INATIVO/i } }, { redeSubrede: null }],
       },
       "codigoRede redeSubrede"
     ).lean();
     const overrides = await ResponsavelRede.find(
-      { supervisorCodigo: codigo },
+      { supervisorCodigo: codigoParaFiltro },
       "codigoRede redeSubrede"
     ).lean();
 
@@ -43,7 +48,7 @@ async function dashboardSupervisor(req, res) {
     }
     redesCodigo = Array.from(redesMap.keys());
   } else {
-    // Admin/Diretoria: todas as redes
+    // Admin/Diretoria sem filtro de supervisor: todas as redes
     const carteira = await Carteira.find(
       {
         codigoRede: { $ne: null },
@@ -71,12 +76,17 @@ async function dashboardSupervisor(req, res) {
   // Último dia do mês às 23:59:59
   const dataMax = new Date(anoAtual, mesAtual + 1, 0, 23, 59, 59, 999);
 
-  const encartes = await Encarte.find({
+  const filtroEncartes = {
     codigoRede: { $in: redesCodigo },
     // Buscar encartes que se SOBREPÕEM ao intervalo [dataMin, dataMax]
     periodoFim: { $gte: dataMin },        // Fim do encarte >= 1º dia do mês
     periodoInicio: { $lte: dataMax },     // Início do encarte <= último dia do mês
-  })
+  };
+  if (tipoFiltro === "encarte" || tipoFiltro === "oferta_interna") {
+    filtroEncartes.tipo = tipoFiltro;
+  }
+
+  const encartes = await Encarte.find(filtroEncartes)
     .select("codigoRede redeSubrede periodoInicio periodoFim itens")
     .lean();
 
