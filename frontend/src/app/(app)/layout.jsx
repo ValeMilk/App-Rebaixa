@@ -90,7 +90,7 @@ export default function AppLayout({ children }) {
       {/* Navbar horizontal no topo */}
       <header className="sticky top-0 z-50 bg-white border-b border-slate-200 shadow-sm">
         <div className="max-w-[1920px] mx-auto px-4 lg:px-6">
-          <div className="flex items-center justify-between h-16">
+          <div className="flex items-center justify-between min-h-16 py-2 gap-y-2">
             {/* Logo */}
             <div className="flex items-center gap-3">
               <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-brand to-brand-600 flex items-center justify-center font-black text-white shadow-md">
@@ -102,8 +102,8 @@ export default function AppLayout({ children }) {
               </div>
             </div>
 
-            {/* Nav links — desktop */}
-            <nav className="hidden lg:flex items-center gap-1 flex-1 min-w-0 overflow-x-auto mx-4 xl:mx-8 no-scrollbar">
+            {/* Nav links — desktop (quebra linha em vez de rolar, pra nenhum item ficar escondido) */}
+            <nav className="hidden lg:flex items-center flex-wrap gap-1 flex-1 min-w-0 mx-4 xl:mx-8">
               {navLinks.map(({ href, label, Icon }) => {
                 const active = pathname === href || pathname.startsWith(href + "/");
                 return (
