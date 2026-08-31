@@ -356,7 +356,7 @@ function RebaixaModal({ item, onClose, onEnviado }) {
   );
 }
 
-function RedeRebaixaModal({ redeSubrede, subrede, codigoRede, produto, onClose, onEnviado }) {
+function RedeRebaixaModal({ redeSubrede, codigoRede, produto, onClose, onEnviado }) {
   const [tipoAcao, setTipoAcao] = useState("rebaixa"); // "rebaixa" | "oferta_interna"
   const [precoOferta, setPrecoOferta] = useState("");
   const [precoPDV, setPrecoPDV] = useState("");
@@ -420,7 +420,6 @@ function RedeRebaixaModal({ redeSubrede, subrede, codigoRede, produto, onClose, 
         tipo: tipoAcao,
         codigoRede,
         redeSubrede,
-        subrede,
         motivo,
         inicioAcao,
         fimAcao,
@@ -497,7 +496,7 @@ function RedeRebaixaModal({ redeSubrede, subrede, codigoRede, produto, onClose, 
           <div className="mb-3 bg-blue-50 rounded-xl border border-blue-100 px-3 py-2.5">
             <div className="flex items-center gap-1.5 text-[11px] text-blue-700 font-bold mb-1">
               <IcoUsers className="w-3.5 h-3.5" />
-              {formatarRede({ redeSubrede, subrede, codigoRede })}
+              {redeSubrede}
             </div>
             <div className="text-xs text-slate-600">
               <span className="font-semibold">{produto.lojas.length}</span> loja{produto.lojas.length !== 1 ? "s" : ""}
@@ -740,7 +739,7 @@ function LojaCard({ clienteCodigo, clienteNome, redeSubrede, subrede, itens, exp
   );
 }
 
-function RedeCard({ codigoRede, redeSubrede, subrede, lojas, produtos, expandedRede, onToggleRede, onRebaixarRede, getAcaoAtivaRede }) {
+function RedeCard({ codigoRede, redeSubrede, lojas, produtos, expandedRede, onToggleRede, onRebaixarRede, getAcaoAtivaRede }) {
   const totalCriticos = produtos.filter((p) => p.piorClassificacao === "critico").length;
   const totalAlertas  = produtos.filter((p) => p.piorClassificacao === "alerta").length;
 
@@ -754,7 +753,7 @@ function RedeCard({ codigoRede, redeSubrede, subrede, lojas, produtos, expandedR
           <IcoUsers className="w-5 h-5" />
         </div>
         <div className="flex-1 min-w-0">
-          <div className="font-bold text-slate-900 truncate text-sm">{formatarRede({ redeSubrede, subrede, codigoRede })}</div>
+          <div className="font-bold text-slate-900 truncate text-sm">{redeSubrede}</div>
           <div className="text-[11px] text-slate-500 mt-1 flex items-center gap-1.5 flex-wrap">
             <span className="whitespace-nowrap">{lojas.length} lojas · {produtos.length} prod.</span>
             {totalCriticos > 0 && (
@@ -824,7 +823,7 @@ export default function EstoquePage() {
   const [expanded, setExpanded] = useState(new Set());       // lojas
   const [expandedRedes, setExpandedRedes] = useState(new Set()); // redes
   const [formItem, setFormItem] = useState(null);
-  const [formRedeProduto, setFormRedeProduto] = useState(null); // { codigoRede, redeSubrede, subrede, produto }
+  const [formRedeProduto, setFormRedeProduto] = useState(null); // { codigoRede, redeSubrede, produto }
   const [toast, setToast] = useState("");
   const [acoesAtivas, setAcoesAtivas] = useState([]);
 
@@ -922,7 +921,6 @@ export default function EstoquePage() {
       if (!redeMap.has(redeKey)) redeMap.set(redeKey, {
         codigoRede: loja.codigoRede,
         redeSubrede: loja.redeSubrede,
-        subrede: loja.subrede,
         lojas: [],
       });
       redeMap.get(redeKey).lojas.push(loja);
@@ -1083,7 +1081,7 @@ export default function EstoquePage() {
       ) : (
         <div className="space-y-2">
           {redeGrupos.map((grupo) => {
-            const { codigoRede, redeSubrede, subrede, lojas } = grupo;
+            const { codigoRede, redeSubrede, lojas } = grupo;
             // Rede com múltiplas lojas → RedeCard
             if (lojas.length > 1 && codigoRede) {
               return (
@@ -1091,12 +1089,11 @@ export default function EstoquePage() {
                   key={codigoRede}
                   codigoRede={codigoRede}
                   redeSubrede={redeSubrede}
-                  subrede={subrede}
                   lojas={lojas}
                   produtos={grupo.produtos || []}
                   expandedRede={expandedRedes.has(codigoRede)}
                   onToggleRede={() => toggleRede(codigoRede)}
-                  onRebaixarRede={(produto) => setFormRedeProduto({ codigoRede, redeSubrede, subrede, produto })}
+                  onRebaixarRede={(produto) => setFormRedeProduto({ codigoRede, redeSubrede, produto })}
                   getAcaoAtivaRede={getAcaoAtivaRede}
                 />
               );
@@ -1128,7 +1125,6 @@ export default function EstoquePage() {
       {formRedeProduto && (
         <RedeRebaixaModal
           redeSubrede={formRedeProduto.redeSubrede}
-          subrede={formRedeProduto.subrede}
           codigoRede={formRedeProduto.codigoRede}
           produto={formRedeProduto.produto}
           onClose={() => setFormRedeProduto(null)}

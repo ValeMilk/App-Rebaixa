@@ -31,8 +31,8 @@ async function podeEditar(user, encarte) {
 async function listar(req, res) {
   const { role, codigo, id } = req.user;
 
-  // redesInfo: mapa codigoRede → { redeSubrede, subrede } com todas as redes acessiveis ao usuario
-  let redesInfo = {}; // codigoRede → { redeSubrede, subrede }
+  // redesInfo: mapa codigoRede → redeSubrede com todas as redes acessiveis ao usuario
+  let redesInfo = {}; // codigoRede → redeSubrede
 
   if (role === "supervisor") {
     // Redes da carteira
@@ -42,15 +42,15 @@ async function listar(req, res) {
         { redeSubrede: { $not: /INATIVO/i } },
         { redeSubrede: null },
       ],
-    }, "codigoRede redeSubrede subrede").lean();
+    }, "codigoRede redeSubrede").lean();
     for (const c of carteira) {
-      if (c.codigoRede) redesInfo[c.codigoRede] = { redeSubrede: c.redeSubrede || null, subrede: c.subrede || null };
+      if (c.codigoRede) redesInfo[c.codigoRede] = c.redeSubrede || null;
     }
 
     // Redes em que e responsavel definido (pode nao estar na carteira direta)
-    const overrides = await ResponsavelRede.find({ supervisorCodigo: codigo }, "codigoRede redeSubrede subrede").lean();
+    const overrides = await ResponsavelRede.find({ supervisorCodigo: codigo }, "codigoRede redeSubrede").lean();
     for (const o of overrides) {
-      if (!redesInfo[o.codigoRede]) redesInfo[o.codigoRede] = { redeSubrede: o.redeSubrede || null, subrede: o.subrede || null };
+      if (!redesInfo[o.codigoRede]) redesInfo[o.codigoRede] = o.redeSubrede || null;
     }
   } else if (role === "admin" || role === "diretoria") {
     // Todas as redes distintas da carteira
@@ -60,9 +60,9 @@ async function listar(req, res) {
         { redeSubrede: { $not: /INATIVO/i } },
         { redeSubrede: null },
       ],
-    }, "codigoRede redeSubrede subrede").lean();
+    }, "codigoRede redeSubrede").lean();
     for (const c of carteira) {
-      if (c.codigoRede) redesInfo[c.codigoRede] = { redeSubrede: c.redeSubrede || null, subrede: c.subrede || null };
+      if (c.codigoRede) redesInfo[c.codigoRede] = c.redeSubrede || null;
     }
   }
 
@@ -74,7 +74,7 @@ async function listar(req, res) {
 
   const encartes = await Encarte.find(filtro)
     .sort({ codigoRede: 1, periodoInicio: -1 })
-    .select("_id nome tipo codigoRede redeSubrede subrede periodoInicio periodoFim criadoPorId criadoPorCodigo criadoPorNome itens createdAt")
+    .select("_id nome tipo codigoRede redeSubrede periodoInicio periodoFim criadoPorId criadoPorCodigo criadoPorNome itens createdAt")
     .lean();
 
   // Mapa de overrides para calculo de podeEditar
@@ -86,14 +86,14 @@ async function listar(req, res) {
 
   // Monta grupos a partir das REDES do usuario (nao so a partir dos encartes existentes)
   const grupos = {};
-  for (const [codigoRede, info] of Object.entries(redesInfo)) {
-    grupos[codigoRede] = { codigoRede, redeSubrede: info.redeSubrede, subrede: info.subrede, encartes: [] };
+  for (const [codigoRede, redeSubrede] of Object.entries(redesInfo)) {
+    grupos[codigoRede] = { codigoRede, redeSubrede, encartes: [] };
   }
 
   // Para admin/diretoria sem redesInfo populado, inicializa grupos a partir dos encartes
   for (const e of encartes) {
     if (!grupos[e.codigoRede]) {
-      grupos[e.codigoRede] = { codigoRede: e.codigoRede, redeSubrede: e.redeSubrede, subrede: e.subrede, encartes: [] };
+      grupos[e.codigoRede] = { codigoRede: e.codigoRede, redeSubrede: e.redeSubrede, encartes: [] };
     }
   }
 
@@ -178,17 +178,15 @@ async function criar(req, res) {
     }
   }
 
-  // Pega redeSubrede/subrede de referencia
+  // Pega redeSubrede de referencia
   const refCarteira = await Carteira.findOne({ codigoRede }).lean();
   const redeSubrede = refCarteira?.redeSubrede || null;
-  const subrede = refCarteira?.subrede || null;
 
   const encarte = await Encarte.create({
     nome: nome.trim(),
     tipo: tipoFinal,
     codigoRede,
     redeSubrede,
-    subrede,
     periodoInicio: new Date(periodoInicio),
     periodoFim: new Date(periodoFim),
     criadoPorId: id,
@@ -548,7 +546,6 @@ async function performance(req, res) {
         nome: enc.nome,
         codigoRede: enc.codigoRede,
         redeSubrede: enc.redeSubrede,
-        subrede: enc.subrede,
         periodoInicio: enc.periodoInicio,
         periodoFim: enc.periodoFim,
         criadoPorId: enc.criadoPorId,

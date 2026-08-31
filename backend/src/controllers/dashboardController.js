@@ -30,11 +30,11 @@ async function dashboardSupervisor(req, res) {
         codigoRede: { $ne: null },
         $or: [{ redeSubrede: { $not: /INATIVO/i } }, { redeSubrede: null }],
       },
-      "codigoRede redeSubrede subrede"
+      "codigoRede redeSubrede"
     ).lean();
     const overrides = await ResponsavelRede.find(
       { supervisorCodigo: codigoParaFiltro },
-      "codigoRede redeSubrede subrede"
+      "codigoRede redeSubrede"
     ).lean();
 
     const redesMap = new Map();
@@ -54,7 +54,7 @@ async function dashboardSupervisor(req, res) {
         codigoRede: { $ne: null },
         $or: [{ redeSubrede: { $not: /INATIVO/i } }, { redeSubrede: null }],
       },
-      "codigoRede redeSubrede subrede"
+      "codigoRede redeSubrede"
     )
       .distinct("codigoRede")
       .lean();
@@ -87,7 +87,7 @@ async function dashboardSupervisor(req, res) {
   }
 
   const encartes = await Encarte.find(filtroEncartes)
-    .select("codigoRede redeSubrede subrede periodoInicio periodoFim itens")
+    .select("codigoRede redeSubrede periodoInicio periodoFim itens")
     .lean();
 
   console.log(`[DEBUG] Período considerado: ${dataMin.toLocaleDateString('pt-BR')} até ${dataMax.toLocaleDateString('pt-BR')}`);
@@ -111,7 +111,6 @@ async function dashboardSupervisor(req, res) {
       redesMetricas.set(codigo, {
         codigoRede: codigo,
         redeSubrede: enc.redeSubrede || codigo,
-        subrede: enc.subrede || null,
         periodos: [],
         produtosCount: {},
       });
@@ -136,11 +135,10 @@ async function dashboardSupervisor(req, res) {
   // Adicionar redes sem encarte
   for (const codigo of redesCodigo) {
     if (!redesMetricas.has(codigo)) {
-      const exemplo = await Carteira.findOne({ codigoRede: codigo }, "redeSubrede subrede").lean();
+      const exemplo = await Carteira.findOne({ codigoRede: codigo }, "redeSubrede").lean();
       redesMetricas.set(codigo, {
         codigoRede: codigo,
         redeSubrede: exemplo?.redeSubrede || codigo,
-        subrede: exemplo?.subrede || null,
         periodos: [],
         produtosCount: {},
       });
@@ -181,7 +179,6 @@ async function dashboardSupervisor(req, res) {
     resultado.push({
       codigoRede: codigo,
       redeSubrede: m.redeSubrede,
-      subrede: m.subrede || null,
       diasTotais,          // Dias com QUALQUER encarte
       diasNegociados,      // Dias com encarte + produtos
       percentualNegociacao, // % = (diasNegociados / diasTotais) * 100

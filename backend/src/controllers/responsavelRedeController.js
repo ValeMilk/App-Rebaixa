@@ -20,9 +20,9 @@ async function redesDisponiveis(req, res) {
         ],
       },
     },
-    { $group: { _id: "$codigoRede", redeSubrede: { $first: "$redeSubrede" }, subrede: { $first: "$subrede" } } },
-    { $project: { _id: 0, codigoRede: "$_id", redeSubrede: 1, subrede: 1 } },
-    { $sort: { redeSubrede: 1, subrede: 1 } },
+    { $group: { _id: "$codigoRede", redeSubrede: { $first: "$redeSubrede" } } },
+    { $project: { _id: 0, codigoRede: "$_id", redeSubrede: 1 } },
+    { $sort: { redeSubrede: 1 } },
   ]);
   res.json({ redes: docs });
 }
@@ -54,7 +54,6 @@ async function criar(req, res) {
     const doc = await ResponsavelRede.create({
       codigoRede: String(codigoRede),
       redeSubrede: exemplo.redeSubrede || null,
-      subrede: exemplo.subrede || null,
       supervisorId: sup._id,
       supervisorCodigo: sup.codigo,
       supervisorNome: sup.nome,

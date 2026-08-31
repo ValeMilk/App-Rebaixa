@@ -3,7 +3,6 @@
 import { useEffect, useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import api from "@/lib/api";
-import { formatarRede } from "@/lib/utils";
 import { IcoCalendar, IcoPackage, IcoSearch } from "@/components/Icons";
 
 export default function DashboardSupervisor() {
@@ -54,7 +53,7 @@ export default function DashboardSupervisor() {
     if (busca.trim()) {
       const termo = busca.toLowerCase();
       filtradas = filtradas.filter(m =>
-        (formatarRede(m) || "").toLowerCase().includes(termo)
+        m.redeSubrede.toLowerCase().includes(termo)
       );
     }
 
@@ -79,10 +78,10 @@ export default function DashboardSupervisor() {
       ordenadas.sort((a, b) => a.percentualNegociacao - b.percentualNegociacao);
     } else if (ordenacao === "nome-asc") {
       // A-Z
-      ordenadas.sort((a, b) => (formatarRede(a) || "").localeCompare(formatarRede(b) || ""));
+      ordenadas.sort((a, b) => a.redeSubrede.localeCompare(b.redeSubrede));
     } else if (ordenacao === "nome-desc") {
       // Z-A
-      ordenadas.sort((a, b) => (formatarRede(b) || "").localeCompare(formatarRede(a) || ""));
+      ordenadas.sort((a, b) => b.redeSubrede.localeCompare(a.redeSubrede));
     }
 
     return ordenadas;
@@ -239,7 +238,7 @@ export default function DashboardSupervisor() {
 }
 
 function CardRedeLista({ metrica, expandido, onToggleExpand, onNavigate }) {
-  const { codigoRede, redeSubrede, subrede, diasTotais, diasNegociados, percentualNegociacao, topProdutos, totalEncartes } = metrica;
+  const { codigoRede, redeSubrede, diasTotais, diasNegociados, percentualNegociacao, topProdutos, totalEncartes } = metrica;
 
   // Cores e badges baseados em % de negociação
   const getStatusVisual = (pct) => {
@@ -290,7 +289,7 @@ function CardRedeLista({ metrica, expandido, onToggleExpand, onNavigate }) {
           {/* Coluna esquerda: Nome da rede */}
           <div className="flex-1 min-w-0">
             <h3 className="font-bold text-slate-900 text-base truncate group-hover:text-brand transition">
-              {formatarRede({ redeSubrede, subrede, codigoRede })}
+              {redeSubrede}
             </h3>
             <p className="text-xs text-slate-500 mt-0.5">
               {diasNegociados} negociados • {diasTotais} dias totais

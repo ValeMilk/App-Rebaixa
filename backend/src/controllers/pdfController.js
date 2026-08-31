@@ -1,7 +1,6 @@
 const Encarte = require("../models/Encarte");
 const Carteira = require("../models/Carteira");
 const pdfService = require("../services/pdfService");
-const { formatarRede } = require("../utils/formatarRede");
 
 /**
  * GET /api/encartes/pdf/rede/:codigoRede?periodo_inicio=YYYY-MM-DD&periodo_fim=YYYY-MM-DD
@@ -91,8 +90,8 @@ async function gerarPdfRede(req, res) {
     });
 
     console.log("[PDF] 7️⃣ Buscando nome da rede na Carteira...");
-    const carteira = await Carteira.findOne({ codigoRede: String(codigoRede) }).select("redeSubrede subrede").lean();
-    const nomeRede = formatarRede({ ...carteira, codigoRede }) || `Rede ${codigoRede}`;
+    const carteira = await Carteira.findOne({ codigoRede: String(codigoRede) }).select("redeSubrede").lean();
+    const nomeRede = carteira?.redeSubrede || `Rede ${codigoRede}`;
     console.log(`[PDF]    Nome da rede: ${nomeRede}`);
 
     console.log("[PDF] 8️⃣ Chamando pdfService.gerarPdfRede()...");
@@ -157,11 +156,11 @@ async function gerarPdfGeral(req, res) {
 
     // Nomes das redes (para o cabeçalho de cada seção)
     const carteiras = await Carteira.find({ codigoRede: { $in: codigos } })
-      .select("codigoRede redeSubrede subrede")
+      .select("codigoRede redeSubrede")
       .lean();
     const nomesPorCodigo = {};
     carteiras.forEach((c) => {
-      if (!nomesPorCodigo[c.codigoRede]) nomesPorCodigo[c.codigoRede] = formatarRede(c);
+      if (!nomesPorCodigo[c.codigoRede]) nomesPorCodigo[c.codigoRede] = c.redeSubrede;
     });
 
     // Busca os encartes de cada rede em paralelo

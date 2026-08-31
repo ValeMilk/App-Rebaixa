@@ -3,7 +3,6 @@
 import { useEffect, useState, useCallback, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import api from "@/lib/api";
-import { formatarRede } from "@/lib/utils";
 import { IcoChevronRight, IcoCalendar, IcoX } from "@/components/Icons";
 
 // ---------------------------------------------------------------------------
@@ -216,7 +215,7 @@ export default function CalendarioGeralPage() {
   const encartesFlat = useMemo(() => {
     const result = [];
     grupos.forEach((g) => {
-      const redeNome = formatarRede(g);
+      const redeNome = g.redeSubrede || g.codigoRede;
       const corRede = mapeoCores[g.codigoRede] || PALETTE[0];
       g.encartes.forEach((e) => {
         // Filtro de supervisor: se tem supervisor filtrado, verifica se o encarte foi criado por ele
@@ -249,7 +248,7 @@ export default function CalendarioGeralPage() {
   const redesComEncartes = useMemo(() =>
     grupos
       .filter((g) => g.encartes.length > 0)
-      .map((g) => ({ codigoRede: g.codigoRede, nome: formatarRede(g), cor: mapeoCores[g.codigoRede] || PALETTE[0] })),
+      .map((g) => ({ codigoRede: g.codigoRede, nome: g.redeSubrede || g.codigoRede, cor: mapeoCores[g.codigoRede] || PALETTE[0] })),
     [grupos, mapeoCores]
   );
 
@@ -257,7 +256,7 @@ export default function CalendarioGeralPage() {
   const redesParaPdfGeral = useMemo(() =>
     grupos
       .filter((g) => g.encartes.length > 0)
-      .map((g) => ({ codigoRede: g.codigoRede, nome: formatarRede(g), cor: mapeoCores[g.codigoRede] || PALETTE[0] })),
+      .map((g) => ({ codigoRede: g.codigoRede, nome: g.redeSubrede || g.codigoRede, cor: mapeoCores[g.codigoRede] || PALETTE[0] })),
     [grupos, mapeoCores]
   );
 
