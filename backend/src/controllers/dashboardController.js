@@ -65,6 +65,16 @@ async function dashboardSupervisor(req, res) {
     return res.json({ metricas: [] });
   }
 
+  // Subredes distintas por rede (direto da Carteira, por cliente — uma rede pode ter varias)
+  const subredesAgg = await Carteira.aggregate([
+    { $match: { codigoRede: { $in: redesCodigo }, subrede: { $ne: null } } },
+    { $group: { _id: "$codigoRede", subredes: { $addToSet: "$subrede" } } },
+  ]);
+  const subredesPorRede = new Map();
+  for (const s of subredesAgg) {
+    subredesPorRede.set(s._id, s.subredes.filter(Boolean).sort());
+  }
+
   // 2. Buscar encartes do mês civil CORRENTE (1º dia até último dia do mês)
   const hoje = new Date();
   const mesAtual = hoje.getMonth();      // 0 = jan, 11 = dez
@@ -179,6 +189,7 @@ async function dashboardSupervisor(req, res) {
     resultado.push({
       codigoRede: codigo,
       redeSubrede: m.redeSubrede,
+      subredes: subredesPorRede.get(codigo) || [], // subredes distintas das lojas dessa rede
       diasTotais,          // Dias com QUALQUER encarte
       diasNegociados,      // Dias com encarte + produtos
       percentualNegociacao, // % = (diasNegociados / diasTotais) * 100

@@ -3,7 +3,7 @@
 import { useEffect, useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import api from "@/lib/api";
-import { IcoCalendar, IcoPackage, IcoSearch } from "@/components/Icons";
+import { IcoCalendar, IcoPackage, IcoSearch, IcoStore } from "@/components/Icons";
 
 export default function DashboardSupervisor() {
   const router = useRouter();
@@ -238,7 +238,7 @@ export default function DashboardSupervisor() {
 }
 
 function CardRedeLista({ metrica, expandido, onToggleExpand, onNavigate }) {
-  const { codigoRede, redeSubrede, diasTotais, diasNegociados, percentualNegociacao, topProdutos, totalEncartes } = metrica;
+  const { codigoRede, redeSubrede, subredes, diasTotais, diasNegociados, percentualNegociacao, topProdutos, totalEncartes } = metrica;
 
   // Cores e badges baseados em % de negociação
   const getStatusVisual = (pct) => {
@@ -294,6 +294,11 @@ function CardRedeLista({ metrica, expandido, onToggleExpand, onNavigate }) {
             <p className="text-xs text-slate-500 mt-0.5">
               {diasNegociados} negociados • {diasTotais} dias totais
             </p>
+            {subredes?.length > 0 && (
+              <p className="text-[11px] text-slate-400 mt-0.5 truncate">
+                {subredes.join(", ")}
+              </p>
+            )}
           </div>
 
           {/* Coluna direita: Percentual + Badge + Ações */}
@@ -355,6 +360,25 @@ function CardRedeLista({ metrica, expandido, onToggleExpand, onNavigate }) {
               <div className="font-bold text-red-600">{diasTotais - diasNegociados} dias</div>
             </div>
           </div>
+
+          {/* Subredes (lojas) dessa rede */}
+          {subredes?.length > 0 && (
+            <div className="mb-3">
+              <div className="flex items-center gap-2 mb-2">
+                <IcoStore className="w-3.5 h-3.5 text-slate-500" />
+                <span className="text-xs font-semibold text-slate-600 uppercase tracking-wide">
+                  Subredes ({subredes.length})
+                </span>
+              </div>
+              <div className="flex flex-wrap gap-1.5">
+                {subredes.map((s) => (
+                  <span key={s} className="text-[11px] font-medium text-slate-600 bg-white border border-slate-200 rounded-full px-2.5 py-1">
+                    {s}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* Top produtos */}
           <div>
