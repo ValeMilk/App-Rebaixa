@@ -19,3 +19,16 @@ export function fmtDataHora(d) {
   if (!d) return "-";
   return new Date(d).toLocaleString("pt-BR");
 }
+
+/**
+ * Formata o nome de exibição de uma rede combinando redeSubrede (A16) + subrede (A68).
+ * Regra: "REDE — SUBREDE" quando ambos existem; senão usa o que existir; fallback final = codigoRede.
+ */
+export function formatarRede({ redeSubrede, subrede, codigoRede } = {}) {
+  const r = (redeSubrede || "").trim() || null;
+  const s = (subrede || "").trim() || null;
+  if (r && s) return `${r} — ${s}`;
+  if (r) return r;
+  if (s) return s;
+  return codigoRede || null;
+}

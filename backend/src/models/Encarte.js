@@ -37,6 +37,7 @@ const encarteSchema = new mongoose.Schema(
     tipo:             { type: String, enum: ["encarte", "oferta_interna"], default: "encarte" },
     codigoRede:       { type: String, required: true, index: true },
     redeSubrede:      { type: String, default: null },
+    subrede:          { type: String, default: null },
     periodoInicio:    { type: Date, required: true },
     periodoFim:       { type: Date, required: true },
     criadoPorId:      { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },

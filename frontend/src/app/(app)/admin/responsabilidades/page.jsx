@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth";
 import api from "@/lib/api";
+import { formatarRede } from "@/lib/utils";
 
 export default function ResponsabilidadesPage() {
   const router = useRouter();
@@ -79,7 +80,7 @@ export default function ResponsabilidadesPage() {
   }
 
   async function remover(r) {
-    if (!confirm(`Remover responsabilidade de ${r.supervisorNome} pela rede ${r.redeSubrede || r.codigoRede}?`)) return;
+    if (!confirm(`Remover responsabilidade de ${r.supervisorNome} pela rede ${formatarRede(r)}?`)) return;
     try {
       await api.delete(`/responsaveis-rede/${r._id}`);
       carregar();
@@ -92,7 +93,7 @@ export default function ResponsabilidadesPage() {
     const q = filtroRede.trim().toLowerCase();
     if (!q) return itens;
     return itens.filter((r) =>
-      (r.redeSubrede || "").toLowerCase().includes(q) ||
+      (formatarRede(r) || "").toLowerCase().includes(q) ||
       (r.codigoRede || "").toLowerCase().includes(q) ||
       (r.supervisorNome || "").toLowerCase().includes(q)
     );
@@ -119,12 +120,12 @@ export default function ResponsabilidadesPage() {
           <option value="">— Selecione a rede —</option>
           {editId && (
             <option value={form.codigoRede}>
-              {itens.find((i) => i._id === editId)?.redeSubrede || form.codigoRede}
+              {formatarRede(itens.find((i) => i._id === editId)) || form.codigoRede}
             </option>
           )}
           {!editId && redesDisponiveisFiltradas.map((r) => (
             <option key={r.codigoRede} value={r.codigoRede}>
-              {r.redeSubrede || r.codigoRede} ({r.codigoRede})
+              {formatarRede(r)} ({r.codigoRede})
             </option>
           ))}
         </select>
@@ -179,7 +180,7 @@ export default function ResponsabilidadesPage() {
             )}
             {!loading && itensFiltrados.map((r) => (
               <tr key={r._id} className="border-t border-slate-100">
-                <td className="px-3 py-2 font-semibold text-slate-800">{r.redeSubrede || "—"}</td>
+                <td className="px-3 py-2 font-semibold text-slate-800">{formatarRede(r) || "—"}</td>
                 <td className="px-3 py-2 text-slate-500">{r.codigoRede}</td>
                 <td className="px-3 py-2 text-slate-800">{r.supervisorNome}</td>
                 <td className="px-3 py-2 text-slate-500">{r.supervisorCodigo}</td>

@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback, useMemo } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import api from "@/lib/api";
-import { fmtData } from "@/lib/utils";
+import { fmtData, formatarRede } from "@/lib/utils";
 import { useAuth } from "@/lib/auth";
 import Link from "next/link";
 import {
@@ -104,7 +104,7 @@ function SelecaoTipoModal({ onClose, onSelecionar }) {
 // ---------------------------------------------------------------------------
 // Modal Novo Encarte / Nova Oferta Interna
 // ---------------------------------------------------------------------------
-function NovoEncarteModal({ codigoRede, redeSubrede, tipo, onClose, onCriado }) {
+function NovoEncarteModal({ codigoRede, redeSubrede, subrede, tipo, onClose, onCriado }) {
   const isOfertaInterna = tipo === "oferta_interna";
   const titulo = isOfertaInterna ? "Nova Oferta Interna" : "Novo Encarte";
   const labelNome = isOfertaInterna ? "Nome da oferta interna" : "Nome do encarte";
@@ -150,7 +150,7 @@ function NovoEncarteModal({ codigoRede, redeSubrede, tipo, onClose, onCriado }) 
         <div className="flex items-center justify-between mb-4">
           <div>
             <div className="text-[10px] font-semibold text-brand uppercase tracking-wider">{titulo}</div>
-            <h2 className="font-bold text-slate-900 text-base">{redeSubrede || codigoRede}</h2>
+            <h2 className="font-bold text-slate-900 text-base">{formatarRede({ redeSubrede, subrede, codigoRede })}</h2>
           </div>
           <button onClick={onClose} className="h-8 w-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-500 hover:bg-slate-200 transition">
             <IcoX className="w-4 h-4" />
@@ -341,7 +341,7 @@ function CalendarioRede({ grupo, onClickEncarte }) {
           qtd: v.ofertas.length || v.sellouts.length,
         }));
         const info = {
-          rede: grupo.redeSubrede || grupo.codigoRede,
+          rede: formatarRede(grupo),
           categorias,
           totalItens: itens.length,
           dataUltimaCompra: enc.dataUltimaCompraRecente || null,
@@ -669,7 +669,7 @@ export default function EncartesPage() {
               <option value="">Selecione uma rede...</option>
               {grupos.map((g) => (
                 <option key={g.codigoRede} value={g.codigoRede}>
-                  {g.redeSubrede || g.codigoRede}
+                  {formatarRede(g)}
                 </option>
               ))}
             </select>
@@ -704,6 +704,7 @@ export default function EncartesPage() {
         <NovoEncarteModal
           codigoRede={grupoSel.codigoRede}
           redeSubrede={grupoSel.redeSubrede}
+          subrede={grupoSel.subrede}
           tipo={tipoSelecionado}
           onClose={handleFecharCriacao}
           onCriado={handleCriado}

@@ -1,6 +1,7 @@
 const Encarte = require("../models/Encarte");
 const Carteira = require("../models/Carteira");
 const pdfService = require("../services/pdfService");
+const { formatarRede } = require("../utils/formatarRede");
 
 /**
  * GET /api/encartes/pdf/rede/:codigoRede?periodo_inicio=YYYY-MM-DD&periodo_fim=YYYY-MM-DD
@@ -90,8 +91,8 @@ async function gerarPdfRede(req, res) {
     });
 
     console.log("[PDF] 7️⃣ Buscando nome da rede na Carteira...");
-    const carteira = await Carteira.findOne({ codigoRede: String(codigoRede) }).select("redeSubrede").lean();
-    const nomeRede = carteira?.redeSubrede || `Rede ${codigoRede}`;
+    const carteira = await Carteira.findOne({ codigoRede: String(codigoRede) }).select("redeSubrede subrede").lean();
+    const nomeRede = formatarRede({ ...carteira, codigoRede }) || `Rede ${codigoRede}`;
     console.log(`[PDF]    Nome da rede: ${nomeRede}`);
 
     console.log("[PDF] 8️⃣ Chamando pdfService.gerarPdfRede()...");
@@ -156,11 +157,11 @@ async function gerarPdfGeral(req, res) {
 
     // Nomes das redes (para o cabeçalho de cada seção)
     const carteiras = await Carteira.find({ codigoRede: { $in: codigos } })
-      .select("codigoRede redeSubrede")
+      .select("codigoRede redeSubrede subrede")
       .lean();
     const nomesPorCodigo = {};
     carteiras.forEach((c) => {
-      if (!nomesPorCodigo[c.codigoRede]) nomesPorCodigo[c.codigoRede] = c.redeSubrede;
+      if (!nomesPorCodigo[c.codigoRede]) nomesPorCodigo[c.codigoRede] = formatarRede(c);
     });
 
     // Busca os encartes de cada rede em paralelo
@@ -178,7 +179,16 @@ async function gerarPdfGeral(req, res) {
       })
     );
 
-    const pdfBuffer = await pdfService.gerarPdfGeral(userName, redesData);
+    // So entra no PDF a rede que tem pelo menos 1 encarte/oferta no periodo filtrado
+    const redesComConteudo = redesData.filter((r) => r.encartes.length > 0);
+
+    if (redesComConteudo.length === 0) {
+      return res.status(404).json({
+        error: "Nenhuma das redes selecionadas possui encartes ou ofertas internas para este período",
+      });
+    }
+
+    const pdfBuffer = await pdfService.gerarPdfGeral(userName, redesComConteudo);
 
     res.setHeader("Content-Type", "application/pdf");
     res.setHeader("Content-Disposition", `attachment; filename="Encartes_Geral_${new Date().getTime()}.pdf"`);

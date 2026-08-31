@@ -15,6 +15,7 @@ const carteiraSchema = new mongoose.Schema(
     supervisorNome:   { type: String },
     codigoRede:       { type: String, default: null, index: true },
     redeSubrede:      { type: String, default: null },
+    subrede:          { type: String, default: null },
     sincronizadoEm:   { type: Date, default: Date.now },
   },
   { timestamps: true }

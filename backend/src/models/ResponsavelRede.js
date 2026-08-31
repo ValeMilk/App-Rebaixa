@@ -11,6 +11,7 @@ const responsavelRedeSchema = new mongoose.Schema(
   {
     codigoRede:       { type: String, required: true, unique: true, index: true },
     redeSubrede:      { type: String, default: null },
+    subrede:          { type: String, default: null },
     supervisorId:     { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
     supervisorCodigo: { type: String, required: true, index: true },
     supervisorNome:   { type: String, required: true },

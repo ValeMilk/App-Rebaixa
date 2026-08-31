@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import api from "@/lib/api";
+import { formatarRede } from "@/lib/utils";
 import { IcoChevronRight, IcoCalendar, IcoX } from "@/components/Icons";
 
 // ---------------------------------------------------------------------------
@@ -146,7 +147,7 @@ export default function CalendarioGeralPage() {
   const [grupos, setGrupos] = useState([]);
   const [loading, setLoading] = useState(true);
   const [tooltip, setTooltip] = useState(null);
-  const [redeFiltrada, setRedeFiltrada] = useState(null); // Nome da rede filtrada
+  const [redeFiltrada, setRedeFiltrada] = useState(null); // codigoRede da rede filtrada
   const [supervisores, setSupervisores] = useState([]); // Lista de supervisores
   const [supervisorFiltrado, setSupervisorFiltrado] = useState(() => {
     if (typeof window !== "undefined") return sessionStorage.getItem(STORAGE_KEY_SUPERVISOR) || null;
@@ -200,13 +201,12 @@ export default function CalendarioGeralPage() {
 
   useEffect(() => { carregar(); }, [carregar]);
 
-  // Mapa de cores FIXO por nome de rede (para consistência)
+  // Mapa de cores FIXO por codigoRede (para consistência — nome pode colidir entre redes)
   const mapeoCores = useMemo(() => {
     const mapa = {};
     grupos.forEach((g, gi) => {
-      const redeNome = g.redeSubrede || g.codigoRede;
-      if (!mapa[redeNome]) {
-        mapa[redeNome] = PALETTE[gi % PALETTE.length];
+      if (!mapa[g.codigoRede]) {
+        mapa[g.codigoRede] = PALETTE[gi % PALETTE.length];
       }
     });
     return mapa;
@@ -216,8 +216,8 @@ export default function CalendarioGeralPage() {
   const encartesFlat = useMemo(() => {
     const result = [];
     grupos.forEach((g) => {
-      const redeNome = g.redeSubrede || g.codigoRede;
-      const corRede = mapeoCores[redeNome] || PALETTE[0];
+      const redeNome = formatarRede(g);
+      const corRede = mapeoCores[g.codigoRede] || PALETTE[0];
       g.encartes.forEach((e) => {
         // Filtro de supervisor: se tem supervisor filtrado, verifica se o encarte foi criado por ele
         let passaSupervisor = true;
@@ -238,32 +238,26 @@ export default function CalendarioGeralPage() {
         if (passaSupervisor && passaNegociacao && passaTipo) {
           // Se for oferta_interna, usa cor preta; senão usa cor da rede
           const cor = e.tipo === "oferta_interna" ? COR_OFERTA_INTERNA : corRede;
-          result.push({ ...e, cor, redeNome });
+          result.push({ ...e, cor, redeNome, redeCodigo: g.codigoRede });
         }
       });
     });
     return result;
   }, [grupos, mapeoCores, supervisorFiltrado, filtroNegociacao, filtroTipo]);
 
-  // Redes que têm pelo menos 1 encarte (para legenda)
+  // Redes que têm pelo menos 1 encarte (para legenda) — chaveado por codigoRede
   const redesComEncartes = useMemo(() =>
     grupos
       .filter((g) => g.encartes.length > 0)
-      .map((g) => {
-        const redeNome = g.redeSubrede || g.codigoRede;
-        return { nome: redeNome, cor: mapeoCores[redeNome] || PALETTE[0] };
-      }),
+      .map((g) => ({ codigoRede: g.codigoRede, nome: formatarRede(g), cor: mapeoCores[g.codigoRede] || PALETTE[0] })),
     [grupos, mapeoCores]
   );
 
-  // Mesma lista, mas com codigoRede — usada no seletor de redes do PDF geral
+  // Mesma lista — usada no seletor de redes do PDF geral
   const redesParaPdfGeral = useMemo(() =>
     grupos
       .filter((g) => g.encartes.length > 0)
-      .map((g) => {
-        const redeNome = g.redeSubrede || g.codigoRede;
-        return { codigoRede: g.codigoRede, nome: redeNome, cor: mapeoCores[redeNome] || PALETTE[0] };
-      }),
+      .map((g) => ({ codigoRede: g.codigoRede, nome: formatarRede(g), cor: mapeoCores[g.codigoRede] || PALETTE[0] })),
     [grupos, mapeoCores]
   );
 
@@ -360,7 +354,15 @@ export default function CalendarioGeralPage() {
       setPdfGeralPreviewUrl(objectUrl);
       setModalPdfGeral(false);
     } catch (err) {
-      alert("Erro ao gerar PDF geral: " + err.message);
+      let msg = err.message;
+      const blob = err.response?.data;
+      if (blob instanceof Blob) {
+        try {
+          const texto = await blob.text();
+          msg = JSON.parse(texto)?.error || msg;
+        } catch { /* mantem msg original */ }
+      }
+      alert("Erro ao gerar PDF geral: " + msg);
     } finally {
       setGerandoPdfGeral(false);
     }
@@ -438,10 +440,10 @@ export default function CalendarioGeralPage() {
                   {/* Legendas por rede */}
                   {redesComEncartes.map((r) => (
                     <button
-                      key={r.nome}
-                      onClick={() => setRedeFiltrada(redeFiltrada === r.nome ? null : r.nome)}
+                      key={r.codigoRede}
+                      onClick={() => setRedeFiltrada(redeFiltrada === r.codigoRede ? null : r.codigoRede)}
                       className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition ${
-                        redeFiltrada === r.nome
+                        redeFiltrada === r.codigoRede
                           ? `${r.cor.bg} ${r.cor.text} shadow-md`
                           : `bg-slate-100 text-slate-600 hover:bg-slate-150`
                       }`}
@@ -554,7 +556,7 @@ export default function CalendarioGeralPage() {
                       </div>
                       <div className="space-y-[2px] pb-[3px] px-[3px]">
                         {dia.encartes.map((e) => {
-                          const selecionado = redeFiltrada === null || e.redeNome === redeFiltrada;
+                          const selecionado = redeFiltrada === null || e.redeCodigo === redeFiltrada;
                           return (
                             <button
                               key={e._id}

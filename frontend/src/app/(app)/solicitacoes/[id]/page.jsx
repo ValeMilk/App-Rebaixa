@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import api from "@/lib/api";
 import { useAuth } from "@/lib/auth";
-import { fmtData, fmtDataHora } from "@/lib/utils";
+import { fmtData, fmtDataHora, formatarRede } from "@/lib/utils";
 
 const STATUS_LABEL = {
   pendente_supervisor: { l: "Ag. Supervisor", cls: "bg-amber-50 text-amber-700 border-amber-200" },
@@ -102,7 +102,7 @@ export default function DetalheSolicitacao() {
               {s.tipo.replace("_", " ")} - {s.cliente}
             </h1>
             <p className="text-slate-500">Cod {s.clienteCodigo} • criada em {fmtDataHora(s.createdAt)}</p>
-            {s.redeSubrede && <p className="text-blue-600 text-sm font-semibold">Rede: {s.redeSubrede}</p>}
+            {formatarRede(s) && <p className="text-blue-600 text-sm font-semibold">Rede: {formatarRede(s)}</p>}
             <p className="text-slate-500 text-sm">Criado por: {s.criadoPorNome} ({s.criadoPorCodigo})</p>
             {s.supervisorNome && <p className="text-slate-500 text-sm">Supervisor: {s.supervisorNome} ({s.supervisorCodigo})</p>}
           </div>

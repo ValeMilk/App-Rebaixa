@@ -19,13 +19,15 @@ SELECT
     c.A00_ID_VEND_2   AS supervisorCodigo,
     s.A00_FANTASIA    AS supervisorNome,
     c.A00_ID_A16      AS codigoRede,
-    seg.A16_DESC      AS redeSubrede
+    seg.A16_DESC      AS redeSubrede,
+    y.A68_DESC        AS subrede
 FROM dbo.A00 c
 INNER JOIN dbo.A14 a   ON c.A00_ID_A14 = a.A14_ID
 INNER JOIN dbo.A02 b   ON c.A00_ID_A02 = b.A02_ID
 LEFT  JOIN dbo.A00 v   ON c.A00_ID_VEND   = v.A00_ID
 LEFT  JOIN dbo.A00 s   ON c.A00_ID_VEND_2 = s.A00_ID
 LEFT  JOIN dbo.A16 seg ON c.A00_ID_A16    = seg.A16_ID
+LEFT  JOIN dbo.A68 y   ON c.A00_ID_A68    = y.A68_ID
 WHERE
     c.A00_EN_CL = 1
     AND a.A14_DESC NOT IN (
@@ -68,6 +70,7 @@ async function sincronizarCarteira() {
     supervisorNome:   l.supervisorNome  || "",
     codigoRede:       l.codigoRede ? String(l.codigoRede) : null,
     redeSubrede:      l.redeSubrede    || null,
+    subrede:          l.subrede        || null,
     sincronizadoEm:   new Date(),
   }));
 

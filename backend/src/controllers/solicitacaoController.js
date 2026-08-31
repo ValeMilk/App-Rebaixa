@@ -29,7 +29,7 @@ async function criar(req, res) {
 
   // Buscar carteira do cliente para obter supervisor e dados de rede
   let supervisorId = null, supervisorNome = null, supervisorCodigo = null;
-  let codigoRede = null, redeSubrede = null;
+  let codigoRede = null, redeSubrede = null, subrede = null;
 
   if (req.user.role === "vendedor") {
     const entrada = await Carteira.findOne({ clienteCodigo: String(clienteCodigo), vendedorCodigo: req.user.codigo });
@@ -38,6 +38,7 @@ async function criar(req, res) {
       supervisorNome   = entrada.supervisorNome;
       codigoRede       = entrada.codigoRede   || null;
       redeSubrede      = entrada.redeSubrede  || null;
+      subrede          = entrada.subrede      || null;
       const supUser = await User.findOne({ codigo: supervisorCodigo });
       if (supUser) supervisorId = supUser._id;
     }
@@ -49,6 +50,7 @@ async function criar(req, res) {
     if (entrada) {
       codigoRede  = entrada.codigoRede  || null;
       redeSubrede = entrada.redeSubrede || null;
+      subrede     = entrada.subrede     || null;
     }
   } else {
     // admin/diretoria: pegar rede da carteira sem filtro de vendedor
@@ -56,6 +58,7 @@ async function criar(req, res) {
     if (entrada) {
       codigoRede  = entrada.codigoRede  || null;
       redeSubrede = entrada.redeSubrede || null;
+      subrede     = entrada.subrede     || null;
     }
   }
 
@@ -68,6 +71,7 @@ async function criar(req, res) {
     clienteCodigo: String(clienteCodigo),
     codigoRede,
     redeSubrede,
+    subrede,
     itens,
     motivo,
     observacoes,

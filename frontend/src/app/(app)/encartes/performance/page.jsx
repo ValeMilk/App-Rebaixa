@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/lib/auth";
 import api from "@/lib/api";
+import { formatarRede } from "@/lib/utils";
 
 // ── Helpers ─────────────────────────────────────────────────────────────────
 function fmtBRL(v) {
@@ -230,7 +231,7 @@ function TabelaEncartes({ encartes, temP2 }) {
                       {enc.nome}
                     </Link>
                   </td>
-                  <td className="py-3 px-4 text-slate-600 text-xs">{enc.redeSubrede || enc.codigoRede}</td>
+                  <td className="py-3 px-4 text-slate-600 text-xs">{formatarRede(enc)}</td>
                   {temP2 && (
                     <td className="py-3 px-4 text-center">
                       <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${enc.periodo === 1 ? "bg-blue-100 text-blue-700" : "bg-purple-100 text-purple-700"}`}>
@@ -448,7 +449,7 @@ export default function PerformancePage() {
             >
               <option value="">Todas as redes</option>
               {redes.map((r) => (
-                <option key={r.codigoRede} value={r.codigoRede}>{r.redeSubrede || r.codigoRede}</option>
+                <option key={r.codigoRede} value={r.codigoRede}>{formatarRede(r)}</option>
               ))}
             </select>
           </div>

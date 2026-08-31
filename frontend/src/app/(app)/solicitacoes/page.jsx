@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import api from "@/lib/api";
-import { fmtDataHora } from "@/lib/utils";
+import { fmtDataHora, formatarRede } from "@/lib/utils";
 import { useAuth } from "@/lib/auth";
 import { IcoClipboard, IcoChevronRight, IcoChevronDown, IcoCheck, IcoX, IcoSync, IcoClock, IcoUser, IcoAlert, IcoUsers, IcoStore } from "@/components/Icons";
 
@@ -347,7 +347,7 @@ export default function SolicitacoesPage() {
       if (s.codigoRede && produtoCodigo) {
         if (!redesMap.has(s.codigoRede)) {
           redesMap.set(s.codigoRede, {
-            redeNome: s.redeSubrede || s.codigoRede,
+            redeNome: formatarRede(s),
             codigoRede: s.codigoRede,
             produtosMap: new Map(),
           });
