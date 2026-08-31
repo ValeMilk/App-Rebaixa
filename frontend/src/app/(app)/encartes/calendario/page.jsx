@@ -154,6 +154,7 @@ export default function CalendarioGeralPage() {
   }); // ID ou null
   const [filtroNegociacao, setFiltroNegociacao] = useState("todos"); // "todos", "negociados", "nao-negociados"
   const [filtroTipo, setFiltroTipo] = useState("todos"); // "todos", "encartes", "ofertas_internas"
+  const [filtroSubrede, setFiltroSubrede] = useState("todos"); // "todos", "__rede__" (toda a rede), ou o nome da subrede
   const [userRole, setUserRole] = useState(null); // admin ou diretoria
   const [modalPdfGeral, setModalPdfGeral] = useState(false);
   const [pdfGeralPreviewUrl, setPdfGeralPreviewUrl] = useState(null);
@@ -233,8 +234,13 @@ export default function CalendarioGeralPage() {
         let passaTipo = true;
         if (filtroTipo === "encartes") passaTipo = e.tipo === "encarte" || !e.tipo;
         if (filtroTipo === "ofertas_internas") passaTipo = e.tipo === "oferta_interna";
-        
-        if (passaSupervisor && passaNegociacao && passaTipo) {
+
+        // Filtro de subrede
+        let passaSubrede = true;
+        if (filtroSubrede === "__rede__") passaSubrede = !e.subrede;
+        else if (filtroSubrede !== "todos") passaSubrede = e.subrede === filtroSubrede;
+
+        if (passaSupervisor && passaNegociacao && passaTipo && passaSubrede) {
           // Se for oferta_interna, usa cor preta; senão usa cor da rede
           const cor = e.tipo === "oferta_interna" ? COR_OFERTA_INTERNA : corRede;
           result.push({ ...e, cor, redeNome, redeCodigo: g.codigoRede });
@@ -242,7 +248,13 @@ export default function CalendarioGeralPage() {
       });
     });
     return result;
-  }, [grupos, mapeoCores, supervisorFiltrado, filtroNegociacao, filtroTipo]);
+  }, [grupos, mapeoCores, supervisorFiltrado, filtroNegociacao, filtroTipo, filtroSubrede]);
+
+  // Subredes distintas presentes em todos os encartes (para o filtro) — nao muda com os outros filtros
+  const subredesDisponiveis = useMemo(
+    () => [...new Set(grupos.flatMap((g) => g.encartes).map((e) => e.subrede).filter(Boolean))].sort(),
+    [grupos]
+  );
 
   // Redes que têm pelo menos 1 encarte (para legenda) — chaveado por codigoRede
   const redesComEncartes = useMemo(() =>
@@ -316,7 +328,7 @@ export default function CalendarioGeralPage() {
           qtd: v.ofertas.length || v.sellouts.length,
         }));
         const info = {
-          rede: enc.redeNome,
+          rede: enc.subrede ? `${enc.redeNome} — ${enc.subrede}` : enc.redeNome,
           categorias,
           totalItens: itens.length,
           dataUltimaCompra: enc.dataUltimaCompraRecente || null,
@@ -503,6 +515,24 @@ export default function CalendarioGeralPage() {
                     <option value="ofertas_internas">Ofertas Internas ({grupos.flatMap(g => g.encartes).filter(e => e.tipo === "oferta_interna").length})</option>
                   </select>
                 </div>
+
+                {/* Filtro de subrede — só aparece se houver encartes com subrede específica */}
+                {subredesDisponiveis.length > 0 && (
+                  <div className="flex-1 min-w-[200px]">
+                    <label className="block text-xs text-slate-600 mb-1 font-medium">Subrede</label>
+                    <select
+                      value={filtroSubrede}
+                      onChange={(e) => setFiltroSubrede(e.target.value)}
+                      className="w-full px-3 py-2 rounded-lg border border-slate-200 text-sm bg-white focus:outline-none focus:border-brand focus:ring-2 focus:ring-brand/20 transition"
+                    >
+                      <option value="todos">Todas</option>
+                      <option value="__rede__">Toda a rede</option>
+                      {subredesDisponiveis.map((s) => (
+                        <option key={s} value={s}>{s}</option>
+                      ))}
+                    </select>
+                  </div>
+                )}
               </div>
             </div>
 
@@ -559,6 +589,7 @@ export default function CalendarioGeralPage() {
                           return (
                             <button
                               key={e._id}
+                              title={e.subrede ? `${e.nome} (${e.subrede})` : e.nome}
                               onClick={() => router.push(`/encartes/${e._id}`)}
                               onMouseEnter={(ev) => onHover(ev, e)}
                               onMouseLeave={onLeave}

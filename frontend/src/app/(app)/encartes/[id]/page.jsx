@@ -801,13 +801,23 @@ function AdicionarProdutoModal({ encarteId, codigoRede, onClose, onAdicionado })
   );
 }
 
-/** Modal para editar nome e período da ação */
+/** Modal para editar nome, período e subrede da ação */
 function EditarInfoModal({ encarte, encarteId, onClose, onAtualizado }) {
   const [nome, setNome] = useState(encarte.nome);
+  const [subrede, setSubrede] = useState(encarte.subrede || "");
+  const [subredesDaRede, setSubredesDaRede] = useState([]);
   const [periodoInicio, setPeriodoInicio] = useState(encarte.periodoInicio?.slice(0, 10) || "");
   const [periodoFim, setPeriodoFim] = useState(encarte.periodoFim?.slice(0, 10) || "");
   const [salvando, setSalvando] = useState(false);
   const [erro, setErro] = useState("");
+
+  useEffect(() => {
+    let cancelado = false;
+    api.get("/encartes/subredes", { params: { codigoRede: encarte.codigoRede } })
+      .then(({ data }) => { if (!cancelado) setSubredesDaRede(data.subredes || []); })
+      .catch(() => { if (!cancelado) setSubredesDaRede([]); });
+    return () => { cancelado = true; };
+  }, [encarte.codigoRede]);
 
   async function salvar() {
     if (!nome.trim()) {
@@ -828,6 +838,7 @@ function EditarInfoModal({ encarte, encarteId, onClose, onAtualizado }) {
     try {
       const { data } = await api.put(`/encartes/${encarteId}`, {
         nome: nome.trim(),
+        subrede: subrede || null,
         periodoInicio,
         periodoFim,
       });
@@ -870,6 +881,24 @@ function EditarInfoModal({ encarte, encarteId, onClose, onAtualizado }) {
               placeholder="Ex: QUARTA MALUCA"
             />
           </div>
+
+          {/* Subrede */}
+          {subredesDaRede.length > 0 && (
+            <div>
+              <label className="block text-xs font-semibold text-slate-600 uppercase tracking-wide mb-2">Aplicar para</label>
+              <select
+                value={subrede}
+                onChange={(e) => setSubrede(e.target.value)}
+                disabled={salvando}
+                className="w-full border-2 border-slate-200 rounded-lg px-3 py-2.5 text-sm font-medium focus:outline-none focus:border-brand focus:ring-2 focus:ring-brand/20 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <option value="">Toda a rede</option>
+                {subredesDaRede.map((s) => (
+                  <option key={s} value={s}>{s}</option>
+                ))}
+              </select>
+            </div>
+          )}
 
           {/* Data Início */}
           <div>
@@ -1250,7 +1279,10 @@ export default function EncarteDetalhe() {
           </button>
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 mb-0.5">
-              <div className="text-[10px] text-slate-500 truncate">{encarte.redeSubrede || encarte.codigoRede}</div>
+              <div className="text-[10px] text-slate-500 truncate">
+                {encarte.redeSubrede || encarte.codigoRede}
+                {encarte.subrede ? ` — ${encarte.subrede}` : " (toda a rede)"}
+              </div>
               {encarte.tipo === "oferta_interna" && (
                 <span className="text-[9px] bg-slate-900 text-white font-bold px-2 py-0.5 rounded-md uppercase tracking-wide">
                   Oferta Interna
@@ -1264,7 +1296,7 @@ export default function EncarteDetalhe() {
               <button
                 onClick={abrirModalEditar}
                 className="shrink-0 h-8 w-8 rounded-lg bg-blue-50 hover:bg-blue-100 flex items-center justify-center text-blue-600 hover:text-blue-700 transition"
-                title="Editar nome e período">
+                title="Editar nome, período e subrede">
                 <EditIcon className="w-4 h-4" />
               </button>
               <button

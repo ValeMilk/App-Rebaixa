@@ -74,7 +74,7 @@ async function listar(req, res) {
 
   const encartes = await Encarte.find(filtro)
     .sort({ codigoRede: 1, periodoInicio: -1 })
-    .select("_id nome tipo codigoRede redeSubrede periodoInicio periodoFim criadoPorId criadoPorCodigo criadoPorNome itens createdAt")
+    .select("_id nome tipo codigoRede redeSubrede subrede periodoInicio periodoFim criadoPorId criadoPorCodigo criadoPorNome itens createdAt")
     .lean();
 
   // Mapa de overrides para calculo de podeEditar
@@ -156,7 +156,7 @@ async function listar(req, res) {
  * ou ser o responsavel definido.
  */
 async function criar(req, res) {
-  const { nome, codigoRede, periodoInicio, periodoFim, tipo } = req.body || {};
+  const { nome, codigoRede, subrede, periodoInicio, periodoFim, tipo } = req.body || {};
   if (!nome || !codigoRede || !periodoInicio || !periodoFim) {
     return res.status(400).json({ error: "nome, codigoRede, periodoInicio e periodoFim sao obrigatorios" });
   }
@@ -178,6 +178,14 @@ async function criar(req, res) {
     }
   }
 
+  // Se subrede foi informada, valida que ela existe dentro dessa rede
+  if (subrede) {
+    const subredeValida = await Carteira.exists({ codigoRede: String(codigoRede), subrede });
+    if (!subredeValida) {
+      return res.status(400).json({ error: "Subrede nao encontrada para esta rede" });
+    }
+  }
+
   // Pega redeSubrede de referencia
   const refCarteira = await Carteira.findOne({ codigoRede }).lean();
   const redeSubrede = refCarteira?.redeSubrede || null;
@@ -187,6 +195,7 @@ async function criar(req, res) {
     tipo: tipoFinal,
     codigoRede,
     redeSubrede,
+    subrede: subrede || null,
     periodoInicio: new Date(periodoInicio),
     periodoFim: new Date(periodoFim),
     criadoPorId: id,
@@ -366,12 +375,26 @@ async function atualizar(req, res) {
     return res.status(403).json({ error: "Apenas o supervisor responsavel pode editar este encarte" });
   }
 
-  const { nome, periodoInicio, periodoFim } = req.body || {};
+  const body = req.body || {};
+  const { nome, periodoInicio, periodoFim } = body;
   if (nome) enc.nome = nome.trim();
   if (periodoInicio) enc.periodoInicio = new Date(periodoInicio);
   if (periodoFim) enc.periodoFim = new Date(periodoFim);
   if (enc.periodoFim < enc.periodoInicio) {
     return res.status(400).json({ error: "periodoFim nao pode ser anterior a periodoInicio" });
+  }
+
+  // Subrede e opcional: string vazia/null = volta a ser "toda a rede"
+  if ("subrede" in body) {
+    if (body.subrede) {
+      const subredeValida = await Carteira.exists({ codigoRede: enc.codigoRede, subrede: body.subrede });
+      if (!subredeValida) {
+        return res.status(400).json({ error: "Subrede nao encontrada para esta rede" });
+      }
+      enc.subrede = body.subrede;
+    } else {
+      enc.subrede = null;
+    }
   }
 
   await enc.save();
@@ -392,6 +415,18 @@ async function remover(req, res) {
 
   await enc.deleteOne();
   res.json({ ok: true });
+}
+
+/**
+ * Lista as subredes (lojas/banners) distintas de uma rede, a partir da Carteira.
+ * Usado para popular o segundo select (cascata) na criacao/edicao de encarte.
+ */
+async function listarSubredes(req, res) {
+  const { codigoRede } = req.query;
+  if (!codigoRede) return res.status(400).json({ error: "codigoRede e obrigatorio" });
+
+  const subredes = await Carteira.distinct("subrede", { codigoRede: String(codigoRede), subrede: { $ne: null } });
+  res.json({ subredes: subredes.filter(Boolean).sort() });
 }
 
 /**
@@ -546,6 +581,7 @@ async function performance(req, res) {
         nome: enc.nome,
         codigoRede: enc.codigoRede,
         redeSubrede: enc.redeSubrede,
+        subrede: enc.subrede,
         periodoInicio: enc.periodoInicio,
         periodoFim: enc.periodoFim,
         criadoPorId: enc.criadoPorId,
@@ -582,4 +618,4 @@ async function performance(req, res) {
   });
 }
 
-module.exports = { listar, criar, obter, adicionarItem, removerItem, atualizarItem, atualizar, remover, listarProdutos, listarCategorias, listarSubcategorias, performance };
+module.exports = { listar, criar, obter, adicionarItem, removerItem, atualizarItem, atualizar, remover, listarProdutos, listarCategorias, listarSubcategorias, listarSubredes, performance };

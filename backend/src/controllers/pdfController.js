@@ -65,7 +65,7 @@ async function gerarPdfRede(req, res) {
 
     // Buscar encartes/ofertas da rede com os produtos
     const encartes = await Encarte.find(filters)
-      .select("_id nome tipo periodoInicio periodoFim itens")
+      .select("_id nome tipo subrede periodoInicio periodoFim itens")
       .lean();
 
     console.log(`[PDF] 5️⃣ Resultado da busca: ${encartes.length} encarte(s) encontrado(s)`);
@@ -168,7 +168,7 @@ async function gerarPdfGeral(req, res) {
       codigos.map(async (codigoRede) => {
         const filters = { codigoRede: String(codigoRede), ...(filtroPeriodo || {}) };
         const encartes = await Encarte.find(filters)
-          .select("_id nome tipo periodoInicio periodoFim itens")
+          .select("_id nome tipo subrede periodoInicio periodoFim itens")
           .lean();
         return {
           codigoRede,

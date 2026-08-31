@@ -12,6 +12,7 @@ const {
   listarProdutos,
   listarCategorias,
   listarSubcategorias,
+  listarSubredes,
   performance,
 } = require("../controllers/encarteController");
 const { gerarPdfRede, gerarPdfGeral } = require("../controllers/pdfController");
@@ -29,6 +30,7 @@ router.post("/",                          requireRole("supervisor", "admin"), cr
 router.get("/categorias",                 roles, listarCategorias);
 router.get("/produtos",                   roles, listarProdutos);
 router.get("/subcategorias",              roles, listarSubcategorias);
+router.get("/subredes",                   roles, listarSubredes);
 router.get("/performance",                requireRole("admin", "diretoria"), performance);
 router.get("/pdf/geral",                  roles, gerarPdfGeral);
 router.get("/pdf/rede/:codigoRede",       roles, gerarPdfRede);

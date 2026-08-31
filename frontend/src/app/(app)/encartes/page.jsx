@@ -104,13 +104,14 @@ function SelecaoTipoModal({ onClose, onSelecionar }) {
 // ---------------------------------------------------------------------------
 // Modal Novo Encarte / Nova Oferta Interna
 // ---------------------------------------------------------------------------
-function NovoEncarteModal({ codigoRede, redeSubrede, tipo, onClose, onCriado }) {
+function NovoEncarteModal({ codigoRede, redeSubrede, subredesDaRede, tipo, onClose, onCriado }) {
   const isOfertaInterna = tipo === "oferta_interna";
   const titulo = isOfertaInterna ? "Nova Oferta Interna" : "Novo Encarte";
   const labelNome = isOfertaInterna ? "Nome da oferta interna" : "Nome do encarte";
   const placeholderNome = isOfertaInterna ? "Ex: Oferta Junho 2026" : "Ex: Encarte Junho 2026";
 
   const [nome, setNome] = useState("");
+  const [subrede, setSubrede] = useState("");
   const [inicio, setInicio] = useState("");
   const [fim, setFim] = useState("");
   const [erro, setErro] = useState("");
@@ -130,6 +131,7 @@ function NovoEncarteModal({ codigoRede, redeSubrede, tipo, onClose, onCriado }) 
       const { data } = await api.post("/encartes", {
         nome: nome.trim(),
         codigoRede,
+        subrede: subrede || null,
         tipo,
         periodoInicio: inicio,
         periodoFim: fim,
@@ -167,6 +169,21 @@ function NovoEncarteModal({ codigoRede, redeSubrede, tipo, onClose, onCriado }) 
               onChange={(e) => setNome(e.target.value)}
             />
           </div>
+          {subredesDaRede?.length > 0 && (
+            <div>
+              <label className="block text-xs font-semibold text-slate-600 mb-1">Aplicar para</label>
+              <select
+                className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-brand/40"
+                value={subrede}
+                onChange={(e) => setSubrede(e.target.value)}
+              >
+                <option value="">Toda a rede</option>
+                {subredesDaRede.map((s) => (
+                  <option key={s} value={s}>{s}</option>
+                ))}
+              </select>
+            </div>
+          )}
           <div className="grid grid-cols-2 gap-2">
             <div>
               <label className="block text-xs font-semibold text-slate-600 mb-1">Inicio</label>
@@ -261,10 +278,17 @@ function CalendarioRede({ grupo, onClickEncarte }) {
   const [tooltip, setTooltip] = useState(null);
   const [filtroNegociacao, setFiltroNegociacao] = useState("todos"); // "todos", "negociados", "nao-negociados"
   const [filtroTipo, setFiltroTipo] = useState("todos"); // "todos", "encartes", "ofertas_internas"
+  const [filtroSubrede, setFiltroSubrede] = useState("todos"); // "todos", "__rede__" (toda a rede), ou o nome da subrede
   const tooltipCache = useMemo(() => ({}), []);
 
   // Cor fixa para ofertas internas (preto)
   const COR_OFERTA_INTERNA = { bg: "bg-slate-900", text: "text-white", light: "bg-slate-100", border: "border-slate-300" };
+
+  // Subredes distintas presentes entre os encartes da rede (para o filtro)
+  const subredesDosEncartes = useMemo(
+    () => [...new Set(grupo.encartes.map((e) => e.subrede).filter(Boolean))].sort(),
+    [grupo.encartes]
+  );
 
   const encartesComCor = useMemo(() =>
     grupo.encartes
@@ -275,6 +299,9 @@ function CalendarioRede({ grupo, onClickEncarte }) {
         // Filtro tipo
         if (filtroTipo === "encartes" && e.tipo !== "encarte") return false;
         if (filtroTipo === "ofertas_internas" && e.tipo !== "oferta_interna") return false;
+        // Filtro subrede
+        if (filtroSubrede === "__rede__" && e.subrede) return false;
+        if (filtroSubrede !== "todos" && filtroSubrede !== "__rede__" && e.subrede !== filtroSubrede) return false;
         return true;
       })
       .map((e, i) => {
@@ -282,7 +309,7 @@ function CalendarioRede({ grupo, onClickEncarte }) {
         const cor = e.tipo === "oferta_interna" ? COR_OFERTA_INTERNA : PALETTE[i % PALETTE.length];
         return { ...e, cor };
       }),
-    [grupo.encartes, filtroNegociacao, filtroTipo]
+    [grupo.encartes, filtroNegociacao, filtroTipo, filtroSubrede]
   );
 
   const diasDoMes = useMemo(() => {
@@ -341,7 +368,7 @@ function CalendarioRede({ grupo, onClickEncarte }) {
           qtd: v.ofertas.length || v.sellouts.length,
         }));
         const info = {
-          rede: grupo.redeSubrede || grupo.codigoRede,
+          rede: enc.subrede ? `${grupo.redeSubrede || grupo.codigoRede} — ${enc.subrede}` : (grupo.redeSubrede || grupo.codigoRede),
           categorias,
           totalItens: itens.length,
           dataUltimaCompra: enc.dataUltimaCompraRecente || null,
@@ -396,6 +423,24 @@ function CalendarioRede({ grupo, onClickEncarte }) {
             <option value="ofertas_internas">Ofertas Internas ({grupo.encartes.filter(e => e.tipo === "oferta_interna").length})</option>
           </select>
         </div>
+
+        {/* Filtro subrede — só aparece se houver encartes com subrede específica */}
+        {subredesDosEncartes.length > 0 && (
+          <div className="flex items-center gap-2">
+            <label className="text-xs font-semibold text-slate-600">Subrede:</label>
+            <select
+              value={filtroSubrede}
+              onChange={(e) => setFiltroSubrede(e.target.value)}
+              className="px-3 py-1.5 text-xs border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand/40 bg-white"
+            >
+              <option value="todos">Todas</option>
+              <option value="__rede__">Toda a rede</option>
+              {subredesDosEncartes.map((s) => (
+                <option key={s} value={s}>{s}</option>
+              ))}
+            </select>
+          </div>
+        )}
       </div>
 
       {/* Legenda de cores */}
@@ -446,7 +491,7 @@ function CalendarioRede({ grupo, onClickEncarte }) {
                 {dia.encartes.map((e) => {
                   const isInicio = isoToYMD(e.periodoInicio) === dia.dataStr;
                   return (
-                    <button key={e._id} onClick={() => onClickEncarte(e._id)} title={e.nome}
+                    <button key={e._id} onClick={() => onClickEncarte(e._id)} title={e.subrede ? `${e.nome} (${e.subrede})` : e.nome}
                       onMouseEnter={(ev) => onHover(ev, e)}
                       onMouseLeave={onLeave}
                       className={`w-full rounded-[4px] py-[3px] px-1 text-left text-[9px] font-bold leading-none truncate ${e.cor.bg} ${e.cor.text} flex items-center gap-0.5`}>
@@ -527,6 +572,7 @@ export default function EncartesPage() {
   const [pdfPreviewUrl, setPdfPreviewUrl] = useState(null);
   const [modalFiltroPeriodusPdf, setModalFiltroPeriodusPdf] = useState(false);
   const [tipoSelecionado, setTipoSelecionado] = useState(null);
+  const [subredesDaRede, setSubredesDaRede] = useState([]);
 
   const carregar = useCallback(async () => {
     setLoading(true);
@@ -541,6 +587,16 @@ export default function EncartesPage() {
   }, []);
 
   useEffect(() => { carregar(); }, [carregar]);
+
+  // Busca as subredes disponiveis da rede selecionada (para o seletor "Aplicar para")
+  useEffect(() => {
+    if (!redeSel) { setSubredesDaRede([]); return; }
+    let cancelado = false;
+    api.get("/encartes/subredes", { params: { codigoRede: redeSel } })
+      .then(({ data }) => { if (!cancelado) setSubredesDaRede(data.subredes || []); })
+      .catch(() => { if (!cancelado) setSubredesDaRede([]); });
+    return () => { cancelado = true; };
+  }, [redeSel]);
 
   // Detectar parâmetro ?rede= da URL e selecionar automaticamente
   useEffect(() => {
@@ -704,6 +760,7 @@ export default function EncartesPage() {
         <NovoEncarteModal
           codigoRede={grupoSel.codigoRede}
           redeSubrede={grupoSel.redeSubrede}
+          subredesDaRede={subredesDaRede}
           tipo={tipoSelecionado}
           onClose={handleFecharCriacao}
           onCriado={handleCriado}

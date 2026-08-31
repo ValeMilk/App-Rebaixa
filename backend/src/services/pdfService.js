@@ -228,9 +228,9 @@ function renderPeriodos(doc, periodos, startY) {
           currentY = 50;
         }
 
-        // Nome do encarte
+        // Nome do encarte (com subrede quando a acao mira uma loja especifica)
         doc.fillColor(COLORS.text).fontSize(10).font("Helvetica-Bold")
-          .text(encarte.nome, 70, currentY);
+          .text(encarte.subrede ? `${encarte.nome} — ${encarte.subrede}` : encarte.nome, 70, currentY);
         currentY += 15;
 
         // Produtos do encarte
@@ -276,9 +276,9 @@ function renderPeriodos(doc, periodos, startY) {
           currentY = 50;
         }
 
-        // Nome da oferta
+        // Nome da oferta (com subrede quando a acao mira uma loja especifica)
         doc.fillColor(COLORS.text).fontSize(10).font("Helvetica-Bold")
-          .text(oferta.nome, 70, currentY);
+          .text(oferta.subrede ? `${oferta.nome} — ${oferta.subrede}` : oferta.nome, 70, currentY);
         currentY += 15;
 
         // Produtos da oferta
@@ -356,6 +356,7 @@ function agruparPorPeriodo(encartes) {
     periodos[key].itens.push({
       nome: e.nome || "Sem nome",
       tipo: e.tipo || "encarte",
+      subrede: e.subrede || null,
       itens: Array.isArray(e.itens) ? e.itens : [], // Array de produtos
     });
   });
