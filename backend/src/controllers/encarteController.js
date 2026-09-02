@@ -130,6 +130,19 @@ async function listar(req, res) {
     });
   }
 
+  // Subredes distintas de cada rede (direto da Carteira) — usado pra achatar o seletor no frontend
+  const codigosGrupos = Object.keys(grupos);
+  const subredesAgg = codigosGrupos.length
+    ? await Carteira.aggregate([
+        { $match: { codigoRede: { $in: codigosGrupos }, subrede: { $ne: null } } },
+        { $group: { _id: "$codigoRede", subredes: { $addToSet: "$subrede" } } },
+      ])
+    : [];
+  const subredesPorRede = new Map();
+  for (const s of subredesAgg) {
+    subredesPorRede.set(s._id, s.subredes.filter(Boolean).sort());
+  }
+
   // Resolve podeEditar para criacao de novo encarte em cada grupo (sem encarte ainda)
   const lista = Object.values(grupos)
     .sort((a, b) => (a.redeSubrede || a.codigoRede).localeCompare(b.redeSubrede || b.codigoRede))
@@ -144,7 +157,7 @@ async function listar(req, res) {
         // Sem override: qualquer supervisor da carteira pode criar
         podeEditGrupo = true;
       }
-      return { ...g, podeEditar: podeEditGrupo };
+      return { ...g, podeEditar: podeEditGrupo, subredes: subredesPorRede.get(g.codigoRede) || [] };
     });
 
   res.json({ grupos: lista });
