@@ -198,6 +198,7 @@ async function gerarPdfGeral(userName, redesData) {
  */
 function renderPeriodos(doc, periodos, startY) {
   let currentY = startY;
+  const LARGURA_TITULO = 475; // largura disponivel pro nome da acao (caixa de 495px menos o recuo de 20px em x=70)
 
   periodos.forEach((periodo) => {
     // Verificar se precisa de nova página
@@ -229,9 +230,12 @@ function renderPeriodos(doc, periodos, startY) {
         }
 
         // Nome do encarte (com subrede quando a acao mira uma loja especifica)
-        doc.fillColor(COLORS.text).fontSize(10).font("Helvetica-Bold")
-          .text(encarte.subrede ? `${encarte.nome} — ${encarte.subrede}` : encarte.nome, 70, currentY);
-        currentY += 15;
+        // Nomes longos quebram em varias linhas — avancar currentY pela altura real do texto
+        const tituloEncarte = encarte.subrede ? `${encarte.nome} — ${encarte.subrede}` : encarte.nome;
+        doc.fillColor(COLORS.text).fontSize(10).font("Helvetica-Bold");
+        const alturaTituloEncarte = doc.heightOfString(tituloEncarte, { width: LARGURA_TITULO });
+        doc.text(tituloEncarte, 70, currentY, { width: LARGURA_TITULO });
+        currentY += alturaTituloEncarte + 5;
 
         // Produtos do encarte
         if (encarte.itens && encarte.itens.length > 0) {
@@ -277,9 +281,12 @@ function renderPeriodos(doc, periodos, startY) {
         }
 
         // Nome da oferta (com subrede quando a acao mira uma loja especifica)
-        doc.fillColor(COLORS.text).fontSize(10).font("Helvetica-Bold")
-          .text(oferta.subrede ? `${oferta.nome} — ${oferta.subrede}` : oferta.nome, 70, currentY);
-        currentY += 15;
+        // Nomes longos quebram em varias linhas — avancar currentY pela altura real do texto
+        const tituloOferta = oferta.subrede ? `${oferta.nome} — ${oferta.subrede}` : oferta.nome;
+        doc.fillColor(COLORS.text).fontSize(10).font("Helvetica-Bold");
+        const alturaTituloOferta = doc.heightOfString(tituloOferta, { width: LARGURA_TITULO });
+        doc.text(tituloOferta, 70, currentY, { width: LARGURA_TITULO });
+        currentY += alturaTituloOferta + 5;
 
         // Produtos da oferta
         if (oferta.itens && oferta.itens.length > 0) {
