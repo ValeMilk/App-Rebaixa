@@ -1,6 +1,7 @@
 const ResponsavelRede = require("../models/ResponsavelRede");
 const Carteira = require("../models/Carteira");
 const User = require("../models/User");
+const { ESIGMA_REDE_CODIGO, ESIGMA_REDE_NOME } = require("../constants/esigma");
 
 // Lista todas as responsabilidades cadastradas
 async function listar(req, res) {
@@ -24,6 +25,8 @@ async function redesDisponiveis(req, res) {
     { $project: { _id: 0, codigoRede: "$_id", redeSubrede: 1 } },
     { $sort: { redeSubrede: 1 } },
   ]);
+  // Rede sintetica do segundo ERP (Esigma) — nao vem da Carteira, entra sempre como opcao
+  docs.push({ codigoRede: ESIGMA_REDE_CODIGO, redeSubrede: ESIGMA_REDE_NOME });
   res.json({ redes: docs });
 }
 
@@ -45,15 +48,22 @@ async function criar(req, res) {
   if (!sup || sup.role !== "supervisor") {
     return res.status(400).json({ error: "Usuario nao e um supervisor valido" });
   }
-  // Pega redeSubrede a partir da Carteira (uma loja qualquer dessa rede)
-  const exemplo = await Carteira.findOne({ codigoRede: String(codigoRede) });
-  if (!exemplo) {
-    return res.status(400).json({ error: "Rede nao encontrada na carteira" });
+  // Pega redeSubrede a partir da Carteira (uma loja qualquer dessa rede),
+  // ou usa o nome fixo se for a rede sintetica do Esigma
+  let redeSubrede;
+  if (String(codigoRede) === ESIGMA_REDE_CODIGO) {
+    redeSubrede = ESIGMA_REDE_NOME;
+  } else {
+    const exemplo = await Carteira.findOne({ codigoRede: String(codigoRede) });
+    if (!exemplo) {
+      return res.status(400).json({ error: "Rede nao encontrada na carteira" });
+    }
+    redeSubrede = exemplo.redeSubrede || null;
   }
   try {
     const doc = await ResponsavelRede.create({
       codigoRede: String(codigoRede),
-      redeSubrede: exemplo.redeSubrede || null,
+      redeSubrede,
       supervisorId: sup._id,
       supervisorCodigo: sup.codigo,
       supervisorNome: sup.nome,

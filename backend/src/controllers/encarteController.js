@@ -2,6 +2,9 @@ const Encarte = require("../models/Encarte");
 const Carteira = require("../models/Carteira");
 const ResponsavelRede = require("../models/ResponsavelRede");
 const Produto = require("../models/Produto");
+const CarteiraEsigma = require("../models/CarteiraEsigma");
+const ProdutoEsigma = require("../models/ProdutoEsigma");
+const { ESIGMA_REDE_CODIGO, ESIGMA_REDE_NOME } = require("../constants/esigma");
 
 /**
  * Resolve se o usuario logado pode EDITAR um encarte.
@@ -64,6 +67,16 @@ async function listar(req, res) {
     for (const c of carteira) {
       if (c.codigoRede) redesInfo[c.codigoRede] = c.redeSubrede || null;
     }
+  }
+
+  // Rede sintetica "Esigma" (segundo ERP, sem conceito de rede na origem —
+  // cada cliente do Esigma vira uma subrede dela). Admin/diretoria sempre veem;
+  // supervisor so ve se tiver responsabilidade atribuida sobre ela.
+  if (role === "admin" || role === "diretoria") {
+    redesInfo[ESIGMA_REDE_CODIGO] = ESIGMA_REDE_NOME;
+  } else if (role === "supervisor") {
+    const overrideEsigma = await ResponsavelRede.findOne({ codigoRede: ESIGMA_REDE_CODIGO, supervisorCodigo: codigo }).lean();
+    if (overrideEsigma) redesInfo[ESIGMA_REDE_CODIGO] = ESIGMA_REDE_NOME;
   }
 
   const redesPermitidas = role === "admin" || role === "diretoria"
@@ -132,15 +145,20 @@ async function listar(req, res) {
 
   // Subredes distintas de cada rede (direto da Carteira) — usado pra achatar o seletor no frontend
   const codigosGrupos = Object.keys(grupos);
-  const subredesAgg = codigosGrupos.length
+  const codigosGruposLacteus = codigosGrupos.filter((c) => c !== ESIGMA_REDE_CODIGO);
+  const subredesAgg = codigosGruposLacteus.length
     ? await Carteira.aggregate([
-        { $match: { codigoRede: { $in: codigosGrupos }, subrede: { $ne: null } } },
+        { $match: { codigoRede: { $in: codigosGruposLacteus }, subrede: { $ne: null } } },
         { $group: { _id: "$codigoRede", subredes: { $addToSet: "$subrede" } } },
       ])
     : [];
   const subredesPorRede = new Map();
   for (const s of subredesAgg) {
     subredesPorRede.set(s._id, s.subredes.filter(Boolean).sort());
+  }
+  if (grupos[ESIGMA_REDE_CODIGO]) {
+    const clientesEsigma = await CarteiraEsigma.distinct("clienteNome", { clienteNome: { $ne: null } });
+    subredesPorRede.set(ESIGMA_REDE_CODIGO, clientesEsigma.filter(Boolean).sort());
   }
 
   // Resolve podeEditar para criacao de novo encarte em cada grupo (sem encarte ainda)
@@ -191,17 +209,26 @@ async function criar(req, res) {
     }
   }
 
+  const isEsigma = codigoRede === ESIGMA_REDE_CODIGO;
+
   // Se subrede foi informada, valida que ela existe dentro dessa rede
   if (subrede) {
-    const subredeValida = await Carteira.exists({ codigoRede: String(codigoRede), subrede });
+    const subredeValida = isEsigma
+      ? await CarteiraEsigma.exists({ clienteNome: subrede })
+      : await Carteira.exists({ codigoRede: String(codigoRede), subrede });
     if (!subredeValida) {
       return res.status(400).json({ error: "Subrede nao encontrada para esta rede" });
     }
   }
 
   // Pega redeSubrede de referencia
-  const refCarteira = await Carteira.findOne({ codigoRede }).lean();
-  const redeSubrede = refCarteira?.redeSubrede || null;
+  let redeSubrede;
+  if (isEsigma) {
+    redeSubrede = ESIGMA_REDE_NOME;
+  } else {
+    const refCarteira = await Carteira.findOne({ codigoRede }).lean();
+    redeSubrede = refCarteira?.redeSubrede || null;
+  }
 
   const encarte = await Encarte.create({
     nome: nome.trim(),
@@ -400,7 +427,9 @@ async function atualizar(req, res) {
   // Subrede e opcional: string vazia/null = volta a ser "toda a rede"
   if ("subrede" in body) {
     if (body.subrede) {
-      const subredeValida = await Carteira.exists({ codigoRede: enc.codigoRede, subrede: body.subrede });
+      const subredeValida = enc.codigoRede === ESIGMA_REDE_CODIGO
+        ? await CarteiraEsigma.exists({ clienteNome: body.subrede })
+        : await Carteira.exists({ codigoRede: enc.codigoRede, subrede: body.subrede });
       if (!subredeValida) {
         return res.status(400).json({ error: "Subrede nao encontrada para esta rede" });
       }
@@ -438,6 +467,11 @@ async function listarSubredes(req, res) {
   const { codigoRede } = req.query;
   if (!codigoRede) return res.status(400).json({ error: "codigoRede e obrigatorio" });
 
+  if (String(codigoRede) === ESIGMA_REDE_CODIGO) {
+    const clientesEsigma = await CarteiraEsigma.distinct("clienteNome", { clienteNome: { $ne: null } });
+    return res.json({ subredes: clientesEsigma.filter(Boolean).sort() });
+  }
+
   const subredes = await Carteira.distinct("subrede", { codigoRede: String(codigoRede), subrede: { $ne: null } });
   res.json({ subredes: subredes.filter(Boolean).sort() });
 }
@@ -447,13 +481,20 @@ async function listarSubredes(req, res) {
  * Retorna codigo, codigoLivre, descricao, precoTabela, precoMinimo, precoPromo, custo.
  */
 async function listarProdutos(req, res) {
-  const { q, subcategoria, limit = 100 } = req.query;
+  const { q, subcategoria, codigoRede, limit = 100 } = req.query;
+  const isEsigma = String(codigoRede) === ESIGMA_REDE_CODIGO;
+  const Model = isEsigma ? ProdutoEsigma : Produto;
+
   const filtro = { ativo: true };
   if (q) filtro.descricao = { $regex: q, $options: "i" };
   if (subcategoria) filtro.subcategoria = subcategoria;
 
-  const produtos = await Produto.find(filtro)
-    .select("codigo codigoLivre descricao categoria subcategoria precoTabela precoMinimo precoPromo custo")
+  const campos = isEsigma
+    ? "codigo descricao categoria subcategoria"
+    : "codigo codigoLivre descricao categoria subcategoria precoTabela precoMinimo precoPromo custo";
+
+  const produtos = await Model.find(filtro)
+    .select(campos)
     .sort({ descricao: 1 })
     .limit(Number(limit))
     .lean();
@@ -463,21 +504,24 @@ async function listarProdutos(req, res) {
 
 /** Retorna lista de categorias distintas (nao vazias) para montar dropdown */
 async function listarCategorias(req, res) {
-  const categorias = await Produto.distinct("categoria", { ativo: true, categoria: { $ne: "" } });
+  const { codigoRede } = req.query;
+  const Model = String(codigoRede) === ESIGMA_REDE_CODIGO ? ProdutoEsigma : Produto;
+  const categorias = await Model.distinct("categoria", { ativo: true, categoria: { $ne: "" } });
   res.json({ categorias: categorias.filter(Boolean).sort() });
 }
 
 /** Retorna lista de subcategorias distintas (nao vazias), opcionalmente filtrado por categoria */
 async function listarSubcategorias(req, res) {
-  const { categoria } = req.query;
+  const { categoria, codigoRede } = req.query;
+  const Model = String(codigoRede) === ESIGMA_REDE_CODIGO ? ProdutoEsigma : Produto;
   const filtro = { ativo: true, subcategoria: { $ne: "" } };
-  
+
   // Se categoria foi especificada, filtrar subcategorias daquela categoria
   if (categoria) {
     filtro.categoria = categoria;
   }
-  
-  const subs = await Produto.distinct("subcategoria", filtro);
+
+  const subs = await Model.distinct("subcategoria", filtro);
   res.json({ subcategorias: subs.filter(Boolean).sort() });
 }
 

@@ -5,7 +5,8 @@ const userSchema = new mongoose.Schema(
   {
     nome: { type: String, required: true, trim: true },
     email: { type: String, required: true, unique: true, lowercase: true, trim: true },
-    codigo: { type: String, required: true, unique: true, trim: true },
+    codigo: { type: String, required: true, unique: true, trim: true }, // codigo de vinculo ao ERP Lacteus (tambem usado como senha inicial)
+    codigoEsigma: { type: String, trim: true, index: { unique: true, sparse: true } }, // codigo de vinculo ao ERP Esigma (opcional) — sem default: precisa ficar AUSENTE (nao null) pra sparse funcionar
     senhaHash: { type: String, required: true },
     role: {
       type: String,

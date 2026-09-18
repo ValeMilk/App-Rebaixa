@@ -95,6 +95,41 @@ export default function SyncPage() {
             Sincronizar agora
           </button>
         </div>
+
+        <div className="card p-5">
+          <h2 className="font-semibold mb-2">Esigma Completo</h2>
+          <p className="text-sm text-slate-500 mb-4">
+            Atualiza carteira de clientes + catálogo de produtos do Esigma de uma vez.
+            {status && !status.esigmaConfigurado && (
+              <span className="block mt-1 text-amber-600 font-medium">
+                ⚠ Esigma não configurado — preencha ERP_*2 no .env da VPS.
+              </span>
+            )}
+          </p>
+          <button onClick={() => rodar("esigma")} className="btn-secondary" disabled={rodando}>
+            Sincronizar agora
+          </button>
+        </div>
+
+        <div className="card p-5">
+          <h2 className="font-semibold mb-2">Carteira (Esigma)</h2>
+          <p className="text-sm text-slate-500 mb-4">
+            Atualiza clientes do Esigma (aparecem como subredes de "Esigma" em Encartes).
+          </p>
+          <button onClick={() => rodar("esigma/carteira")} className="btn-secondary" disabled={rodando}>
+            Sincronizar agora
+          </button>
+        </div>
+
+        <div className="card p-5">
+          <h2 className="font-semibold mb-2">Produtos (Esigma)</h2>
+          <p className="text-sm text-slate-500 mb-4">
+            Importa catálogo do Esigma (sem preços — precificação manual).
+          </p>
+          <button onClick={() => rodar("esigma/produtos")} className="btn-secondary" disabled={rodando}>
+            Sincronizar agora
+          </button>
+        </div>
       </div>
 
       <div className="card p-5">

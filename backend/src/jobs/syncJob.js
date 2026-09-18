@@ -1,6 +1,7 @@
 const cron = require("node-cron");
 const { sincronizarEstoque } = require("../services/estoqueSyncService");
 const { sincronizarCarteira } = require("../services/erpService");
+const { sincronizarCarteiraEsigma } = require("../services/esigmaService");
 
 let rodando = false;
 
@@ -22,6 +23,10 @@ function startSyncJob() {
       console.log("[cron] iniciando sync carteira...");
       const c = await sincronizarCarteira();
       console.log("[cron] sync carteira ok:", c);
+
+      console.log("[cron] iniciando sync carteira Esigma...");
+      const ce = await sincronizarCarteiraEsigma();
+      console.log("[cron] sync carteira Esigma ok:", ce);
     } catch (err) {
       console.error("[cron] erro:", err.message);
     } finally {

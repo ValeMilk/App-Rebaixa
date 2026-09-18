@@ -1,6 +1,7 @@
 const Encarte = require("../models/Encarte");
 const Carteira = require("../models/Carteira");
 const pdfService = require("../services/pdfService");
+const { ESIGMA_REDE_CODIGO, ESIGMA_REDE_NOME } = require("../constants/esigma");
 
 /**
  * GET /api/encartes/pdf/rede/:codigoRede?periodo_inicio=YYYY-MM-DD&periodo_fim=YYYY-MM-DD
@@ -89,9 +90,14 @@ async function gerarPdfRede(req, res) {
       console.log(`[PDF]       Produtos: ${e.itens?.length || 0}`);
     });
 
-    console.log("[PDF] 7️⃣ Buscando nome da rede na Carteira...");
-    const carteira = await Carteira.findOne({ codigoRede: String(codigoRede) }).select("redeSubrede").lean();
-    const nomeRede = carteira?.redeSubrede || `Rede ${codigoRede}`;
+    console.log("[PDF] 7️⃣ Buscando nome da rede...");
+    let nomeRede;
+    if (String(codigoRede) === ESIGMA_REDE_CODIGO) {
+      nomeRede = ESIGMA_REDE_NOME;
+    } else {
+      const carteira = await Carteira.findOne({ codigoRede: String(codigoRede) }).select("redeSubrede").lean();
+      nomeRede = carteira?.redeSubrede || `Rede ${codigoRede}`;
+    }
     console.log(`[PDF]    Nome da rede: ${nomeRede}`);
 
     console.log("[PDF] 8️⃣ Chamando pdfService.gerarPdfRede()...");
@@ -158,7 +164,7 @@ async function gerarPdfGeral(req, res) {
     const carteiras = await Carteira.find({ codigoRede: { $in: codigos } })
       .select("codigoRede redeSubrede")
       .lean();
-    const nomesPorCodigo = {};
+    const nomesPorCodigo = { [ESIGMA_REDE_CODIGO]: ESIGMA_REDE_NOME };
     carteiras.forEach((c) => {
       if (!nomesPorCodigo[c.codigoRede]) nomesPorCodigo[c.codigoRede] = c.redeSubrede;
     });

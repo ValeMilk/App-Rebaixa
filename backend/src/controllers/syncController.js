@@ -2,6 +2,8 @@ const { sincronizarEstoque } = require("../services/estoqueSyncService");
 const { sincronizarCarteira } = require("../services/erpService");
 const { sincronizarProdutos, sincronizarERP } = require("../services/produtoSyncService");
 const { erpConfigurado } = require("../services/erpDbService");
+const { sincronizarCarteiraEsigma, sincronizarProdutosEsigma } = require("../services/esigmaService");
+const { esigmaConfigurado } = require("../services/esigmaDbService");
 
 let executando = false;
 let ultimaExecucao = null;
@@ -75,12 +77,61 @@ async function rodarSyncERP(_req, res) {
   }
 }
 
+async function rodarSyncCarteiraEsigma(_req, res) {
+  try {
+    const r = await sincronizarCarteiraEsigma();
+    ultimaExecucao = { tipo: "esigma_carteira", em: new Date(), resultado: r };
+    res.json({ ok: true, ...r });
+  } catch (err) {
+    console.error("[sync/esigma/carteira] erro:", err);
+    ultimaExecucao = { tipo: "esigma_carteira", em: new Date(), resultado: { erro: err.message } };
+    res.status(500).json({ error: err.message || "Erro ao sincronizar carteira do Esigma" });
+  }
+}
+
+async function rodarSyncProdutosEsigma(_req, res) {
+  try {
+    const r = await sincronizarProdutosEsigma();
+    ultimaExecucao = { tipo: "esigma_produtos", em: new Date(), resultado: r };
+    res.json({ ok: true, ...r });
+  } catch (err) {
+    console.error("[sync/esigma/produtos] erro:", err);
+    ultimaExecucao = { tipo: "esigma_produtos", em: new Date(), resultado: { erro: err.message } };
+    res.status(500).json({ error: err.message || "Erro ao sincronizar produtos do Esigma" });
+  }
+}
+
+async function rodarSyncEsigma(_req, res) {
+  try {
+    const carteira = await sincronizarCarteiraEsigma();
+    const produtos = await sincronizarProdutosEsigma();
+    const r = { carteira, produtos };
+    ultimaExecucao = { tipo: "esigma_completo", em: new Date(), resultado: r };
+    res.json({ ok: true, ...r });
+  } catch (err) {
+    console.error("[sync/esigma] erro:", err);
+    ultimaExecucao = { tipo: "esigma_completo", em: new Date(), resultado: { erro: err.message } };
+    res.status(500).json({ error: err.message || "Erro ao sincronizar Esigma completo" });
+  }
+}
+
 function status(_req, res) {
   res.json({
     executando,
     ultimaExecucao,
     erpConfigurado: erpConfigurado(),
+    esigmaConfigurado: esigmaConfigurado(),
   });
 }
 
-module.exports = { rodarSyncEstoque, rodarSyncCarteira, rodarSyncProdutos, rodarSyncERP, triggerBackground, status };
+module.exports = {
+  rodarSyncEstoque,
+  rodarSyncCarteira,
+  rodarSyncProdutos,
+  rodarSyncERP,
+  rodarSyncCarteiraEsigma,
+  rodarSyncProdutosEsigma,
+  rodarSyncEsigma,
+  triggerBackground,
+  status,
+};

@@ -119,27 +119,27 @@ function AdicionarProdutoModal({ encarteId, codigoRede, onClose, onAdicionado })
 
   // Carrega categorias ao abrir o modal
   useEffect(() => {
-    api.get("/encartes/categorias")
+    api.get("/encartes/categorias", { params: { codigoRede } })
       .then(({ data }) => setCategorias(data.categorias || []))
       .catch(() => setCategorias([]))
       .finally(() => setLoadingCategorias(false));
-  }, []);
+  }, [codigoRede]);
 
   // Carrega subcategorias quando categoria mudar (ou todas se nenhuma categoria selecionada)
   useEffect(() => {
     setLoadingSubs(true);
-    const params = categoriaSel ? { categoria: categoriaSel } : {};
+    const params = { codigoRede, ...(categoriaSel ? { categoria: categoriaSel } : {}) };
     api.get("/encartes/subcategorias", { params })
       .then(({ data }) => setSubcategorias(data.subcategorias || []))
       .catch(() => setSubcategorias([]))
       .finally(() => setLoadingSubs(false));
-    
+
     // Limpa subcategoria e produtos quando categoria muda
     setSubcategoriaSel("");
     setProdutos([]);
     setQ("");
     setDesmarcados(new Set());
-  }, [categoriaSel]);
+  }, [categoriaSel, codigoRede]);
 
   // Carrega produtos quando subcategoria mudar ou q mudar
   useEffect(() => {
@@ -147,7 +147,7 @@ function AdicionarProdutoModal({ encarteId, codigoRede, onClose, onAdicionado })
     const t = setTimeout(async () => {
       setLoadingProdutos(true);
       try {
-        const params = { subcategoria: subcategoriaSel, limit: 500 };
+        const params = { codigoRede, subcategoria: subcategoriaSel, limit: 500 };
         if (q.trim().length >= 2) params.q = q.trim();
         const { data } = await api.get("/encartes/produtos", { params });
         setProdutos(data.produtos || []);
@@ -155,7 +155,7 @@ function AdicionarProdutoModal({ encarteId, codigoRede, onClose, onAdicionado })
       finally { setLoadingProdutos(false); }
     }, 200);
     return () => clearTimeout(t);
-  }, [subcategoriaSel, q]);
+  }, [subcategoriaSel, q, codigoRede]);
 
   // Busca última compra de todos os produtos em UMA ÚNICA requisição batch otimizada
   useEffect(() => {

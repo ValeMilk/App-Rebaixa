@@ -6,23 +6,25 @@ async function listar(_req, res) {
 }
 
 async function criar(req, res) {
-  const { nome, email, codigo, role } = req.body || {};
+  const { nome, email, codigo, codigoEsigma, role } = req.body || {};
   if (!nome || !email || !codigo || !role) {
     return res.status(400).json({ error: "Dados incompletos" });
   }
   const senhaHash = await User.gerarHash(String(codigo));
   try {
-    const user = await User.create({
+    const dados = {
       nome,
       email: String(email).toLowerCase(),
       codigo: String(codigo),
       senhaHash,
       role,
-    });
+    };
+    if (codigoEsigma) dados.codigoEsigma = String(codigoEsigma);
+    const user = await User.create(dados);
     res.status(201).json({ user });
   } catch (err) {
     if (err.code === 11000) {
-      return res.status(409).json({ error: "Email ou codigo ja cadastrado" });
+      return res.status(409).json({ error: "Email, codigo ou codigo Esigma ja cadastrado" });
     }
     throw err;
   }
@@ -30,7 +32,7 @@ async function criar(req, res) {
 
 async function atualizar(req, res) {
   const { id } = req.params;
-  const { nome, email, codigo, role, roles, ativo } = req.body || {};
+  const { nome, email, codigo, codigoEsigma, role, roles, ativo } = req.body || {};
   const update = {};
   if (nome) update.nome = nome;
   if (email) update.email = String(email).toLowerCase();
@@ -41,10 +43,18 @@ async function atualizar(req, res) {
     update.codigo = String(codigo);
     update.senhaHash = await User.gerarHash(String(codigo));
   }
+  if (codigoEsigma) update.codigoEsigma = String(codigoEsigma);
 
-  const user = await User.findByIdAndUpdate(id, update, { new: true });
-  if (!user) return res.status(404).json({ error: "Usuario nao encontrado" });
-  res.json({ user });
+  try {
+    const user = await User.findByIdAndUpdate(id, update, { new: true });
+    if (!user) return res.status(404).json({ error: "Usuario nao encontrado" });
+    res.json({ user });
+  } catch (err) {
+    if (err.code === 11000) {
+      return res.status(409).json({ error: "Email, codigo ou codigo Esigma ja cadastrado" });
+    }
+    throw err;
+  }
 }
 
 async function remover(req, res) {

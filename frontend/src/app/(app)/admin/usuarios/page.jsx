@@ -8,7 +8,7 @@ import api from "@/lib/api";
 const ALL_ROLES = ["vendedor", "supervisor", "diretoria", "admin"];
 const ROLE_LABEL = { vendedor: "Vendedor", supervisor: "Supervisor", diretoria: "Diretoria", admin: "Admin" };
 
-const formVazio = { nome: "", email: "", codigo: "", role: "supervisor", roles: [] };
+const formVazio = { nome: "", email: "", codigo: "", codigoEsigma: "", role: "supervisor", roles: [] };
 
 export default function UsuariosPage() {
   const router = useRouter();
@@ -57,7 +57,7 @@ export default function UsuariosPage() {
 
   function editar(u) {
     setEditId(u._id);
-    setForm({ nome: u.nome, email: u.email, codigo: u.codigo, role: u.role, roles: u.roles || [] });
+    setForm({ nome: u.nome, email: u.email, codigo: u.codigo, codigoEsigma: u.codigoEsigma || "", role: u.role, roles: u.roles || [] });
   }
 
   function cancelarEdicao() {
@@ -86,13 +86,15 @@ export default function UsuariosPage() {
       <p className="text-slate-500 mb-6">Gerencie usuários. A senha inicial é igual ao código.</p>
 
       <form onSubmit={salvar} className="card p-4 space-y-3 mb-6">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+        <div className="grid grid-cols-1 md:grid-cols-5 gap-3">
           <input className="input" placeholder="Nome completo" value={form.nome}
             onChange={(e) => setForm({ ...form, nome: e.target.value })} required />
           <input className="input" type="email" placeholder="Email" value={form.email}
             onChange={(e) => setForm({ ...form, email: e.target.value })} required />
-          <input className="input" placeholder="Código (= senha inicial)" value={form.codigo}
+          <input className="input" placeholder="Código Lacteus (= senha inicial)" value={form.codigo}
             onChange={(e) => setForm({ ...form, codigo: e.target.value })} required />
+          <input className="input" placeholder="Código Esigma (opcional)" value={form.codigoEsigma}
+            onChange={(e) => setForm({ ...form, codigoEsigma: e.target.value })} />
           <select className="input" value={form.role} onChange={(e) => setForm({ ...form, role: e.target.value, roles: [] })}>
             {ALL_ROLES.map((r) => <option key={r} value={r}>{ROLE_LABEL[r]}</option>)}
           </select>
@@ -134,6 +136,7 @@ export default function UsuariosPage() {
               <th className="px-3 py-2">Nome</th>
               <th className="px-3 py-2">Email</th>
               <th className="px-3 py-2">Código</th>
+              <th className="px-3 py-2">ERPs</th>
               <th className="px-3 py-2">Perfil principal</th>
               <th className="px-3 py-2">Perfis extras</th>
               <th className="px-3 py-2">Ativo</th>
@@ -142,12 +145,20 @@ export default function UsuariosPage() {
           </thead>
           <tbody>
             {loading ? (
-              <tr><td colSpan={7} className="px-3 py-6 text-center text-slate-500">Carregando...</td></tr>
+              <tr><td colSpan={8} className="px-3 py-6 text-center text-slate-500">Carregando...</td></tr>
             ) : users.map((u) => (
               <tr key={u._id} className={`border-t border-slate-100 ${editId === u._id ? "bg-brand/5" : ""}`}>
                 <td className="px-3 py-2 font-medium">{u.nome}</td>
                 <td className="px-3 py-2 text-slate-500">{u.email}</td>
                 <td className="px-3 py-2">{u.codigo}</td>
+                <td className="px-3 py-2">
+                  <div className="flex flex-wrap gap-1">
+                    <span className="inline-block px-2 py-0.5 rounded-full text-xs font-semibold bg-slate-100 text-slate-600">Lacteus</span>
+                    {u.codigoEsigma && (
+                      <span className="inline-block px-2 py-0.5 rounded-full text-xs font-semibold bg-slate-100 text-slate-600">Esigma</span>
+                    )}
+                  </div>
+                </td>
                 <td className="px-3 py-2">
                   <span className="inline-block px-2 py-0.5 rounded-full text-xs font-semibold bg-brand/10 text-brand capitalize">
                     {ROLE_LABEL[u.role] || u.role}
