@@ -52,7 +52,13 @@ async function getPool() {
     config.port = Number(process.env.ERP_PORT || 1433);
   }
 
-  pool = await sql.connect(config);
+  // IMPORTANTE: usar `new sql.ConnectionPool()` em vez do atalho `sql.connect()`.
+  // `sql.connect()` usa um pool GLOBAL unico do pacote mssql — como o sistema
+  // tambem conecta num segundo ERP (Esigma, esigmaDbService.js), usar o atalho
+  // faria os dois compartilharem a mesma conexao (o que conectar primeiro "vence"
+  // e o outro silenciosamente reusa essa conexao errada).
+  pool = new sql.ConnectionPool(config);
+  await pool.connect();
   return pool;
 }
 
