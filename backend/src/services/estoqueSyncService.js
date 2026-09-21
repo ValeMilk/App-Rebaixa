@@ -10,19 +10,16 @@ const { classificarPorValidade } = require("./classificadorService");
  */
 const SQL_ESTOQUE = `
 SELECT
-    event_id,
-    event_dth,
     codigo_destino,
     nome_fantasia_dest,
-    agent_name,
     produto_nome,
     produto_codigo,
     quantidade,
-    data_validade,
-    em_ruptura,
-    link_rastreamento
+    data_validade
 FROM public.ativmob_estoque
-WHERE data_validade > CURRENT_DATE;
+WHERE data_validade > CURRENT_DATE
+and quantidade >= 5
+ORDER BY data_validade;
 `;
 
 /**
