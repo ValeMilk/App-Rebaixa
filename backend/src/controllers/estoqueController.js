@@ -2,33 +2,14 @@ const Estoque = require("../models/Estoque");
 const Carteira = require("../models/Carteira");
 
 /**
- * Lista o estoque mais recente por (cliente, produto).
- * Aplica filtros de classificacao, cliente e supervisor.
- * Para supervisor, restringe pelos clientes da sua carteira.
+ * Lista o estoque critico (ja filtrado pela view do Postgres na sincronizacao —
+ * ver estoqueSyncService.js). Cada documento e um lote/validade distinto.
+ * Aplica filtros opcionais de classificacao/cliente/produto e restricao por carteira.
  */
-// Retorna o inicio do dia de hoje (midnight UTC-3 aproximado)
-function hojeMidnight() {
-  const d = new Date();
-  d.setHours(0, 0, 0, 0);
-  return d;
-}
-
 async function listar(req, res) {
   const { classificacao, clienteCodigo, produto, q, limit = 500 } = req.query;
-  const hoje = hojeMidnight();
-  // Janela de validade fixa: hoje+3 ate hoje+40 dias.
-  // Pega sempre o registro mais recente por (cliente, produto) — mesmo que a contagem
-  // tenha sido feita semana retrasada, o item aparece se a validade cair nessa janela.
-  const inicioValidade = new Date(hoje);
-  inicioValidade.setDate(inicioValidade.getDate() + 3);
-  const fimValidade = new Date(hoje);
-  fimValidade.setDate(fimValidade.getDate() + 40);
 
-  // Filtra por dataValidade dinamicamente (ignora diasParaVencer stale)
-  const match = {
-    quantidade: { $gt: 10 },
-    dataValidade: { $gte: inicioValidade, $lte: fimValidade },
-  };
+  const match = {};
 
   if (classificacao) match.classificacao = classificacao;
   if (clienteCodigo) match.clienteCodigo = String(clienteCodigo);
@@ -53,17 +34,8 @@ async function listar(req, res) {
     for (const c of carteira) redeMap[c.clienteCodigo] = { codigoRede: c.codigoRede || null, redeSubrede: c.redeSubrede || null, subrede: c.subrede || null };
   }
 
-  // Pegar o snapshot mais recente por (clienteCodigo, produto)
   const pipeline = [
     { $match: match },
-    { $sort: { eventDth: -1 } },
-    {
-      $group: {
-        _id: { clienteCodigo: "$clienteCodigo", produto: "$produto" },
-        doc: { $first: "$$ROOT" },
-      },
-    },
-    { $replaceRoot: { newRoot: "$doc" } },
     // Busca precoTabela e custo do catalogo de produtos
     {
       $lookup: {
@@ -93,7 +65,7 @@ async function listar(req, res) {
         },
       },
     },
-    { $sort: { diasParaVencer: 1, eventDth: -1 } },
+    { $sort: { diasParaVencer: 1 } },
     { $limit: Number(limit) },
   ];
 
@@ -109,17 +81,7 @@ async function listar(req, res) {
 }
 
 async function resumo(req, res) {
-  const hoje = hojeMidnight();
-  // Janela de validade fixa: hoje+3 ate hoje+40 dias.
-  const inicioValidade = new Date(hoje);
-  inicioValidade.setDate(inicioValidade.getDate() + 3);
-  const fimValidade = new Date(hoje);
-  fimValidade.setDate(fimValidade.getDate() + 40);
-
-  const match = {
-    quantidade: { $gt: 10 },
-    dataValidade: { $gte: inicioValidade, $lte: fimValidade },
-  };
+  const match = {};
   if (req.user.role === "vendedor") {
     const carteira = await Carteira.find({ vendedorCodigo: req.user.codigo }, "clienteCodigo");
     const codigos = carteira.map((c) => c.clienteCodigo);
@@ -132,20 +94,13 @@ async function resumo(req, res) {
 
   const agg = await Estoque.aggregate([
     { $match: match },
-    { $sort: { eventDth: -1 } },
-    {
-      $group: {
-        _id: { c: "$clienteCodigo", p: "$produto" },
-        doc: { $first: "$$ROOT" },
-      },
-    },
     // Recalcula classificacao dinamicamente
     {
       $addFields: {
         diasParaVencer: {
           $dateDiff: {
             startDate: "$$NOW",
-            endDate: "$doc.dataValidade",
+            endDate: "$dataValidade",
             unit: "day",
           },
         },

@@ -1,25 +1,24 @@
 const mongoose = require("mongoose");
 
 /**
- * Cada documento eh um snapshot de "produto na loja em uma data".
- * Origem: ATIVMOB - evento ESTOQUE E VENCIMENTO.
+ * Cada documento eh um item de estoque critico (produto + cliente + lote/validade).
+ * Origem: view public.vw_ativmob_estoque_critico no Postgres de BI (VPS) —
+ * ja aplica a definicao de "critico" (visita recente, limite por produto,
+ * nao vencido). Um documento por chave (clienteCodigo+produtoCodigo+dataValidade);
+ * a cada sync o que nao aparece mais na view eh removido daqui (espelho).
  */
 const estoqueSchema = new mongoose.Schema(
   {
-    eventId: { type: String, required: true, unique: true, index: true },
-    eventDth: { type: Date, required: true, index: true },
+    chave: { type: String, required: true, unique: true, index: true },
 
     cliente: { type: String, required: true, index: true },
     clienteCodigo: { type: String, required: true, index: true },
-
-    promotor: { type: String },
 
     produto: { type: String, required: true, index: true },
     produtoCodigo: { type: String, index: true },
 
     quantidade: { type: Number, default: 0 },
     dataValidade: { type: Date, index: true },
-    ruptura: { type: Boolean, default: false },
 
     diasParaVencer: { type: Number, index: true },
     classificacao: {
@@ -28,12 +27,9 @@ const estoqueSchema = new mongoose.Schema(
       index: true,
     },
 
-    linkRastreamento: { type: String },
     raw: { type: mongoose.Schema.Types.Mixed },
   },
   { timestamps: true }
 );
-
-estoqueSchema.index({ clienteCodigo: 1, produto: 1, eventDth: -1 });
 
 module.exports = mongoose.model("Estoque", estoqueSchema);

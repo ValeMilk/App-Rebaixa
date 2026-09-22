@@ -196,7 +196,7 @@ export default function DashboardPage() {
         <div>
           <p className="text-xs font-semibold uppercase tracking-widest text-brand mb-1">Valemilk · Controle Comercial</p>
           <h1 className="text-xl sm:text-2xl font-black text-slate-900">Painel de Vencimentos</h1>
-          <p className="text-xs text-slate-400 mt-0.5">Estoque ativo · qtd &gt; 5 · janela 1 – 31 dias</p>
+          <p className="text-xs text-slate-400 mt-0.5">Estoque crítico · fonte: relatório BI (Ativmob)</p>
         </div>
         <div className="flex items-center gap-2">
           {atualizado && (

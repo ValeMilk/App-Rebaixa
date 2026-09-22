@@ -3,10 +3,11 @@ const { query, pgConfigurado } = require("./estoquePgDbService");
 const { classificarPorValidade } = require("./classificadorService");
 
 /**
- * Fonte: Postgres de BI na VPS (tabela public.ativmob_estoque) — espelho das
- * mesmas colunas que a API da ATIVMOB expunha via evento (event_id, event_dth,
- * agent_name, em_ruptura, link_rastreamento etc, com o antigo form_json ja
- * achatado em colunas). So traz produtos ainda nao vencidos (data_validade > hoje).
+ * Fonte: view public.vw_ativmob_estoque_critico no Postgres de BI (VPS) —
+ * ja aplica a definicao de negocio de "critico" (ultima visita nos ultimos
+ * 15 dias, limite de quantidade variavel por produto, nao vencido). O app
+ * nao re-filtra por cima, confia integralmente no que a view devolve.
+ * Uma linha = um lote/validade de um produto num cliente.
  */
 const SQL_ESTOQUE = `
 SELECT
@@ -16,19 +17,20 @@ SELECT
     produto_codigo,
     quantidade,
     data_validade
-FROM public.ativmob_estoque
-WHERE data_validade > CURRENT_DATE
-and quantidade >= 5
-ORDER BY data_validade;
+FROM public.vw_ativmob_estoque_critico
+ORDER BY data_validade, codigo_destino, produto_codigo;
 `;
 
+function montarChave(clienteCodigo, produtoCodigo, dataValidade) {
+  const validadeISO = dataValidade ? dataValidade.toISOString().slice(0, 10) : "sem-validade";
+  return `${clienteCodigo}|${produtoCodigo}|${validadeISO}`;
+}
+
 /**
- * Sincroniza estoque/validade a partir do Postgres de BI.
- * Mesma estrategia de antes (upsert por eventId, em lotes) — a fonte mudou
- * (Postgres em vez da API REST da ATIVMOB), mas o formato/semantica dos
- * dados e o mesmo: um documento por leitura/evento, historico preservado.
- * A tela de Estoque (estoqueController) ja pega so a leitura mais recente
- * por (clienteCodigo, produto) na hora de exibir.
+ * Sincroniza estoque critico a partir da view do Postgres de BI.
+ * Espelha o resultado no Mongo: grava/atualiza por chave (upsert) e apaga
+ * o que nao apareceu mais nesta rodada — a view recalcula "critico" do
+ * zero a cada consulta, entao o que sai dela deixou de ser critico.
  */
 async function sincronizarEstoque() {
   if (!pgConfigurado()) {
@@ -37,47 +39,47 @@ async function sincronizarEstoque() {
 
   const linhas = await query(SQL_ESTOQUE);
   if (!linhas.length) {
-    return { eventosBaixados: 0, upserts: 0 };
+    return { eventosBaixados: 0, upserts: 0, removidos: 0 };
   }
 
   const docs = linhas.map((l) => {
     const dataValidade = l.data_validade ? new Date(l.data_validade) : null;
     const { diasParaVencer, classificacao } = classificarPorValidade(dataValidade);
+    const clienteCodigo = String(l.codigo_destino || "");
+    const produtoCodigo = l.produto_codigo != null ? String(l.produto_codigo) : "";
 
     return {
-      eventId: String(l.event_id),
-      eventDth: l.event_dth ? new Date(l.event_dth) : new Date(),
+      chave: montarChave(clienteCodigo, produtoCodigo, dataValidade),
       cliente: l.nome_fantasia_dest || "",
-      clienteCodigo: String(l.codigo_destino || ""),
-      promotor: l.agent_name || "",
+      clienteCodigo,
       produto: l.produto_nome || "",
-      produtoCodigo: l.produto_codigo != null ? String(l.produto_codigo) : null,
+      produtoCodigo,
       quantidade: Number(l.quantidade) || 0,
       dataValidade,
-      ruptura: String(l.em_ruptura || "").toUpperCase().includes("SIM"),
       diasParaVencer,
       classificacao,
-      linkRastreamento: l.link_rastreamento || null,
       raw: l,
     };
   });
 
   const ops = docs.map((d) => ({
     updateOne: {
-      filter: { eventId: d.eventId },
+      filter: { chave: d.chave },
       update: { $set: d },
       upsert: true,
     },
   }));
 
-  // Bulk em lotes de 1000 para evitar payloads enormes.
   let upserts = 0;
   for (let i = 0; i < ops.length; i += 1000) {
     const r = await Estoque.bulkWrite(ops.slice(i, i + 1000), { ordered: false });
     upserts += (r.upsertedCount || 0) + (r.modifiedCount || 0);
   }
 
-  return { eventosBaixados: linhas.length, upserts };
+  const chavesAtuais = docs.map((d) => d.chave);
+  const del = await Estoque.deleteMany({ chave: { $nin: chavesAtuais } });
+
+  return { eventosBaixados: linhas.length, upserts, removidos: del.deletedCount || 0 };
 }
 
 module.exports = { sincronizarEstoque };
