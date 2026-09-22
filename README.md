@@ -98,7 +98,6 @@ Login com o admin criado no seed (email/senha = codigo do .env).
 | POST   | `/api/auth/login`             | publico                  |
 | GET    | `/api/auth/me`                | autenticado              |
 | GET    | `/api/estoque`                | autenticado              |
-| GET    | `/api/estoque/resumo`         | autenticado              |
 | POST   | `/api/solicitacoes`           | supervisor / admin       |
 | GET    | `/api/solicitacoes`           | autenticado              |
 | GET    | `/api/solicitacoes/:id`       | autenticado              |

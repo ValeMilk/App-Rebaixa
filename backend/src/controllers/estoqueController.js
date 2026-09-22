@@ -7,7 +7,8 @@ const Carteira = require("../models/Carteira");
  * Aplica filtros opcionais de classificacao/cliente/produto e restricao por carteira.
  */
 async function listar(req, res) {
-  const { classificacao, clienteCodigo, produto, q, limit = 500 } = req.query;
+  const { classificacao, clienteCodigo, produto, q, limit } = req.query;
+  const lim = Math.min(Math.max(parseInt(limit, 10) || 500, 1), 5000);
 
   const match = {};
 
@@ -36,6 +37,7 @@ async function listar(req, res) {
 
   const pipeline = [
     { $match: match },
+    { $unset: "raw" },
     // Busca precoTabela e custo do catalogo de produtos
     {
       $lookup: {
@@ -66,7 +68,7 @@ async function listar(req, res) {
       },
     },
     { $sort: { diasParaVencer: 1 } },
-    { $limit: Number(limit) },
+    { $limit: lim },
   ];
 
   const itens = await Estoque.aggregate(pipeline);
@@ -80,57 +82,4 @@ async function listar(req, res) {
   res.json({ total: itensEnriquecidos.length, itens: itensEnriquecidos });
 }
 
-async function resumo(req, res) {
-  const match = {};
-  if (req.user.role === "vendedor") {
-    const carteira = await Carteira.find({ vendedorCodigo: req.user.codigo }, "clienteCodigo");
-    const codigos = carteira.map((c) => c.clienteCodigo);
-    match.clienteCodigo = { $in: codigos.length ? codigos : ["__none__"] };
-  } else if (req.user.role === "supervisor") {
-    const carteira = await Carteira.find({ supervisorCodigo: req.user.codigo }, "clienteCodigo");
-    const codigos = carteira.map((c) => c.clienteCodigo);
-    match.clienteCodigo = { $in: codigos.length ? codigos : ["__none__"] };
-  }
-
-  const agg = await Estoque.aggregate([
-    { $match: match },
-    // Recalcula classificacao dinamicamente
-    {
-      $addFields: {
-        diasParaVencer: {
-          $dateDiff: {
-            startDate: "$$NOW",
-            endDate: "$dataValidade",
-            unit: "day",
-          },
-        },
-      },
-    },
-    {
-      $addFields: {
-        classificacao: {
-          $switch: {
-            branches: [
-              { case: { $lte: ["$diasParaVencer", 0] }, then: "vencido" },
-              { case: { $lte: ["$diasParaVencer", 15] }, then: "critico" },
-              { case: { $lte: ["$diasParaVencer", 30] }, then: "alerta" },
-            ],
-            default: "atencao",
-          },
-        },
-      },
-    },
-    {
-      $group: {
-        _id: "$classificacao",
-        total: { $sum: 1 },
-      },
-    },
-  ]);
-
-  const out = { vencido: 0, critico: 0, alerta: 0, atencao: 0, ok: 0 };
-  for (const r of agg) out[r._id] = r.total;
-  res.json(out);
-}
-
-module.exports = { listar, resumo };
+module.exports = { listar };

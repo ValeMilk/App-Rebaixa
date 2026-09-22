@@ -1,167 +1,130 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth";
 import api from "@/lib/api";
-import { fmtData, fmtDataHora } from "@/lib/utils";
+import { fmtDataHora } from "@/lib/utils";
+import {
+  SEGMENTOS,
+  PESO,
+  classificar,
+  scoreCriticidade,
+  indexarAtivas,
+  acaoAtivaDe,
+  normalizar,
+} from "@/lib/estoque";
+import Ranking from "@/components/dashboard/Ranking";
+import TabelaVencimentos from "@/components/dashboard/TabelaVencimentos";
+import RebaixaModal from "@/components/RebaixaModal";
 
-const SEGMENTS = [
-  { key: "critico", label: "Crítico",  sub: "1 – 15 dias",  hex: "#dc2626", light: "#fef2f2", border: "#fca5a5" },
-  { key: "alerta",  label: "Alerta",   sub: "16 – 30 dias", hex: "#ea580c", light: "#fff7ed", border: "#fdba74" },
-  { key: "atencao", label: "Atenção",  sub: "31 – 60 dias", hex: "#ca8a04", light: "#fefce8", border: "#fde047" },
-  { key: "ok",      label: "Regular",  sub: "> 60 dias",    hex: "#16a34a", light: "#f0fdf4", border: "#86efac" },
-  { key: "vencido", label: "Vencido",  sub: "0 dias",       hex: "#64748b", light: "#f8fafc", border: "#cbd5e1" },
+const HORIZONTES = [
+  { value: "todos", label: "Todos" },
+  { value: 15, label: "≤ 15 dias" },
+  { value: 30, label: "≤ 30 dias" },
 ];
+const PAGINA = 50;
+const FILTROS_VAZIOS = { busca: "", rede: "", loja: "", produtoCodigo: "" };
+const PRINCIPAIS = new Set(["critico", "alerta", "atencao"]);
 
-// ── Gráfico rosca SVG ───────────────────────────────────────────────────────
-function Donut({ data, total }) {
-  const R = 54, CX = 64, CY = 64, SW = 18;
-  const circ = 2 * Math.PI * R;
-  let acc = 0;
-  const slices = SEGMENTS.map((s) => {
-    const v = data?.[s.key] ?? 0;
-    const dash = total > 0 ? (v / total) * circ : 0;
-    const slice = { ...s, v, dash, offset: -acc };
-    acc += dash;
-    return slice;
-  }).filter((s) => s.v > 0);
+const fmtNum = (n) => Number(n || 0).toLocaleString("pt-BR");
+const chaveProduto = (it) => it.produtoCodigo || it.produto;
 
+// ── Pequenos blocos visuais ──────────────────────────────────────────────────
+function ChipsHorizonte({ value, onChange }) {
   return (
-    <svg viewBox="0 0 128 128" className="w-32 h-32 -rotate-90">
-      <circle cx={CX} cy={CY} r={R} fill="none" stroke="#e2e8f0" strokeWidth={SW} />
-      {slices.map((s) => (
-        <circle key={s.key} cx={CX} cy={CY} r={R} fill="none"
-          stroke={s.hex} strokeWidth={SW}
-          strokeDasharray={`${s.dash} ${circ - s.dash}`}
-          strokeDashoffset={s.offset}
-          strokeLinecap="butt"
-        />
-      ))}
-    </svg>
-  );
-}
-
-// ── Barra de progresso fina ─────────────────────────────────────────────────
-function ProgressBar({ pct, hex }) {
-  return (
-    <div className="h-1 w-full rounded-full bg-slate-100 overflow-hidden">
-      <div className="h-full rounded-full transition-all duration-500" style={{ width: `${pct}%`, backgroundColor: hex }} />
-    </div>
-  );
-}
-
-// ── Sparkline SVG (barras verticais mini) ───────────────────────────────────
-function Sparkbars({ data, total }) {
-  const vals = SEGMENTS.map((s) => ({ hex: s.hex, v: data?.[s.key] ?? 0 }));
-  const max = Math.max(...vals.map((x) => x.v), 1);
-  const W = 48, H = 24, barW = 6, gap = 2;
-  return (
-    <svg viewBox={`0 0 ${W} ${H}`} className="w-12 h-6">
-      {vals.map((x, i) => {
-        const h = Math.max((x.v / max) * H, 1);
-        const xPos = i * (barW + gap);
-        return <rect key={i} x={xPos} y={H - h} width={barW} height={h} fill={x.hex} rx="1" />;
-      })}
-    </svg>
-  );
-}
-
-// ── Card KPI ────────────────────────────────────────────────────────────────
-function KpiCard({ s, valor, total }) {
-  const pct = total > 0 ? (valor / total) * 100 : 0;
-  const isAlert = (s.key === "critico" || s.key === "vencido") && valor > 0;
-  return (
-    <div
-      className="relative bg-white rounded-2xl border p-5 flex flex-col gap-3 hover:shadow-md transition-shadow"
-      style={{ borderColor: isAlert ? s.border : "#e2e8f0" }}
-    >
-      {/* topo colorido */}
-      <div className="flex items-center justify-between">
-        <span
-          className="text-xs font-semibold uppercase tracking-widest px-2 py-0.5 rounded-md"
-          style={{ color: s.hex, backgroundColor: s.light }}
+    <div className="flex items-center gap-1.5">
+      {HORIZONTES.map((h) => (
+        <button
+          key={h.value}
+          type="button"
+          onClick={() => onChange(h.value)}
+          className={`chip ${value === h.value ? "chip-active" : ""}`}
         >
-          {s.label}
-        </span>
-        {isAlert && (
-          <span className="h-2 w-2 rounded-full animate-pulse" style={{ backgroundColor: s.hex }} />
-        )}
-      </div>
-
-      {/* número */}
-      <div className="text-4xl sm:text-5xl font-black tabular-nums leading-none" style={{ color: s.hex }}>
-        {valor.toLocaleString("pt-BR")}
-      </div>
-
-      {/* legenda + barra */}
-      <div className="space-y-1.5">
-        <div className="flex justify-between text-xs text-slate-400">
-          <span>{s.sub}</span>
-          <span className="font-mono">{pct.toFixed(1)}%</span>
-        </div>
-        <ProgressBar pct={pct} hex={s.hex} />
-      </div>
+          {h.label}
+        </button>
+      ))}
     </div>
   );
 }
 
-// ── Tabela itens críticos ────────────────────────────────────────────────────
-function TabelaCriticos({ itens }) {
-  const top = [...itens]
-    .filter((i) => i.diasParaVencer >= 1 && i.diasParaVencer <= 15)
-    .sort((a, b) => a.diasParaVencer - b.diasParaVencer)
-    .slice(0, 8);
-
-  if (!top.length)
-    return <p className="text-sm text-slate-400 py-6 text-center">Nenhum item crítico no momento.</p>;
-
+function StatTile({ label, faixa, itens, unidades, hex, alerta }) {
   return (
-    <div className="overflow-x-auto w-full">
-    <table className="w-full text-sm min-w-[480px]">
-      <thead>
-        <tr className="border-b border-slate-100 text-xs text-slate-400 uppercase tracking-wider">
-          <th className="text-left pb-2 pr-4 font-medium">Produto</th>
-          <th className="text-left pb-2 pr-4 font-medium">Cliente</th>
-          <th className="text-right pb-2 pr-4 font-medium">Qtd</th>
-          <th className="text-right pb-2 pr-4 font-medium">Validade</th>
-          <th className="text-right pb-2 font-medium">Dias</th>
-        </tr>
-      </thead>
-      <tbody className="divide-y divide-slate-50">
-        {top.map((item, i) => {
-          const hex = item.diasParaVencer <= 7 ? "#dc2626" : "#ea580c";
-          return (
-            <tr key={i} className="hover:bg-slate-50 transition-colors">
-              <td className="py-2 pr-4 text-slate-800 font-medium max-w-[200px] truncate">{item.produto}</td>
-              <td className="py-2 pr-4 text-slate-500 max-w-[160px] truncate">{item.cliente}</td>
-              <td className="py-2 pr-4 text-right font-mono text-slate-700">{item.quantidade}</td>
-              <td className="py-2 pr-4 text-right font-mono text-slate-500">{fmtData(item.dataValidade)}</td>
-              <td className="py-2 text-right">
-                <span
-                  className="inline-block rounded-full px-2 py-0.5 text-xs font-bold"
-                  style={{ color: hex, backgroundColor: hex + "18" }}
-                >
-                  {item.diasParaVencer}d
-                </span>
-              </td>
-            </tr>
-          );
-        })}
-      </tbody>
-    </table>
+    <div className="bg-white rounded-2xl border p-4 sm:p-5 min-w-0" style={{ borderColor: alerta ? hex + "55" : "#e2e8f0" }}>
+      <div className="flex items-center justify-between gap-2">
+        <span className="text-[11px] font-semibold uppercase tracking-widest truncate" style={{ color: hex }}>{label}</span>
+        {alerta && <span className="h-2 w-2 rounded-full animate-pulse shrink-0" style={{ backgroundColor: hex }} />}
+      </div>
+      <div className="mt-2 text-3xl sm:text-4xl font-black tabular-nums leading-none" style={{ color: hex }}>{fmtNum(itens)}</div>
+      <div className="mt-1.5 flex items-baseline justify-between gap-2 text-xs text-slate-400">
+        <span className="truncate">{faixa}</span>
+        <span className="font-semibold text-slate-600 tabular-nums whitespace-nowrap">{fmtNum(unidades)} un</span>
+      </div>
     </div>
   );
 }
 
-// ── Page ────────────────────────────────────────────────────────────────────
+function BarraComposicao({ resumo }) {
+  const total = resumo.totalItens;
+  if (!total) return null;
+  const segs = SEGMENTOS.filter((s) => resumo.por[s.key].itens > 0);
+  const pct = (s) => (resumo.por[s.key].itens / total) * 100;
+  return (
+    <div className="bg-white rounded-2xl border border-slate-100 px-5 py-4 mb-5">
+      <div className="flex h-2.5 w-full overflow-hidden rounded-full gap-0.5">
+        {segs.map((s) => (pct(s) < 0.5 ? null : (
+          <div
+            key={s.key}
+            title={`${s.label}: ${pct(s).toFixed(1)}%`}
+            className="h-full transition-all duration-500"
+            style={{ width: `${pct(s)}%`, backgroundColor: s.hex }}
+          />
+        )))}
+      </div>
+      <div className="mt-2.5 flex flex-wrap gap-x-4 gap-y-1">
+        {segs.map((s) => (
+          <div key={s.key} className="flex items-center gap-1.5 text-xs text-slate-500">
+            <span className="h-2 w-2 rounded-full" style={{ backgroundColor: s.hex }} />
+            {s.label}
+            <span className="font-semibold text-slate-700 tabular-nums">{pct(s).toFixed(0)}%</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function Spinner({ texto }) {
+  return (
+    <div className="flex items-center justify-center h-64">
+      <div className="flex flex-col items-center gap-3">
+        <div className="h-7 w-7 rounded-full border-2 border-brand border-t-transparent animate-spin" />
+        <p className="text-sm text-slate-400">{texto}</p>
+      </div>
+    </div>
+  );
+}
+
+// ── Página ───────────────────────────────────────────────────────────────────
 export default function DashboardPage() {
   const router = useRouter();
   const { user, loading } = useAuth();
-  const [resumo, setResumo] = useState(null);
+
   const [itens, setItens] = useState([]);
+  const [ativas, setAtivas] = useState([]);
   const [pageLoading, setPageLoading] = useState(true);
+  const [erro, setErro] = useState("");
   const [atualizado, setAtualizado] = useState(null);
+
+  const [horizonte, setHorizonte] = useState("todos");
+  const [ordemLojas, setOrdemLojas] = useState("unidades");
+  const [filtros, setFiltros] = useState(FILTROS_VAZIOS);
+  const [ordem, setOrdem] = useState({ campo: "dias", dir: 1 });
+  const [visiveis, setVisiveis] = useState(PAGINA);
+
+  const [formItem, setFormItem] = useState(null);
+  const [toast, setToast] = useState("");
+  const tabelaRef = useRef(null);
 
   // Proteger rota: apenas admin
   useEffect(() => {
@@ -170,41 +133,220 @@ export default function DashboardPage() {
     }
   }, [user, loading, router]);
 
-  const carregar = useCallback(async () => {
-    setPageLoading(true);
+  const carregarAtivas = useCallback(async () => {
     try {
-      const [r1, r2] = await Promise.all([
-        api.get("/estoque/resumo"),
-        api.get("/estoque?limit=200"),
-      ]);
-      setResumo(r1.data);
-      setItens(r2.data?.itens ?? []);
-      setAtualizado(new Date());
-    } catch (_) {}
-    finally { setPageLoading(false); }
+      const { data } = await api.get("/solicitacoes/ativas");
+      setAtivas(data.ativas || []);
+    } catch {
+      setAtivas([]);
+    }
   }, []);
 
-  useEffect(() => { carregar(); }, [carregar]);
+  const carregar = useCallback(async () => {
+    setPageLoading(true);
+    setErro("");
+    try {
+      const { data } = await api.get("/estoque", { params: { limit: 5000 } });
+      setItens(data.itens || []);
+      setAtualizado(new Date());
+    } catch {
+      setErro("Não foi possível carregar o estoque. Tente atualizar.");
+    } finally {
+      setPageLoading(false);
+    }
+    carregarAtivas();
+  }, [carregarAtivas]);
 
-  const total = resumo ? Object.values(resumo).reduce((a, b) => a + b, 0) : 0;
-  const urgente = (resumo?.critico ?? 0) + (resumo?.vencido ?? 0);
+  useEffect(() => { carregar(); }, [carregar]);
+  useEffect(() => { setVisiveis(PAGINA); }, [filtros, ordem, horizonte]);
+
+  // ── Derivações ─────────────────────────────────────────────────────────────
+  const itensBase = useMemo(
+    () => itens.map((it) => {
+      const dias = it.diasParaVencer ?? null;
+      return { ...it, diasParaVencer: dias, quantidade: Number(it.quantidade) || 0, classificacao: classificar(dias) };
+    }),
+    [itens]
+  );
+
+  const itensJanela = useMemo(
+    () => (horizonte === "todos"
+      ? itensBase
+      : itensBase.filter((it) => it.diasParaVencer != null && it.diasParaVencer <= horizonte)),
+    [itensBase, horizonte]
+  );
+
+  const resumo = useMemo(() => {
+    const por = {};
+    for (const s of SEGMENTOS) por[s.key] = { itens: 0, unidades: 0 };
+    let totalItens = 0;
+    let totalUnidades = 0;
+    for (const it of itensJanela) {
+      por[it.classificacao].itens += 1;
+      por[it.classificacao].unidades += it.quantidade;
+      totalItens += 1;
+      totalUnidades += it.quantidade;
+    }
+    return { por, totalItens, totalUnidades };
+  }, [itensJanela]);
+
+  const rankingLojas = useMemo(() => {
+    const map = new Map();
+    for (const it of itensJanela) {
+      let l = map.get(it.clienteCodigo);
+      if (!l) {
+        l = {
+          clienteCodigo: it.clienteCodigo,
+          nome: it.cliente,
+          codigoRede: it.codigoRede || "",
+          redeSubrede: it.redeSubrede || "",
+          itens: [],
+          unidades: 0,
+          criticos: 0,
+          menorDias: null,
+        };
+        map.set(it.clienteCodigo, l);
+      }
+      l.itens.push(it);
+      l.unidades += it.quantidade;
+      if (it.classificacao === "critico") l.criticos += 1;
+      if (it.diasParaVencer != null && (l.menorDias == null || it.diasParaVencer < l.menorDias)) l.menorDias = it.diasParaVencer;
+    }
+    const dias = (l) => (l.menorDias == null ? Infinity : l.menorDias);
+    const lista = [...map.values()].map(({ itens: its, ...l }) => ({ ...l, qtdItens: its.length, score: scoreCriticidade(its) }));
+    lista.sort((a, b) => (ordemLojas === "unidades"
+      ? (b.unidades - a.unidades) || (b.score - a.score) || (dias(a) - dias(b))
+      : (b.score - a.score) || (b.unidades - a.unidades) || (dias(a) - dias(b))));
+    return lista.slice(0, 10);
+  }, [itensJanela, ordemLojas]);
+
+  const rankingProdutos = useMemo(() => {
+    const map = new Map();
+    for (const it of itensJanela) {
+      const k = chaveProduto(it);
+      let p = map.get(k);
+      if (!p) {
+        p = { chave: k, nome: it.produto, unidades: 0, lojas: new Set(), criticos: 0, menorDias: null };
+        map.set(k, p);
+      }
+      p.unidades += it.quantidade;
+      p.lojas.add(it.clienteCodigo);
+      if (it.classificacao === "critico") p.criticos += 1;
+      if (it.diasParaVencer != null && (p.menorDias == null || it.diasParaVencer < p.menorDias)) p.menorDias = it.diasParaVencer;
+    }
+    const dias = (p) => (p.menorDias == null ? Infinity : p.menorDias);
+    return [...map.values()]
+      .map((p) => ({ ...p, lojas: p.lojas.size }))
+      .sort((a, b) => (b.unidades - a.unidades) || (dias(a) - dias(b)))
+      .slice(0, 10);
+  }, [itensJanela]);
+
+  const opcoesRede = useMemo(() => {
+    const m = new Map();
+    for (const it of itensJanela) if (it.codigoRede) m.set(it.codigoRede, it.redeSubrede || it.codigoRede);
+    return [...m.entries()]
+      .map(([value, label]) => ({ value, label }))
+      .sort((a, b) => a.label.localeCompare(b.label, "pt-BR"));
+  }, [itensJanela]);
+
+  const opcoesLoja = useMemo(() => {
+    const m = new Map();
+    for (const it of itensJanela) {
+      if (filtros.rede && it.codigoRede !== filtros.rede) continue;
+      const o = m.get(it.clienteCodigo) || { value: it.clienteCodigo, label: it.cliente, n: 0 };
+      o.n += 1;
+      m.set(it.clienteCodigo, o);
+    }
+    return [...m.values()].sort((a, b) => a.label.localeCompare(b.label, "pt-BR"));
+  }, [itensJanela, filtros.rede]);
+
+  const produtoFiltradoNome = useMemo(() => {
+    if (!filtros.produtoCodigo) return "";
+    const it = itensBase.find((x) => chaveProduto(x) === filtros.produtoCodigo);
+    return it ? it.produto : filtros.produtoCodigo;
+  }, [itensBase, filtros.produtoCodigo]);
+
+  const linhasTodas = useMemo(() => {
+    const busca = normalizar(filtros.busca).trim();
+    const lista = itensJanela.filter((it) =>
+      (!filtros.rede || it.codigoRede === filtros.rede) &&
+      (!filtros.loja || it.clienteCodigo === filtros.loja) &&
+      (!filtros.produtoCodigo || chaveProduto(it) === filtros.produtoCodigo) &&
+      (!busca || normalizar(`${it.cliente} ${it.produto}`).includes(busca))
+    );
+
+    const dir = ordem.dir;
+    const str = (a, b) => (a || "").localeCompare(b || "", "pt-BR", { sensitivity: "base" });
+    // null sempre por ultimo, independente da direcao
+    const num = (a, b, d) => {
+      if (a == null && b == null) return 0;
+      if (a == null) return 1;
+      if (b == null) return -1;
+      return (a - b) * d;
+    };
+    const cmp = {
+      cliente:    (a, b) => str(a.cliente, b.cliente) * dir,
+      produto:    (a, b) => str(a.produto, b.produto) * dir,
+      quantidade: (a, b) => num(a.quantidade, b.quantidade, dir),
+      validade:   (a, b) => num(a.diasParaVencer, b.diasParaVencer, dir),
+      dias:       (a, b) => num(a.diasParaVencer, b.diasParaVencer, dir),
+      status:     (a, b) => (PESO[b.classificacao] - PESO[a.classificacao]) * dir,
+    }[ordem.campo] || (() => 0);
+    const desempate = (a, b) =>
+      num(a.diasParaVencer, b.diasParaVencer, 1) || str(a.cliente, b.cliente) || str(a.produto, b.produto);
+
+    lista.sort((a, b) => cmp(a, b) || desempate(a, b));
+    return lista;
+  }, [itensJanela, filtros, ordem]);
+
+  const linhas = useMemo(() => linhasTodas.slice(0, visiveis), [linhasTodas, visiveis]);
+
+  const ativasIdx = useMemo(() => indexarAtivas(ativas), [ativas]);
+  const getAcaoAtiva = useCallback((it) => acaoAtivaDe(ativasIdx, it), [ativasIdx]);
+
+  // ── Interações ─────────────────────────────────────────────────────────────
+  function irParaTabela() {
+    requestAnimationFrame(() => tabelaRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }));
+  }
+  function selecionarLoja(l) {
+    setFiltros((f) => (f.loja === l.clienteCodigo
+      ? { ...f, loja: "" }
+      : { ...f, loja: l.clienteCodigo, rede: l.codigoRede || "", produtoCodigo: "" }));
+    irParaTabela();
+  }
+  function selecionarProduto(p) {
+    setFiltros((f) => ({ ...f, produtoCodigo: f.produtoCodigo === p.chave ? "" : p.chave }));
+    irParaTabela();
+  }
+  function limpar() {
+    setFiltros(FILTROS_VAZIOS);
+  }
+  function ordenar(campo) {
+    setOrdem((o) => ({ campo, dir: o.campo === campo ? -o.dir : 1 }));
+  }
+  function enviado() {
+    setToast("Solicitação enviada!");
+    setTimeout(() => setToast(""), 3000);
+    carregarAtivas();
+  }
+
+  const tilesExtras = SEGMENTOS.filter((s) => !PRINCIPAIS.has(s.key) && resumo.por[s.key].itens > 0);
+  const gridTiles = { 4: "lg:grid-cols-4", 5: "lg:grid-cols-5", 6: "lg:grid-cols-6" }[4 + tilesExtras.length] || "lg:grid-cols-4";
 
   return (
     <div>
-      {/* ── Header ── */}
-      <div className="flex items-start justify-between gap-3 mb-6 flex-wrap">
+      {/* Header */}
+      <div className="flex items-start justify-between gap-3 mb-5 flex-wrap">
         <div>
           <p className="text-xs font-semibold uppercase tracking-widest text-brand mb-1">Valemilk · Controle Comercial</p>
           <h1 className="text-xl sm:text-2xl font-black text-slate-900">Painel de Vencimentos</h1>
           <p className="text-xs text-slate-400 mt-0.5">Estoque crítico · fonte: relatório BI (Ativmob)</p>
         </div>
-        <div className="flex items-center gap-2">
-          {atualizado && (
-            <span className="hidden sm:block text-xs text-slate-400">
-              {fmtDataHora(atualizado)}
-            </span>
-          )}
+        <div className="flex items-center gap-2 flex-wrap">
+          <ChipsHorizonte value={horizonte} onChange={setHorizonte} />
+          {atualizado && <span className="hidden sm:block text-xs text-slate-400">{fmtDataHora(atualizado)}</span>}
           <button
+            type="button"
             onClick={carregar}
             disabled={pageLoading}
             className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-medium text-slate-600 hover:bg-slate-50 transition disabled:opacity-40 flex items-center gap-1.5"
@@ -218,140 +360,112 @@ export default function DashboardPage() {
       </div>
 
       {pageLoading ? (
-        <div className="flex items-center justify-center h-64">
-          <div className="flex flex-col items-center gap-3">
-            <div className="h-7 w-7 rounded-full border-2 border-brand border-t-transparent animate-spin" />
-            <p className="text-sm text-slate-400">Carregando dados...</p>
-          </div>
-        </div>
+        <Spinner texto="Carregando dados..." />
+      ) : erro ? (
+        <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{erro}</div>
       ) : (
         <>
-          {/* ── Alerta ── */}
-          {urgente > 0 && (
-            <div className="mb-5 flex items-center gap-3 rounded-xl border border-red-200 bg-red-50 px-4 py-3">
-              <span className="h-2 w-2 rounded-full bg-red-500 animate-pulse flex-shrink-0" />
-              <p className="text-sm text-red-700">
-                <span className="font-bold">{urgente} produto{urgente > 1 ? "s" : ""}</span> requerem ação imediata — vencimento em até 15 dias com estoque disponível.
-              </p>
-            </div>
-          )}
-
-          {/* ── KPI Cards ── */}
-          <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-3 mb-5">
-            {SEGMENTS.map((s) => (
-              <KpiCard key={s.key} s={s} valor={resumo?.[s.key] ?? 0} total={total} />
+          {/* Resumo */}
+          <div className={`grid grid-cols-2 ${gridTiles} gap-3 mb-3`}>
+            <StatTile label="Total" faixa="itens monitorados" itens={resumo.totalItens} unidades={resumo.totalUnidades} hex="#0056a6" />
+            {SEGMENTOS.filter((s) => PRINCIPAIS.has(s.key)).map((s) => (
+              <StatTile
+                key={s.key}
+                label={s.label}
+                faixa={s.faixa}
+                itens={resumo.por[s.key].itens}
+                unidades={resumo.por[s.key].unidades}
+                hex={s.hex}
+                alerta={s.key === "critico" && resumo.por.critico.itens > 0}
+              />
+            ))}
+            {tilesExtras.map((s) => (
+              <StatTile key={s.key} label={s.label} faixa={s.faixa} itens={resumo.por[s.key].itens} unidades={resumo.por[s.key].unidades} hex={s.hex} />
             ))}
           </div>
+          <BarraComposicao resumo={resumo} />
 
-          {/* ── Linha 2: composição + distribuição + métricas ── */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-4">
-
-            {/* Rosca */}
-            <div className="bg-white rounded-2xl border border-slate-100 p-6 flex flex-col items-center gap-4">
-              <p className="self-start text-xs font-semibold uppercase tracking-widest text-slate-400">Composição</p>
-              <div className="relative">
-                <Donut data={resumo} total={total} />
-                <div className="absolute inset-0 flex flex-col items-center justify-center">
-                  <span className="text-2xl font-black text-slate-900">{total}</span>
-                  <span className="text-[10px] uppercase tracking-wider text-slate-400">itens</span>
-                </div>
-              </div>
-              <div className="w-full space-y-2">
-                {SEGMENTS.map((s) => (
-                  <div key={s.key} className="flex items-center justify-between text-xs">
-                    <div className="flex items-center gap-2">
-                      <span className="h-2 w-2 rounded-full flex-shrink-0" style={{ backgroundColor: s.hex }} />
-                      <span className="text-slate-500">{s.label}</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className="font-semibold text-slate-700">{resumo?.[s.key] ?? 0}</span>
-                      <span className="text-slate-300 font-mono w-9 text-right">
-                        {total > 0 ? ((resumo?.[s.key] ?? 0) / total * 100).toFixed(0) : 0}%
-                      </span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Distribuição + métricas */}
-            <div className="lg:col-span-2 bg-white rounded-2xl border border-slate-100 p-6 flex flex-col gap-5">
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-widest text-slate-400 mb-3">Distribuição de Risco</p>
-                {/* barra segmentada */}
-                <div className="flex h-4 w-full overflow-hidden rounded-lg gap-0.5">
-                  {SEGMENTS.map((s) => {
-                    const pct = total > 0 ? (resumo?.[s.key] ?? 0) / total * 100 : 0;
-                    if (pct < 0.5) return null;
-                    return (
-                      <div key={s.key} title={`${s.label}: ${pct.toFixed(1)}%`}
-                        className="h-full transition-all duration-500"
-                        style={{ width: `${pct}%`, backgroundColor: s.hex }}
-                      />
-                    );
-                  })}
-                </div>
-                <div className="mt-2 flex justify-between">
-                  {SEGMENTS.map((s) => {
-                    const pct = total > 0 ? (resumo?.[s.key] ?? 0) / total * 100 : 0;
-                    return (
-                      <div key={s.key} className="text-center" style={{ width: "19%" }}>
-                        <div className="text-xs font-bold" style={{ color: s.hex }}>{pct.toFixed(0)}%</div>
-                        <div className="text-[10px] text-slate-400 truncate">{s.label}</div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-
-              {/* 3 métricas */}
-              <div className="grid grid-cols-3 gap-2 pt-4 border-t border-slate-100">
-                {[
-                  { label: "Imediato",  val: urgente,              sub: "Crít. + Venc.", hex: urgente > 0 ? "#dc2626" : "#94a3b8" },
-                  { label: "Alerta",    val: resumo?.alerta ?? 0,  sub: "16–30 dias",    hex: (resumo?.alerta ?? 0) > 0 ? "#ea580c" : "#94a3b8" },
-                  { label: "Total",     val: total,                sub: "monitorados",   hex: "#0056a6" },
-                ].map((m) => (
-                  <div key={m.label} className="rounded-xl bg-slate-50 p-3 min-w-0 overflow-hidden">
-                    <p className="text-[10px] uppercase tracking-wide text-slate-400 font-semibold truncate">{m.label}</p>
-                    <p className="text-2xl font-black tabular-nums mt-1 leading-none" style={{ color: m.hex }}>{m.val.toLocaleString("pt-BR")}</p>
-                    <p className="text-[10px] text-slate-400 mt-0.5 truncate">{m.sub}</p>
-                  </div>
-                ))}
-              </div>
-
-              {/* Indicador de urgência */}
-              <div className="pt-2 border-t border-slate-100">
-                <div className="flex justify-between text-xs text-slate-400 mb-1.5">
-                  <span className="font-medium text-slate-600">Índice de urgência</span>
-                  <span className="font-mono">{total > 0 ? (urgente / total * 100).toFixed(1) : "0.0"}%</span>
-                </div>
-                <div className="h-1.5 w-full rounded-full bg-slate-100 overflow-hidden">
-                  <div
-                    className="h-full rounded-full transition-all duration-500"
-                    style={{
-                      width: `${total > 0 ? Math.min(urgente / total * 100, 100) : 0}%`,
-                      background: "linear-gradient(to right, #f97316, #dc2626)",
-                    }}
-                  />
-                </div>
-              </div>
-            </div>
+          {/* Macro: rankings */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-5">
+            <Ranking
+              titulo="Lojas mais críticas"
+              subtitulo={ordemLojas === "unidades" ? "Por unidades a vencer" : "Por score de criticidade"}
+              itens={rankingLojas}
+              chave="clienteCodigo"
+              selecionada={filtros.loja}
+              onSelect={selecionarLoja}
+              renderLabel={(l) => l.nome}
+              renderSub={(l) => [
+                l.redeSubrede || null,
+                `${l.qtdItens} ${l.qtdItens === 1 ? "item" : "itens"}`,
+                l.criticos ? `${l.criticos} crít.` : null,
+              ].filter(Boolean).join(" · ")}
+              renderValor={(l) => (ordemLojas === "unidades" ? `${fmtNum(l.unidades)} un` : fmtNum(l.score))}
+              renderValorSub={(l) => (ordemLojas === "unidades"
+                ? (l.menorDias != null ? `vence em ${l.menorDias}d` : null)
+                : `${fmtNum(l.unidades)} un`)}
+              controle={(
+                <select
+                  value={ordemLojas}
+                  onChange={(e) => setOrdemLojas(e.target.value)}
+                  className="shrink-0 text-xs border border-slate-200 rounded-lg px-2 py-1.5 bg-white text-slate-600 focus:outline-none focus:ring-2 focus:ring-brand/20"
+                >
+                  <option value="unidades">Unidades</option>
+                  <option value="criticidade">Criticidade</option>
+                </select>
+              )}
+              vazio="Nenhuma loja nesse horizonte."
+            />
+            <Ranking
+              titulo="Produtos com mais unidades a vencer"
+              subtitulo="Somando todas as lojas"
+              itens={rankingProdutos}
+              chave="chave"
+              selecionada={filtros.produtoCodigo}
+              onSelect={selecionarProduto}
+              renderLabel={(p) => p.nome}
+              renderSub={(p) => [
+                `${p.lojas} ${p.lojas === 1 ? "loja" : "lojas"}`,
+                p.menorDias != null ? `vence em ${p.menorDias}d` : null,
+              ].filter(Boolean).join(" · ")}
+              renderValor={(p) => `${fmtNum(p.unidades)} un`}
+              renderValorSub={(p) => (p.criticos ? `${p.criticos} crít.` : null)}
+              vazio="Nenhum produto nesse horizonte."
+            />
           </div>
 
-          {/* ── Tabela críticos ── */}
-          <div className="bg-white rounded-2xl border border-slate-100 p-6">
-            <div className="flex items-center justify-between mb-4">
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-widest text-slate-400">Produtos Críticos</p>
-                <p className="text-sm text-slate-600 mt-0.5">Vencem em até 15 dias · com estoque disponível</p>
-              </div>
-              <span className="rounded-full bg-red-50 border border-red-100 px-2.5 py-0.5 text-xs font-semibold text-red-600">
-                {itens.filter((i) => i.diasParaVencer >= 1 && i.diasParaVencer <= 15).length} itens
-              </span>
-            </div>
-            <TabelaCriticos itens={itens} />
+          {/* Micro: tabela */}
+          <div ref={tabelaRef} className="scroll-mt-20">
+            <TabelaVencimentos
+              linhas={linhas}
+              totalLinhas={linhasTodas.length}
+              filtros={filtros}
+              setFiltros={setFiltros}
+              opcoesRede={opcoesRede}
+              opcoesLoja={opcoesLoja}
+              produtoFiltradoNome={produtoFiltradoNome}
+              ordem={ordem}
+              onOrdenar={ordenar}
+              onMais={() => setVisiveis((v) => v + PAGINA)}
+              onLimpar={limpar}
+              getAcaoAtiva={getAcaoAtiva}
+              onSolicitar={setFormItem}
+            />
           </div>
         </>
+      )}
+
+      {formItem && (
+        <RebaixaModal item={formItem} onClose={() => setFormItem(null)} onEnviado={enviado} />
+      )}
+
+      {toast && (
+        <div className="fixed bottom-28 left-1/2 -translate-x-1/2 bg-emerald-600 text-white text-sm font-semibold px-5 py-2.5 rounded-full shadow-lg z-50 pointer-events-none animate-fade-in flex items-center gap-2">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={3} strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4">
+            <path d="M20 6L9 17l-5-5" />
+          </svg>
+          {toast}
+        </div>
       )}
     </div>
   );
