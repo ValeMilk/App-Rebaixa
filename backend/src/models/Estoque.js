@@ -1,11 +1,12 @@
 const mongoose = require("mongoose");
 
 /**
- * Cada documento eh um item de estoque critico (produto + cliente + lote/validade).
+ * Cada documento eh um item de estoque critico (um produto num cliente).
  * Origem: view public.vw_ativmob_estoque_critico no Postgres de BI (VPS) —
  * ja aplica a definicao de "critico" (visita recente, limite por produto,
- * nao vencido). Um documento por chave (clienteCodigo+produtoCodigo+dataValidade);
- * a cada sync o que nao aparece mais na view eh removido daqui (espelho).
+ * nao vencido). Um documento por chave (clienteCodigo+produtoCodigo);
+ * quantidade = soma de todos os lotes criticos, dataValidade = a mais proxima
+ * entre eles. A cada sync o que nao aparece mais na view eh removido (espelho).
  */
 const estoqueSchema = new mongoose.Schema(
   {

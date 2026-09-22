@@ -7,23 +7,25 @@ const { classificarPorValidade } = require("./classificadorService");
  * ja aplica a definicao de negocio de "critico" (ultima visita nos ultimos
  * 15 dias, limite de quantidade variavel por produto, nao vencido). O app
  * nao re-filtra por cima, confia integralmente no que a view devolve.
- * Uma linha = um lote/validade de um produto num cliente.
+ * Uma linha por cliente+produto: quantidade = estoque total somando todos
+ * os lotes criticos daquele produto no cliente, data_validade = a validade
+ * mais proxima entre eles (a mais urgente).
  */
 const SQL_ESTOQUE = `
 SELECT
     codigo_destino,
-    nome_fantasia_dest,
-    produto_nome,
+    MAX(nome_fantasia_dest) AS nome_fantasia_dest,
     produto_codigo,
-    quantidade,
-    data_validade
+    MAX(produto_nome) AS produto_nome,
+    MAX(estoque_total) AS quantidade,
+    MIN(data_validade) AS data_validade
 FROM public.vw_ativmob_estoque_critico
+GROUP BY codigo_destino, produto_codigo
 ORDER BY data_validade, codigo_destino, produto_codigo;
 `;
 
-function montarChave(clienteCodigo, produtoCodigo, dataValidade) {
-  const validadeISO = dataValidade ? dataValidade.toISOString().slice(0, 10) : "sem-validade";
-  return `${clienteCodigo}|${produtoCodigo}|${validadeISO}`;
+function montarChave(clienteCodigo, produtoCodigo) {
+  return `${clienteCodigo}|${produtoCodigo}`;
 }
 
 /**
@@ -49,7 +51,7 @@ async function sincronizarEstoque() {
     const produtoCodigo = l.produto_codigo != null ? String(l.produto_codigo) : "";
 
     return {
-      chave: montarChave(clienteCodigo, produtoCodigo, dataValidade),
+      chave: montarChave(clienteCodigo, produtoCodigo),
       cliente: l.nome_fantasia_dest || "",
       clienteCodigo,
       produto: l.produto_nome || "",
