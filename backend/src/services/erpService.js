@@ -86,19 +86,19 @@ async function sincronizarCarteira() {
 // ---------------------------------------------------------------------------
 
 const SQL_PRODUTOS = `
--- Created by GitHub Copilot in SSMS - review carefully before executing
 SELECT
-    E02_ID            AS codigo,
-    E02_LIVRE         AS codigoLivre,
-    E02_DESC          AS descricao,
-    e02_validade      as shelf,
-    E29.e29_desc      AS subcategoria,
-    E02_PRECO         AS precoTabela,
-    E02_PRECO_02      AS precoMinimo,
-    E02_PRECO_03      AS precoPromo,
-    E02_CUSTO_lIVRE   AS custo,
-    E23.E23_DESC      AS categoria
-    
+    E02_ID                                       AS codigo,
+    E02_LIVRE                                    AS codigoLivre,
+    E02_DESC                                     AS descricao,
+    e02_validade                                 AS shelf,
+    CAST(ROUND(e02_validade * 0.45, 0) AS INT)   AS rebaixa,
+    CAST(ROUND(e02_validade * 0.73, 0) AS INT)   AS oferta,
+    E29.e29_desc                                 AS subcategoria,
+    E02_PRECO                                    AS precoTabela,
+    E02_PRECO_02                                 AS precoMinimo,
+    E02_PRECO_03                                 AS precoPromo,
+    E02_CUSTO_lIVRE                              AS custo,
+    E23.E23_DESC                                 AS categoria
 FROM dbo.E02 WITH (NOLOCK)
 LEFT JOIN dbo.E23 WITH (NOLOCK) ON E02.E02_ID_E23 = E23.E23_ID
 LEFT JOIN dbo.E29 WITH (NOLOCK) ON E02.E02_ID_E29 = E29.E29_ID

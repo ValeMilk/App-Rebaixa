@@ -19,6 +19,8 @@ const produtoSchema = new mongoose.Schema(
     precoPromo:   { type: Number, default: 0 },  // E02_PRECO_03 (PROMO)
     custo:        { type: Number, default: 0 },  // E02_CUSTO_LIVRE
     shelf:        { type: Number, default: 0 },  // e02_validade (shelf life em dias; 0 = nao informado)
+    diasRebaixa:  { type: Number, default: 0 },  // 45% do shelf: dias restantes em que o produto entra em rebaixa
+    diasOferta:   { type: Number, default: 0 },  // 73% do shelf: dias restantes em que entra em oferta
 
     sincronizadoEm: { type: Date, default: Date.now },
     ativo:          { type: Boolean, default: true },
