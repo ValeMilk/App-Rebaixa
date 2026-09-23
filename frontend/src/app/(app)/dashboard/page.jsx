@@ -25,7 +25,7 @@ const HORIZONTES = [
   { value: 30, label: "≤ 30 dias" },
 ];
 const PAGINA = 50;
-const FILTROS_VAZIOS = { busca: "", rede: "", loja: "", produtoCodigo: "" };
+const FILTROS_VAZIOS = { busca: "", rede: "", loja: "", produtoCodigo: "", venceAte: "" };
 const PRINCIPAIS = new Set(["critico", "alerta", "atencao"]);
 
 const fmtNum = (n) => Number(n || 0).toLocaleString("pt-BR");
@@ -284,6 +284,8 @@ export default function DashboardPage() {
       (!filtros.rede || it.codigoRede === filtros.rede) &&
       (!filtros.loja || it.clienteCodigo === filtros.loja) &&
       (!filtros.produtoCodigo || chaveProduto(it) === filtros.produtoCodigo) &&
+      // dataValidade vem como ISO a meia-noite UTC; comparar o prefixo yyyy-mm-dd evita fuso
+      (!filtros.venceAte || (it.dataValidade && String(it.dataValidade).slice(0, 10) <= filtros.venceAte)) &&
       (!busca || normalizar(`${it.cliente} ${it.produto}`).includes(busca))
     );
 

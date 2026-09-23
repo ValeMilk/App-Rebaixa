@@ -62,7 +62,7 @@ export default function TabelaVencimentos({
   onToggleItem,
   onToggleVisiveis,
 }) {
-  const temFiltro = !!(filtros.busca || filtros.rede || filtros.loja || filtros.produtoCodigo);
+  const temFiltro = !!(filtros.busca || filtros.rede || filtros.loja || filtros.produtoCodigo || filtros.venceAte);
   const lojaForaDasOpcoes = filtros.loja && !opcoesLoja.some((o) => o.value === filtros.loja);
   const visiveisMarcados = linhas.filter((l) => selecionados.has(l._id)).length;
   const todosVisiveis = linhas.length > 0 && visiveisMarcados === linhas.length;
@@ -120,6 +120,17 @@ export default function TabelaVencimentos({
             <option key={o.value} value={o.value}>{o.label} ({o.n})</option>
           ))}
         </select>
+
+        <label className="flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-500 whitespace-nowrap focus-within:border-brand focus-within:ring-4 focus-within:ring-brand/10 transition">
+          Vence até
+          <input
+            type="date"
+            aria-label="Vence até"
+            className="bg-transparent text-slate-700 focus:outline-none min-w-0"
+            value={filtros.venceAte}
+            onChange={(e) => setFiltros((f) => ({ ...f, venceAte: e.target.value }))}
+          />
+        </label>
       </div>
 
       {(produtoFiltradoNome || temFiltro) && (
