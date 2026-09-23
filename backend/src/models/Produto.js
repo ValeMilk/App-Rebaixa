@@ -18,6 +18,7 @@ const produtoSchema = new mongoose.Schema(
     precoMinimo:  { type: Number, default: 0 },  // E02_PRECO_02 (MINIMO)
     precoPromo:   { type: Number, default: 0 },  // E02_PRECO_03 (PROMO)
     custo:        { type: Number, default: 0 },  // E02_CUSTO_LIVRE
+    shelf:        { type: Number, default: 0 },  // e02_validade (shelf life em dias; 0 = nao informado)
 
     sincronizadoEm: { type: Date, default: Date.now },
     ativo:          { type: Boolean, default: true },

@@ -30,6 +30,7 @@ async function sincronizarProdutos() {
           precoMinimo:   Number(p.precoMinimo  || 0),
           precoPromo:    Number(p.precoPromo   || 0),
           custo:         Number(p.custo        || 0),
+          shelf:         Number(p.shelf        || 0),
           sincronizadoEm: new Date(),
           ativo: true,
         },
