@@ -58,9 +58,14 @@ export default function TabelaVencimentos({
   onLimpar,
   getAcaoAtiva,
   onSolicitar,
+  selecionados,
+  onToggleItem,
+  onToggleVisiveis,
 }) {
   const temFiltro = !!(filtros.busca || filtros.rede || filtros.loja || filtros.produtoCodigo);
   const lojaForaDasOpcoes = filtros.loja && !opcoesLoja.some((o) => o.value === filtros.loja);
+  const visiveisMarcados = linhas.filter((l) => selecionados.has(l._id)).length;
+  const todosVisiveis = linhas.length > 0 && visiveisMarcados === linhas.length;
 
   return (
     <section className="bg-white rounded-2xl border border-slate-100 p-5">
@@ -154,9 +159,19 @@ export default function TabelaVencimentos({
       ) : (
         <>
           <div className="overflow-x-auto -mx-5 px-5">
-            <table className="w-full text-sm min-w-[720px]">
+            <table className="w-full text-sm min-w-[780px]">
               <thead>
                 <tr className="border-b border-slate-100 text-xs text-slate-400 uppercase tracking-wider">
+                  <th className="py-2.5 px-3 w-8">
+                    <input
+                      type="checkbox"
+                      aria-label="Selecionar todos os visíveis"
+                      className="h-4 w-4 rounded border-slate-300 accent-brand cursor-pointer align-middle"
+                      checked={todosVisiveis}
+                      ref={(el) => { if (el) el.indeterminate = visiveisMarcados > 0 && !todosVisiveis; }}
+                      onChange={(e) => onToggleVisiveis(linhas.map((l) => l._id), e.target.checked)}
+                    />
+                  </th>
                   {COLUNAS.map((c) => (
                     <Th key={c.campo} col={c} ordem={ordem} onOrdenar={onOrdenar} />
                   ))}
@@ -168,8 +183,18 @@ export default function TabelaVencimentos({
                   const seg = SEGMENTO[l.classificacao] || SEGMENTO.ok;
                   const ativa = getAcaoAtiva(l);
                   const rede = formatarRede({ redeSubrede: l.redeSubrede, subrede: l.subrede, codigoRede: l.codigoRede });
+                  const marcado = selecionados.has(l._id);
                   return (
-                    <tr key={l._id} className="hover:bg-slate-50 transition-colors">
+                    <tr key={l._id} className={`transition-colors ${marcado ? "bg-brand/5" : "hover:bg-slate-50"}`}>
+                      <td className="py-2 px-3">
+                        <input
+                          type="checkbox"
+                          aria-label={`Selecionar ${l.produto} em ${l.cliente}`}
+                          className="h-4 w-4 rounded border-slate-300 accent-brand cursor-pointer align-middle"
+                          checked={marcado}
+                          onChange={() => onToggleItem(l._id)}
+                        />
+                      </td>
                       <td className="py-2 px-3 max-w-[220px]">
                         <div className="font-medium text-slate-800 truncate">{l.cliente}</div>
                         {rede && <div className="text-[10px] text-slate-400 truncate">{rede}</div>}

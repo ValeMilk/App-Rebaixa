@@ -17,6 +17,7 @@ import {
 import Ranking from "@/components/dashboard/Ranking";
 import TabelaVencimentos from "@/components/dashboard/TabelaVencimentos";
 import RebaixaModal from "@/components/RebaixaModal";
+import RebaixaLoteModal from "@/components/RebaixaLoteModal";
 
 const HORIZONTES = [
   { value: "todos", label: "Todos" },
@@ -123,6 +124,8 @@ export default function DashboardPage() {
   const [visiveis, setVisiveis] = useState(PAGINA);
 
   const [formItem, setFormItem] = useState(null);
+  const [selecionados, setSelecionados] = useState(() => new Set());
+  const [loteAberto, setLoteAberto] = useState(false);
   const [toast, setToast] = useState("");
   const tabelaRef = useRef(null);
 
@@ -159,6 +162,15 @@ export default function DashboardPage() {
 
   useEffect(() => { carregar(); }, [carregar]);
   useEffect(() => { setVisiveis(PAGINA); }, [filtros, ordem, horizonte]);
+  // Descarta da selecao itens que sairam do estoque apos um recarregamento
+  useEffect(() => {
+    setSelecionados((s) => {
+      if (s.size === 0) return s;
+      const ids = new Set(itens.map((it) => it._id));
+      const filtrado = new Set([...s].filter((id) => ids.has(id)));
+      return filtrado.size === s.size ? s : filtrado;
+    });
+  }, [itens]);
 
   // ── Derivações ─────────────────────────────────────────────────────────────
   const itensBase = useMemo(
@@ -304,6 +316,15 @@ export default function DashboardPage() {
   const ativasIdx = useMemo(() => indexarAtivas(ativas), [ativas]);
   const getAcaoAtiva = useCallback((it) => acaoAtivaDe(ativasIdx, it), [ativasIdx]);
 
+  const itensSelecionados = useMemo(
+    () => itensBase.filter((it) => selecionados.has(it._id)),
+    [itensBase, selecionados]
+  );
+  const lojasSelecionadas = useMemo(
+    () => new Set(itensSelecionados.map((it) => it.clienteCodigo)).size,
+    [itensSelecionados]
+  );
+
   // ── Interações ─────────────────────────────────────────────────────────────
   function irParaTabela() {
     requestAnimationFrame(() => tabelaRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }));
@@ -324,10 +345,27 @@ export default function DashboardPage() {
   function ordenar(campo) {
     setOrdem((o) => ({ campo, dir: o.campo === campo ? -o.dir : 1 }));
   }
-  function enviado() {
-    setToast("Solicitação enviada!");
+  function enviado(n = 1) {
+    setToast(n > 1 ? `${n} solicitações enviadas!` : "Solicitação enviada!");
     setTimeout(() => setToast(""), 3000);
     carregarAtivas();
+  }
+  function toggleItem(id) {
+    setSelecionados((s) => {
+      const n = new Set(s);
+      if (n.has(id)) n.delete(id); else n.add(id);
+      return n;
+    });
+  }
+  function toggleVisiveis(ids, marcar) {
+    setSelecionados((s) => {
+      const n = new Set(s);
+      for (const id of ids) { if (marcar) n.add(id); else n.delete(id); }
+      return n;
+    });
+  }
+  function limparSelecao() {
+    setSelecionados(new Set());
   }
 
   const tilesExtras = SEGMENTOS.filter((s) => !PRINCIPAIS.has(s.key) && resumo.por[s.key].itens > 0);
@@ -450,13 +488,42 @@ export default function DashboardPage() {
               onLimpar={limpar}
               getAcaoAtiva={getAcaoAtiva}
               onSolicitar={setFormItem}
+              selecionados={selecionados}
+              onToggleItem={toggleItem}
+              onToggleVisiveis={toggleVisiveis}
             />
           </div>
         </>
       )}
 
+      {itensSelecionados.length > 0 && !loteAberto && (
+        <div className="fixed bottom-20 lg:bottom-6 left-1/2 -translate-x-1/2 z-40 flex items-center gap-3 rounded-2xl bg-slate-900 text-white shadow-2xl px-4 py-2.5 animate-slide-up max-w-[calc(100vw-2rem)]">
+          <span className="text-sm whitespace-nowrap">
+            <b>{itensSelecionados.length}</b> {itensSelecionados.length === 1 ? "item" : "itens"} · <b>{lojasSelecionadas}</b> {lojasSelecionadas === 1 ? "loja" : "lojas"}
+          </span>
+          <button type="button" onClick={limparSelecao} className="text-xs text-slate-300 hover:text-white underline whitespace-nowrap">
+            Limpar
+          </button>
+          <button
+            type="button"
+            onClick={() => setLoteAberto(true)}
+            className="rounded-xl bg-brand px-4 py-2 text-sm font-semibold text-white hover:bg-brand-600 active:scale-[0.98] transition whitespace-nowrap"
+          >
+            Criar rebaixa
+          </button>
+        </div>
+      )}
+
       {formItem && (
         <RebaixaModal item={formItem} onClose={() => setFormItem(null)} onEnviado={enviado} />
+      )}
+
+      {loteAberto && (
+        <RebaixaLoteModal
+          itens={itensSelecionados}
+          onClose={() => setLoteAberto(false)}
+          onEnviado={(n) => { enviado(n); limparSelecao(); }}
+        />
       )}
 
       {toast && (
