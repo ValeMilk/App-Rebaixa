@@ -12,15 +12,36 @@ const { classificarPorValidade } = require("./classificadorService");
  * mais proxima entre eles (a mais urgente).
  */
 const SQL_ESTOQUE = `
-SELECT
+WITH agg AS (
+  SELECT
     codigo_destino,
     MAX(nome_fantasia_dest) AS nome_fantasia_dest,
     produto_codigo,
-    MAX(produto_nome) AS produto_nome,
-    MAX(estoque_total) AS quantidade,
-    MIN(data_validade) AS data_validade
-FROM public.vw_ativmob_estoque_critico
-GROUP BY codigo_destino, produto_codigo
+    MAX(produto_nome)       AS produto_nome,
+    MAX(estoque_total)      AS quantidade,
+    MIN(data_validade)      AS data_validade,
+    MAX(shelf_dias)         AS shelf
+  FROM public.vw_ativmob_estoque_critico
+  GROUP BY codigo_destino, produto_codigo
+),
+calc AS (
+  SELECT agg.*,
+         (data_validade - CURRENT_DATE)         AS dias_restantes,
+         shelf - (data_validade - CURRENT_DATE) AS dias_consumidos
+  FROM agg
+)
+SELECT
+  codigo_destino, nome_fantasia_dest, produto_codigo, produto_nome,
+  quantidade, data_validade, shelf,
+  -- pct limitado a [0,1]: validade mais longa que o shelf (dado inconsistente) daria negativo
+  CASE WHEN COALESCE(shelf, 0) <= 0 THEN NULL
+       ELSE ROUND(GREATEST(0, LEAST(1, dias_consumidos::numeric / shelf)), 4) END AS pct_shelf,
+  -- Regra: >= 73% do shelf consumido = rebaixa; >= 45% = giro (oferta interna)
+  CASE WHEN COALESCE(shelf, 0) <= 0                THEN 'sem_shelf'
+       WHEN dias_consumidos >= ROUND(shelf * 0.73) THEN 'rebaixa'
+       WHEN dias_consumidos >= ROUND(shelf * 0.45) THEN 'giro'
+       ELSE 'ok' END AS status_shelf
+FROM calc
 ORDER BY data_validade, codigo_destino, produto_codigo;
 `;
 
@@ -60,6 +81,9 @@ async function sincronizarEstoque() {
       dataValidade,
       diasParaVencer,
       classificacao,
+      shelf: Number(l.shelf) || 0,
+      pctShelf: l.pct_shelf != null ? Number(l.pct_shelf) : null,
+      statusShelf: l.status_shelf || "sem_shelf",
       raw: l,
     };
   });

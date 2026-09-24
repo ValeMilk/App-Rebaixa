@@ -9,7 +9,6 @@ import {
   STATUS_SHELF,
   STATUS_SHELF_MAP,
   PESO_SHELF,
-  classificarShelf,
   scoreShelf,
   indexarAtivas,
   acaoAtivaDe,
@@ -177,7 +176,8 @@ export default function DashboardPage() {
   const itensBase = useMemo(
     () => itens.map((it) => {
       const dias = it.diasParaVencer ?? null;
-      const { status, pct } = classificarShelf({ shelf: it.shelf, diasParaVencer: dias, diasGiro: it.diasGiro, diasRebaixa: it.diasRebaixa });
+      const status = STATUS_SHELF_MAP[it.statusShelf] ? it.statusShelf : "sem_shelf";
+      const pct = it.pctShelf ?? null;
       return { ...it, diasParaVencer: dias, quantidade: Number(it.quantidade) || 0, status, pct };
     }),
     [itens]

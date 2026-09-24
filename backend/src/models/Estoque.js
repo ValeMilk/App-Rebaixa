@@ -28,6 +28,11 @@ const estoqueSchema = new mongoose.Schema(
       index: true,
     },
 
+    // Regua por shelf life, calculada na query do Postgres (estoqueSyncService)
+    shelf: { type: Number, default: 0 },
+    pctShelf: { type: Number },
+    statusShelf: { type: String, enum: ["rebaixa", "giro", "ok", "sem_shelf"], index: true },
+
     raw: { type: mongoose.Schema.Types.Mixed },
   },
   { timestamps: true }
