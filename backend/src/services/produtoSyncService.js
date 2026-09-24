@@ -22,7 +22,7 @@ async function sincronizarProdutos() {
       update: {
         $set: {
           codigo:        String(p.codigo),
-          codigoLivre:   p.codigoLivre  ? String(p.codigoLivre)  : "",
+          codigoLivre:   p.codigoLivre  ? String(p.codigoLivre).trim() : "", // CHAR no SQL Server vem com espacos a direita
           descricao:     p.descricao    || "",
           categoria:     p.categoria    || "",
           subcategoria:  p.subcategoria  || "",
@@ -31,8 +31,8 @@ async function sincronizarProdutos() {
           precoPromo:    Number(p.precoPromo   || 0),
           custo:         Number(p.custo        || 0),
           shelf:         Number(p.shelf        || 0),
-          diasRebaixa:   Number(p.rebaixa      || 0),
-          diasOferta:    Number(p.oferta       || 0),
+          diasGiro:      Number(p.diasGiro     || 0),
+          diasRebaixa:   Number(p.diasRebaixa  || 0),
           sincronizadoEm: new Date(),
           ativo: true,
         },

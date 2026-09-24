@@ -1,7 +1,7 @@
 "use client";
 
 import { fmtData, formatarRede } from "@/lib/utils";
-import { SEGMENTO } from "@/lib/estoque";
+import { STATUS_SHELF_MAP } from "@/lib/estoque";
 import AcaoAtivaBadge from "@/components/AcaoAtivaBadge";
 import { IcoSearch, IcoX, IcoPackage } from "@/components/Icons";
 
@@ -20,7 +20,7 @@ const COLUNAS = [
 ];
 
 function BadgeStatus({ cls }) {
-  const c = SEGMENTO[cls] || SEGMENTO.ok;
+  const c = STATUS_SHELF_MAP[cls] || STATUS_SHELF_MAP.sem_shelf;
   return (
     <span className={`inline-flex items-center gap-1 text-[10px] font-semibold px-1.5 py-0.5 rounded-full border whitespace-nowrap ${c.bg} ${c.text} ${c.border}`}>
       <span className={`w-1.5 h-1.5 rounded-full ${c.dot}`} />
@@ -191,7 +191,8 @@ export default function TabelaVencimentos({
               </thead>
               <tbody className="divide-y divide-slate-50">
                 {linhas.map((l) => {
-                  const seg = SEGMENTO[l.classificacao] || SEGMENTO.ok;
+                  const seg = STATUS_SHELF_MAP[l.status] || STATUS_SHELF_MAP.sem_shelf;
+                  const acao = seg.acao === "oferta_interna" ? "oferta" : "rebaixa";
                   const ativa = getAcaoAtiva(l);
                   const rede = formatarRede({ redeSubrede: l.redeSubrede, subrede: l.subrede, codigoRede: l.codigoRede });
                   const marcado = selecionados.has(l._id);
@@ -220,10 +221,13 @@ export default function TabelaVencimentos({
                         >
                           {l.diasParaVencer ?? "—"}d
                         </span>
+                        <div className="text-[10px] text-slate-400 whitespace-nowrap mt-0.5">
+                          {l.pct != null ? `${Math.round(l.pct * 100)}% do shelf` : "sem shelf"}
+                        </div>
                       </td>
                       <td className="py-2 px-3">
                         <div className="flex items-center gap-1.5">
-                          <BadgeStatus cls={l.classificacao} />
+                          <BadgeStatus cls={l.status} />
                           {ativa && <AcaoAtivaBadge ativa={ativa} />}
                         </div>
                       </td>
@@ -233,7 +237,7 @@ export default function TabelaVencimentos({
                           onClick={() => onSolicitar(l)}
                           className="rounded-lg border border-brand/30 text-brand text-xs font-semibold px-3 py-1.5 hover:bg-brand/5 active:scale-95 transition whitespace-nowrap"
                         >
-                          {ativa ? "Nova rebaixa" : "Rebaixar"}
+                          {ativa ? `Nova ${acao}` : acao === "oferta" ? "Oferta" : "Rebaixar"}
                         </button>
                       </td>
                     </tr>

@@ -6,10 +6,11 @@ import { useAuth } from "@/lib/auth";
 import api from "@/lib/api";
 import { fmtDataHora } from "@/lib/utils";
 import {
-  SEGMENTOS,
-  PESO,
-  classificar,
-  scoreCriticidade,
+  STATUS_SHELF,
+  STATUS_SHELF_MAP,
+  PESO_SHELF,
+  classificarShelf,
+  scoreShelf,
   indexarAtivas,
   acaoAtivaDe,
   normalizar,
@@ -26,7 +27,7 @@ const HORIZONTES = [
 ];
 const PAGINA = 50;
 const FILTROS_VAZIOS = { busca: "", rede: "", loja: "", produtoCodigo: "", venceAte: "" };
-const PRINCIPAIS = new Set(["critico", "alerta", "atencao"]);
+const PRINCIPAIS = new Set(["rebaixa", "giro", "ok"]);
 
 const fmtNum = (n) => Number(n || 0).toLocaleString("pt-BR");
 const chaveProduto = (it) => it.produtoCodigo || it.produto;
@@ -68,7 +69,7 @@ function StatTile({ label, faixa, itens, unidades, hex, alerta }) {
 function BarraComposicao({ resumo }) {
   const total = resumo.totalItens;
   if (!total) return null;
-  const segs = SEGMENTOS.filter((s) => resumo.por[s.key].itens > 0);
+  const segs = STATUS_SHELF.filter((s) => resumo.por[s.key].itens > 0);
   const pct = (s) => (resumo.por[s.key].itens / total) * 100;
   return (
     <div className="bg-white rounded-2xl border border-slate-100 px-5 py-4 mb-5">
@@ -176,7 +177,8 @@ export default function DashboardPage() {
   const itensBase = useMemo(
     () => itens.map((it) => {
       const dias = it.diasParaVencer ?? null;
-      return { ...it, diasParaVencer: dias, quantidade: Number(it.quantidade) || 0, classificacao: classificar(dias) };
+      const { status, pct } = classificarShelf({ shelf: it.shelf, diasParaVencer: dias, diasGiro: it.diasGiro, diasRebaixa: it.diasRebaixa });
+      return { ...it, diasParaVencer: dias, quantidade: Number(it.quantidade) || 0, status, pct };
     }),
     [itens]
   );
@@ -190,12 +192,12 @@ export default function DashboardPage() {
 
   const resumo = useMemo(() => {
     const por = {};
-    for (const s of SEGMENTOS) por[s.key] = { itens: 0, unidades: 0 };
+    for (const s of STATUS_SHELF) por[s.key] = { itens: 0, unidades: 0 };
     let totalItens = 0;
     let totalUnidades = 0;
     for (const it of itensJanela) {
-      por[it.classificacao].itens += 1;
-      por[it.classificacao].unidades += it.quantidade;
+      por[it.status].itens += 1;
+      por[it.status].unidades += it.quantidade;
       totalItens += 1;
       totalUnidades += it.quantidade;
     }
@@ -214,18 +216,20 @@ export default function DashboardPage() {
           redeSubrede: it.redeSubrede || "",
           itens: [],
           unidades: 0,
-          criticos: 0,
+          rebaixa: 0,
+          giro: 0,
           menorDias: null,
         };
         map.set(it.clienteCodigo, l);
       }
       l.itens.push(it);
       l.unidades += it.quantidade;
-      if (it.classificacao === "critico") l.criticos += 1;
+      if (it.status === "rebaixa") l.rebaixa += 1;
+      else if (it.status === "giro") l.giro += 1;
       if (it.diasParaVencer != null && (l.menorDias == null || it.diasParaVencer < l.menorDias)) l.menorDias = it.diasParaVencer;
     }
     const dias = (l) => (l.menorDias == null ? Infinity : l.menorDias);
-    const lista = [...map.values()].map(({ itens: its, ...l }) => ({ ...l, qtdItens: its.length, score: scoreCriticidade(its) }));
+    const lista = [...map.values()].map(({ itens: its, ...l }) => ({ ...l, qtdItens: its.length, score: scoreShelf(its) }));
     lista.sort((a, b) => (ordemLojas === "unidades"
       ? (b.unidades - a.unidades) || (b.score - a.score) || (dias(a) - dias(b))
       : (b.score - a.score) || (b.unidades - a.unidades) || (dias(a) - dias(b))));
@@ -238,12 +242,12 @@ export default function DashboardPage() {
       const k = chaveProduto(it);
       let p = map.get(k);
       if (!p) {
-        p = { chave: k, nome: it.produto, unidades: 0, lojas: new Set(), criticos: 0, menorDias: null };
+        p = { chave: k, nome: it.produto, unidades: 0, lojas: new Set(), rebaixa: 0, menorDias: null };
         map.set(k, p);
       }
       p.unidades += it.quantidade;
       p.lojas.add(it.clienteCodigo);
-      if (it.classificacao === "critico") p.criticos += 1;
+      if (it.status === "rebaixa") p.rebaixa += 1;
       if (it.diasParaVencer != null && (p.menorDias == null || it.diasParaVencer < p.menorDias)) p.menorDias = it.diasParaVencer;
     }
     const dias = (p) => (p.menorDias == null ? Infinity : p.menorDias);
@@ -304,7 +308,7 @@ export default function DashboardPage() {
       quantidade: (a, b) => num(a.quantidade, b.quantidade, dir),
       validade:   (a, b) => num(a.diasParaVencer, b.diasParaVencer, dir),
       dias:       (a, b) => num(a.diasParaVencer, b.diasParaVencer, dir),
-      status:     (a, b) => (PESO[b.classificacao] - PESO[a.classificacao]) * dir,
+      status:     (a, b) => (PESO_SHELF[b.status] - PESO_SHELF[a.status]) * dir,
     }[ordem.campo] || (() => 0);
     const desempate = (a, b) =>
       num(a.diasParaVencer, b.diasParaVencer, 1) || str(a.cliente, b.cliente) || str(a.produto, b.produto);
@@ -370,7 +374,7 @@ export default function DashboardPage() {
     setSelecionados(new Set());
   }
 
-  const tilesExtras = SEGMENTOS.filter((s) => !PRINCIPAIS.has(s.key) && resumo.por[s.key].itens > 0);
+  const tilesExtras = STATUS_SHELF.filter((s) => !PRINCIPAIS.has(s.key) && resumo.por[s.key].itens > 0);
   const gridTiles = { 4: "lg:grid-cols-4", 5: "lg:grid-cols-5", 6: "lg:grid-cols-6" }[4 + tilesExtras.length] || "lg:grid-cols-4";
 
   return (
@@ -408,7 +412,7 @@ export default function DashboardPage() {
           {/* Resumo */}
           <div className={`grid grid-cols-2 ${gridTiles} gap-3 mb-3`}>
             <StatTile label="Total" faixa="itens monitorados" itens={resumo.totalItens} unidades={resumo.totalUnidades} hex="#0056a6" />
-            {SEGMENTOS.filter((s) => PRINCIPAIS.has(s.key)).map((s) => (
+            {STATUS_SHELF.filter((s) => PRINCIPAIS.has(s.key)).map((s) => (
               <StatTile
                 key={s.key}
                 label={s.label}
@@ -416,7 +420,7 @@ export default function DashboardPage() {
                 itens={resumo.por[s.key].itens}
                 unidades={resumo.por[s.key].unidades}
                 hex={s.hex}
-                alerta={s.key === "critico" && resumo.por.critico.itens > 0}
+                alerta={s.key === "rebaixa" && resumo.por.rebaixa.itens > 0}
               />
             ))}
             {tilesExtras.map((s) => (
@@ -438,7 +442,8 @@ export default function DashboardPage() {
               renderSub={(l) => [
                 l.redeSubrede || null,
                 `${l.qtdItens} ${l.qtdItens === 1 ? "item" : "itens"}`,
-                l.criticos ? `${l.criticos} crít.` : null,
+                l.rebaixa ? `${l.rebaixa} rebaixa` : null,
+                l.giro ? `${l.giro} giro` : null,
               ].filter(Boolean).join(" · ")}
               renderValor={(l) => (ordemLojas === "unidades" ? `${fmtNum(l.unidades)} un` : fmtNum(l.score))}
               renderValorSub={(l) => (ordemLojas === "unidades"
@@ -469,7 +474,7 @@ export default function DashboardPage() {
                 p.menorDias != null ? `vence em ${p.menorDias}d` : null,
               ].filter(Boolean).join(" · ")}
               renderValor={(p) => `${fmtNum(p.unidades)} un`}
-              renderValorSub={(p) => (p.criticos ? `${p.criticos} crít.` : null)}
+              renderValorSub={(p) => (p.rebaixa ? `${p.rebaixa} em rebaixa` : null)}
               vazio="Nenhum produto nesse horizonte."
             />
           </div>
@@ -517,7 +522,12 @@ export default function DashboardPage() {
       )}
 
       {formItem && (
-        <RebaixaModal item={formItem} onClose={() => setFormItem(null)} onEnviado={enviado} />
+        <RebaixaModal
+          item={formItem}
+          tipo={STATUS_SHELF_MAP[formItem.status]?.acao || "rebaixa"}
+          onClose={() => setFormItem(null)}
+          onEnviado={enviado}
+        />
       )}
 
       {loteAberto && (

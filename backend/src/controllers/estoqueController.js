@@ -43,7 +43,7 @@ async function listar(req, res) {
       $lookup: {
         from: "produtos",
         localField: "produtoCodigo",
-        foreignField: "codigo",
+        foreignField: "codigoLivre", // o estoque (ATIVMOB) usa o E02_LIVRE, nao o E02_ID
         as: "_p",
       },
     },
@@ -52,6 +52,9 @@ async function listar(req, res) {
         precoTabela: { $arrayElemAt: ["$_p.precoTabela", 0] },
         precoMinimo: { $arrayElemAt: ["$_p.precoMinimo", 0] },
         custo: { $arrayElemAt: ["$_p.custo", 0] },
+        shelf: { $arrayElemAt: ["$_p.shelf", 0] },
+        diasGiro: { $arrayElemAt: ["$_p.diasGiro", 0] },
+        diasRebaixa: { $arrayElemAt: ["$_p.diasRebaixa", 0] },
       },
     },
     { $unset: "_p" },

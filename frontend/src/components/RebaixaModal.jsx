@@ -19,7 +19,8 @@ export function MargemBadge({ pct }) {
   );
 }
 
-export default function RebaixaModal({ item, onClose, onEnviado }) {
+export default function RebaixaModal({ item, onClose, onEnviado, tipo = "rebaixa" }) {
+  const isOferta = tipo === "oferta_interna";
   const [precoOferta, setPrecoOferta] = useState("");
   const [precoPDV, setPrecoPDV] = useState("");
   const [sellout, setSellout] = useState("");
@@ -85,7 +86,7 @@ export default function RebaixaModal({ item, onClose, onEnviado }) {
     setEnviando(true);
     try {
       await api.post("/solicitacoes", {
-        tipo: "rebaixa",
+        tipo,
         cliente: item.cliente,
         clienteCodigo: item.clienteCodigo,
         codigoRede: item.codigoRede || null,
@@ -130,7 +131,7 @@ export default function RebaixaModal({ item, onClose, onEnviado }) {
         <div className="shrink-0 px-4 pt-3 pb-2.5 border-b border-slate-100 bg-white sm:rounded-t-3xl safe-area-pt">
           <div className="flex items-center justify-between gap-3">
             <div className="min-w-0 flex-1">
-              <div className="text-[10px] font-semibold text-brand uppercase tracking-wider mb-0.5">Nova Rebaixa</div>
+              <div className="text-[10px] font-semibold text-brand uppercase tracking-wider mb-0.5">{isOferta ? "Nova Oferta Interna" : "Nova Rebaixa"}</div>
               <h2 className="font-bold text-slate-900 text-base leading-snug line-clamp-2">{item.produto}</h2>
             </div>
             <button onClick={onClose} aria-label="Fechar"
@@ -296,7 +297,7 @@ export default function RebaixaModal({ item, onClose, onEnviado }) {
         {/* Footer fixo com botão */}
         <div className="shrink-0 px-4 py-3 border-t border-slate-100 bg-white sm:rounded-b-3xl">
           <button type="submit" form="form-rebaixa" className="btn-primary w-full py-3 text-base" disabled={enviando}>
-            {enviando ? "Enviando..." : "Solicitar Rebaixa"}
+            {enviando ? "Enviando..." : isOferta ? "Solicitar Oferta" : "Solicitar Rebaixa"}
           </button>
         </div>
       </div>

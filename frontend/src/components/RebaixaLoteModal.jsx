@@ -3,7 +3,11 @@
 import { useEffect, useMemo, useState } from "react";
 import api from "@/lib/api";
 import { fmtData, fmtBRL } from "@/lib/utils";
+import { STATUS_SHELF_MAP } from "@/lib/estoque";
 import { IcoX, IcoAlert, IcoStore } from "@/components/Icons";
+
+// Tipo de solicitacao sugerido pelo status de shelf do item (giro -> oferta interna)
+const tipoDe = (it) => STATUS_SHELF_MAP[it.status]?.acao || "rebaixa";
 
 // Mesmas formulas do RebaixaModal, em funcao pura para aplicar item a item.
 function calcMargens({ precoPDV, precoOferta, sellout, precoUC }) {
@@ -104,7 +108,7 @@ export default function RebaixaLoteModal({ itens, onClose, onEnviado }) {
         itens.map((it) => {
           const d = dadosItem(it);
           return api.post("/solicitacoes", {
-            tipo: "rebaixa",
+            tipo: tipoDe(it),
             cliente: it.cliente,
             clienteCodigo: it.clienteCodigo,
             codigoRede: it.codigoRede || null,
@@ -141,6 +145,13 @@ export default function RebaixaLoteModal({ itens, onClose, onEnviado }) {
   }
 
   const semHistorico = !loadingUC && itens.filter((it) => !ultimaCompra[it._id]?.encontrado).length;
+  const nOfertas = itens.filter((it) => tipoDe(it) === "oferta_interna").length;
+  const nRebaixas = itens.length - nOfertas;
+  const rotuloEnviar = nOfertas && nRebaixas
+    ? `Criar ${itens.length} solicitações (${nRebaixas} ${nRebaixas === 1 ? "rebaixa" : "rebaixas"} · ${nOfertas} ${nOfertas === 1 ? "oferta" : "ofertas"})`
+    : nOfertas
+      ? `Criar ${nOfertas} ${nOfertas === 1 ? "oferta interna" : "ofertas internas"}`
+      : `Criar ${nRebaixas} ${nRebaixas === 1 ? "rebaixa" : "rebaixas"}`;
 
   return (
     <div className="fixed inset-0 z-50 flex flex-col sm:items-center sm:justify-center sm:p-6 animate-fade-in">
@@ -211,7 +222,14 @@ export default function RebaixaLoteModal({ itens, onClose, onEnviado }) {
                       <div key={it._id} className="px-3 py-3 space-y-2">
                         <div className="flex items-start justify-between gap-3">
                           <div className="min-w-0">
-                            <div className="text-sm font-medium text-slate-800 leading-snug">{it.produto}</div>
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <div className="text-sm font-medium text-slate-800 leading-snug">{it.produto}</div>
+                              <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full border whitespace-nowrap ${
+                                tipoDe(it) === "oferta_interna" ? "bg-blue-50 text-blue-700 border-blue-200" : "bg-red-50 text-red-700 border-red-200"
+                              }`}>
+                                {tipoDe(it) === "oferta_interna" ? "Oferta" : "Rebaixa"}
+                              </span>
+                            </div>
                             <div className="text-[11px] text-slate-400 mt-0.5">
                               {it.quantidade} un · vence {fmtData(it.dataValidade)}
                               <span className={`font-semibold ${it.diasParaVencer <= 15 ? "text-red-600" : "text-slate-500"}`}> ({it.diasParaVencer ?? "—"}d)</span>
@@ -279,7 +297,7 @@ export default function RebaixaLoteModal({ itens, onClose, onEnviado }) {
         {/* Footer fixo */}
         <div className="shrink-0 px-4 py-3 border-t border-slate-100 bg-white sm:rounded-b-3xl">
           <button type="submit" form="form-rebaixa-lote" className="btn-primary w-full py-3 text-base" disabled={enviando}>
-            {enviando ? "Enviando..." : `Criar ${itens.length} ${itens.length === 1 ? "solicitação" : "solicitações"}`}
+            {enviando ? "Enviando..." : rotuloEnviar}
           </button>
         </div>
       </div>
