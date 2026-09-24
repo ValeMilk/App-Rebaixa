@@ -26,7 +26,7 @@ const HORIZONTES = [
 ];
 const PAGINA = 50;
 const FILTROS_VAZIOS = { busca: "", rede: "", loja: "", produtoCodigo: "", venceAte: "" };
-const PRINCIPAIS = new Set(["rebaixa", "giro", "ok"]);
+const PRINCIPAIS = new Set(["rebaixa", "giro"]);
 
 const fmtNum = (n) => Number(n || 0).toLocaleString("pt-BR");
 const chaveProduto = (it) => it.produtoCodigo || it.produto;
@@ -375,7 +375,7 @@ export default function DashboardPage() {
   }
 
   const tilesExtras = STATUS_SHELF.filter((s) => !PRINCIPAIS.has(s.key) && resumo.por[s.key].itens > 0);
-  const gridTiles = { 4: "lg:grid-cols-4", 5: "lg:grid-cols-5", 6: "lg:grid-cols-6" }[4 + tilesExtras.length] || "lg:grid-cols-4";
+  const gridTiles = { 3: "lg:grid-cols-3", 4: "lg:grid-cols-4", 5: "lg:grid-cols-5" }[1 + PRINCIPAIS.size + tilesExtras.length] || "lg:grid-cols-5";
 
   return (
     <div>
@@ -384,7 +384,7 @@ export default function DashboardPage() {
         <div>
           <p className="text-xs font-semibold uppercase tracking-widest text-brand mb-1">Valemilk · Controle Comercial</p>
           <h1 className="text-xl sm:text-2xl font-black text-slate-900">Painel de Vencimentos</h1>
-          <p className="text-xs text-slate-400 mt-0.5">Estoque crítico · fonte: relatório BI (Ativmob)</p>
+          <p className="text-xs text-slate-400 mt-0.5">Estoque em giro/rebaixa · fonte: relatório BI (Ativmob)</p>
         </div>
         <div className="flex items-center gap-2 flex-wrap">
           <ChipsHorizonte value={horizonte} onChange={setHorizonte} />

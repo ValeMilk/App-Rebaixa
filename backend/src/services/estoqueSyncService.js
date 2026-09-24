@@ -7,41 +7,51 @@ const { classificarPorValidade } = require("./classificadorService");
  * ja aplica a definicao de negocio de "critico" (ultima visita nos ultimos
  * 15 dias, limite de quantidade variavel por produto, nao vencido). O app
  * nao re-filtra por cima, confia integralmente no que a view devolve.
- * Uma linha por cliente+produto: quantidade = estoque total somando todos
- * os lotes criticos daquele produto no cliente, data_validade = a validade
- * mais proxima entre eles (a mais urgente).
+ * Uma linha por cliente+produto: cada lote (validade) e classificado pelo
+ * shelf; quantidade = soma so dos lotes em giro/rebaixa (lotes ok ficam de
+ * fora), data_validade = a mais proxima entre esses lotes, status = o pior.
+ * Item sem nenhum lote em giro/rebaixa nao entra (exceto sem shelf).
  */
 const SQL_ESTOQUE = `
-WITH agg AS (
+WITH lotes AS (
   SELECT
-    codigo_destino,
-    MAX(nome_fantasia_dest) AS nome_fantasia_dest,
-    produto_codigo,
-    MAX(produto_nome)       AS produto_nome,
-    MAX(estoque_total)      AS quantidade,
-    MIN(data_validade)      AS data_validade,
-    MAX(shelf_dias)         AS shelf
+    codigo_destino, nome_fantasia_dest, produto_codigo, produto_nome,
+    COALESCE(quantidade, 0) AS quantidade, data_validade, shelf_dias AS shelf,
+    -- Regra por lote: >= 73% do shelf consumido = rebaixa (3); >= 45% = giro (2); ok (1); sem shelf (0)
+    CASE WHEN COALESCE(shelf_dias, 0) <= 0 THEN 0
+         WHEN shelf_dias - (data_validade - CURRENT_DATE) >= ROUND(shelf_dias * 0.73) THEN 3
+         WHEN shelf_dias - (data_validade - CURRENT_DATE) >= ROUND(shelf_dias * 0.45) THEN 2
+         ELSE 1 END AS peso
   FROM public.vw_ativmob_estoque_critico
+),
+agg AS (
+  SELECT
+    codigo_destino, MAX(nome_fantasia_dest) AS nome_fantasia_dest,
+    produto_codigo, MAX(produto_nome) AS produto_nome, MAX(shelf) AS shelf,
+    MAX(peso) AS peso_max,
+    SUM(quantidade)    FILTER (WHERE peso >= 2) AS qtd_acao,
+    MIN(data_validade) FILTER (WHERE peso >= 2) AS validade_acao,
+    SUM(quantidade)    AS qtd_total,
+    MIN(data_validade) AS validade_min
+  FROM lotes
   GROUP BY codigo_destino, produto_codigo
 ),
-calc AS (
-  SELECT agg.*,
-         (data_validade - CURRENT_DATE)         AS dias_restantes,
-         shelf - (data_validade - CURRENT_DATE) AS dias_consumidos
+sel AS (
+  -- So lotes em giro/rebaixa entram na soma; item sem nenhum deles sai (exceto sem shelf)
+  SELECT *,
+    CASE WHEN peso_max >= 2 THEN qtd_acao      ELSE qtd_total    END AS quantidade,
+    CASE WHEN peso_max >= 2 THEN validade_acao ELSE validade_min END AS data_validade
   FROM agg
+  WHERE peso_max >= 2 OR peso_max = 0
 )
 SELECT
   codigo_destino, nome_fantasia_dest, produto_codigo, produto_nome,
   quantidade, data_validade, shelf,
   -- pct limitado a [0,1]: validade mais longa que o shelf (dado inconsistente) daria negativo
   CASE WHEN COALESCE(shelf, 0) <= 0 THEN NULL
-       ELSE ROUND(GREATEST(0, LEAST(1, dias_consumidos::numeric / shelf)), 4) END AS pct_shelf,
-  -- Regra: >= 73% do shelf consumido = rebaixa; >= 45% = giro (oferta interna)
-  CASE WHEN COALESCE(shelf, 0) <= 0                THEN 'sem_shelf'
-       WHEN dias_consumidos >= ROUND(shelf * 0.73) THEN 'rebaixa'
-       WHEN dias_consumidos >= ROUND(shelf * 0.45) THEN 'giro'
-       ELSE 'ok' END AS status_shelf
-FROM calc
+       ELSE ROUND(GREATEST(0, LEAST(1, (shelf - (data_validade - CURRENT_DATE))::numeric / shelf)), 4) END AS pct_shelf,
+  CASE peso_max WHEN 3 THEN 'rebaixa' WHEN 2 THEN 'giro' ELSE 'sem_shelf' END AS status_shelf
+FROM sel
 ORDER BY data_validade, codigo_destino, produto_codigo;
 `;
 
