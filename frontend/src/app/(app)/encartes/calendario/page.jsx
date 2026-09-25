@@ -1,5 +1,8 @@
 "use client";
 import { useTituloDaPagina } from "@/components/PageTitleContext";
+import Dialog from "@/components/ui/Dialog";
+import Button from "@/components/ui/Button";
+import { CHART, COR_OFERTA_INTERNA } from "@/lib/tones";
 
 import { useEffect, useState, useCallback, useMemo } from "react";
 import { useRouter } from "next/navigation";
@@ -9,27 +12,9 @@ import { IcoChevronRight, IcoCalendar, IcoX } from "@/components/Icons";
 // ---------------------------------------------------------------------------
 // Paleta: uma cor por rede (expandida para suportar mais redes)
 // ---------------------------------------------------------------------------
-const PALETTE = [
-  { bg: "bg-brand",          text: "text-white" },
-  { bg: "bg-emerald-500",    text: "text-white" },
-  { bg: "bg-violet-500",     text: "text-white" },
-  { bg: "bg-amber-500",      text: "text-white" },
-  { bg: "bg-rose-500",       text: "text-white" },
-  { bg: "bg-cyan-500",       text: "text-white" },
-  { bg: "bg-orange-500",     text: "text-white" },
-  { bg: "bg-pink-500",       text: "text-white" },
-  { bg: "bg-indigo-500",     text: "text-white" },
-  { bg: "bg-lime-500",       text: "text-white" },
-  { bg: "bg-fuchsia-500",    text: "text-white" },
-  { bg: "bg-red-500",        text: "text-white" },
-  { bg: "bg-green-600",      text: "text-white" },
-  { bg: "bg-blue-600",       text: "text-white" },
-  { bg: "bg-purple-600",     text: "text-white" },
-  { bg: "bg-teal-600",       text: "text-white" },
-];
+const PALETTE = CHART;
 
 // Cor fixa para ofertas internas (preto)
-const COR_OFERTA_INTERNA = { bg: "bg-neutral-900", text: "text-white" };
 
 const DIAS_SEMANA = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sab"];
 
@@ -73,7 +58,7 @@ function SelecaoRedesPdfModal({ redes, onGerar, onClose, gerando }) {
             type="checkbox"
             checked={todasSelecionadas}
             onChange={toggleTodas}
-            className="w-4 h-4 rounded accent-brand"
+            className="w-4 h-4 rounded accent-secondary"
           />
           Selecionar todas ({redes.length})
         </label>
@@ -90,7 +75,7 @@ function SelecaoRedesPdfModal({ redes, onGerar, onClose, gerando }) {
               type="checkbox"
               checked={selecionadas.includes(r.codigoRede)}
               onChange={() => toggleRede(r.codigoRede)}
-              className="w-4 h-4 rounded accent-brand shrink-0"
+              className="w-4 h-4 rounded accent-secondary shrink-0"
             />
             <span className={`inline-block w-2.5 h-2.5 rounded-sm shrink-0 ${r.cor.bg}`} />
             <span className="text-neutral-700 truncate">{r.nome}</span>
@@ -105,13 +90,13 @@ function SelecaoRedesPdfModal({ redes, onGerar, onClose, gerando }) {
             type="date"
             value={periodoInicio}
             onChange={(e) => setPeriodoInicio(e.target.value)}
-            className="flex-1 border border-neutral-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand/40"
+            className="flex-1 border border-neutral-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-secondary/40"
           />
           <input
             type="date"
             value={periodoFim}
             onChange={(e) => setPeriodoFim(e.target.value)}
-            className="flex-1 border border-neutral-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand/40"
+            className="flex-1 border border-neutral-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-secondary/40"
           />
         </div>
         <p className="text-[11px] text-neutral-400 mt-1">Deixe em branco para incluir todos os períodos</p>
@@ -128,7 +113,7 @@ function SelecaoRedesPdfModal({ redes, onGerar, onClose, gerando }) {
         <button
           onClick={handleGerar}
           disabled={selecionadas.length === 0 || gerando}
-          className="flex-1 py-2 rounded-xl bg-brand text-white text-sm font-semibold hover:opacity-90 active:scale-95 transition disabled:opacity-50 disabled:pointer-events-none"
+          className="flex-1 py-2 rounded-xl bg-secondary text-white text-sm font-semibold hover:opacity-90 active:scale-95 transition disabled:opacity-50 disabled:pointer-events-none"
         >
           {gerando ? "Gerando..." : "Gerar PDF"}
         </button>
@@ -413,7 +398,7 @@ export default function CalendarioGeralPage() {
           {redesParaPdfGeral.length > 0 && (
             <button
               onClick={() => setModalPdfGeral(true)}
-              className="shrink-0 h-9 px-4 rounded-xl bg-neutral-700 text-white text-xs font-bold hover:bg-neutral-800 active:scale-95 transition shadow-sm shadow-neutral-700/20">
+              className="shrink-0 h-9 px-4 rounded-xl bg-neutral-700 text-white text-xs font-bold hover:bg-neutral-800 active:scale-95 transition shadow-neutral-700/20">
               📥 PDF Geral
             </button>
           )}
@@ -430,7 +415,7 @@ export default function CalendarioGeralPage() {
           <>
             {/* Legenda de redes — clicável para filtrar */}
             {redesComEncartes.length > 0 && (
-              <div className="mb-4 p-3 bg-white rounded-2xl border border-neutral-100 shadow-sm">
+              <div className="mb-4 p-3 surface">
                 <div className="text-xs text-neutral-500 font-semibold uppercase tracking-wide mb-2">Filtrar por rede (clique para selecionar)</div>
                 <div className="flex flex-wrap gap-x-3 gap-y-2">
                   {/* Botão "Mostrar tudo" */}
@@ -452,7 +437,7 @@ export default function CalendarioGeralPage() {
                       onClick={() => setRedeFiltrada(redeFiltrada === r.codigoRede ? null : r.codigoRede)}
                       className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition ${
                         redeFiltrada === r.codigoRede
-                          ? `${r.cor.bg} ${r.cor.text} shadow-md`
+                          ? `${r.cor.bg} ${r.cor.text}`
                           : `bg-neutral-100 text-neutral-600 hover:bg-neutral-150`
                       }`}
                     >
@@ -466,12 +451,12 @@ export default function CalendarioGeralPage() {
 
             {/* Filtro de supervisor — apenas para admin/diretoria */}
             {(userRole === "admin" || userRole === "diretoria") && supervisores.length > 0 && (
-              <div className="mb-4 p-3 bg-white rounded-2xl border border-neutral-100 shadow-sm">
+              <div className="mb-4 p-3 surface">
                 <div className="text-xs text-neutral-500 font-semibold uppercase tracking-wide mb-2">Filtrar por supervisor</div>
                 <select
                   value={supervisorFiltrado || ""}
                   onChange={(e) => setSupervisorFiltrado(e.target.value || null)}
-                  className="w-full md:w-64 px-3 py-2 rounded-lg border border-neutral-200 text-sm bg-white focus:outline-none focus:border-brand focus:ring-2 focus:ring-brand/20 transition"
+                  className="w-full md:w-64 px-3 py-2 rounded-lg border border-neutral-200 text-sm bg-white focus:outline-none focus:border-secondary focus:ring-2 focus:ring-secondary/20 transition"
                 >
                   <option value="">Todos os supervisores</option>
                   {supervisores.map((sup) => (
@@ -482,7 +467,7 @@ export default function CalendarioGeralPage() {
             )}
 
             {/* Filtros de negociação e tipo */}
-            <div className="mb-4 p-3 bg-white rounded-2xl border border-neutral-100 shadow-sm">
+            <div className="mb-4 p-3 surface">
               <div className="text-xs text-neutral-500 font-semibold uppercase tracking-wide mb-2">Filtros</div>
               <div className="flex flex-wrap gap-3">
                 {/* Filtro de negociação */}
@@ -491,7 +476,7 @@ export default function CalendarioGeralPage() {
                   <select
                     value={filtroNegociacao}
                     onChange={(e) => setFiltroNegociacao(e.target.value)}
-                    className="w-full px-3 py-2 rounded-lg border border-neutral-200 text-sm bg-white focus:outline-none focus:border-brand focus:ring-2 focus:ring-brand/20 transition"
+                    className="w-full px-3 py-2 rounded-lg border border-neutral-200 text-sm bg-white focus:outline-none focus:border-secondary focus:ring-2 focus:ring-secondary/20 transition"
                   >
                     <option value="todos">Todos ({encartesFlat.length})</option>
                     <option value="negociados">Negociados ({encartesFlat.filter(e => e.negociado).length})</option>
@@ -505,7 +490,7 @@ export default function CalendarioGeralPage() {
                   <select
                     value={filtroTipo}
                     onChange={(e) => setFiltroTipo(e.target.value)}
-                    className="w-full px-3 py-2 rounded-lg border border-neutral-200 text-sm bg-white focus:outline-none focus:border-brand focus:ring-2 focus:ring-brand/20 transition"
+                    className="w-full px-3 py-2 rounded-lg border border-neutral-200 text-sm bg-white focus:outline-none focus:border-secondary focus:ring-2 focus:ring-secondary/20 transition"
                   >
                     <option value="todos">Todos ({grupos.flatMap(g => g.encartes).length})</option>
                     <option value="encartes">Encartes ({grupos.flatMap(g => g.encartes).filter(e => e.tipo === "encarte" || !e.tipo).length})</option>
@@ -520,7 +505,7 @@ export default function CalendarioGeralPage() {
                     <select
                       value={filtroSubrede}
                       onChange={(e) => setFiltroSubrede(e.target.value)}
-                      className="w-full px-3 py-2 rounded-lg border border-neutral-200 text-sm bg-white focus:outline-none focus:border-brand focus:ring-2 focus:ring-brand/20 transition"
+                      className="w-full px-3 py-2 rounded-lg border border-neutral-200 text-sm bg-white focus:outline-none focus:border-secondary focus:ring-2 focus:ring-secondary/20 transition"
                     >
                       <option value="todos">Todas</option>
                       <option value="__rede__">Toda a rede</option>
@@ -548,7 +533,7 @@ export default function CalendarioGeralPage() {
               </div>
             </div>
 
-            <div className="bg-white rounded-2xl border border-neutral-100 shadow-sm p-4">
+            <div className="surface p-4">
               {/* Navegação de mês */}
               <div className="flex items-center justify-between mb-4">
                 <button onClick={prevMes}
@@ -577,7 +562,7 @@ export default function CalendarioGeralPage() {
                   return (
                     <div key={dia.d}
                       className={`rounded-xl overflow-hidden min-h-[52px] ${dia.encartes.length > 0 ? "ring-1 ring-neutral-200" : ""}`}>
-                      <div className={`text-xs font-bold text-center py-1 leading-none ${isHoje ? "bg-brand text-white" : "text-neutral-600"}`}>
+                      <div className={`text-xs font-bold text-center py-1 leading-none ${isHoje ? "bg-secondary text-white" : "text-neutral-600"}`}>
                         {dia.d}
                       </div>
                       <div className="space-y-[2px] pb-[3px] px-[3px]">
@@ -593,7 +578,7 @@ export default function CalendarioGeralPage() {
                               className={`w-full rounded-[4px] py-[3px] px-1 text-left text-[9px] font-bold leading-none transition ${e.cor.bg} ${e.cor.text} ${
                                 selecionado ? "opacity-100" : "opacity-30"
                               } flex items-center gap-0.5`}>
-                              {e.negociado && <span className="text-[11px] shrink-0 drop-shadow-sm">✅</span>}
+                              {e.negociado && <span className="text-[11px] shrink-0 drop-">✅</span>}
                               <span className="truncate">{e.nome}</span>
                             </button>
                           );
@@ -620,7 +605,7 @@ export default function CalendarioGeralPage() {
       {tooltip && (
         <div
           style={{ position: 'fixed', left: tooltip.x, top: tooltip.y - 8, transform: 'translate(-50%, -100%)', zIndex: 9999 }}
-          className="pointer-events-none bg-neutral-900 text-white rounded-xl shadow-xl px-3 py-2.5 text-xs min-w-[220px] max-w-[300px]"
+          className="pointer-events-none bg-neutral-900 text-white rounded-xl px-3 py-2.5 text-xs min-w-[220px] max-w-[300px]"
         >
           {!tooltip.data ? (
             <div className="text-neutral-400 text-center py-1 text-[11px]">Carregando...</div>
@@ -641,9 +626,9 @@ export default function CalendarioGeralPage() {
               {tooltip.data.categorias.map(c => (
                 <div key={c.sub} className="grid grid-cols-4 gap-x-2 py-[3px] border-b border-neutral-800 last:border-0">
                   <div className="col-span-1 text-[10px] text-neutral-200 leading-tight truncate">{c.sub}</div>
-                  <div className="text-right text-[10px] font-semibold text-emerald-400">{c.ofertaMedia != null ? fmtBRL(c.ofertaMedia) : '—'}</div>
-                  <div className="text-right text-[10px] font-semibold text-amber-400">{c.selloutMedio != null ? fmtBRL(c.selloutMedio) : '—'}</div>
-                  <div className={`text-right text-[10px] font-semibold ${c.margemMedia != null ? (c.margemMedia >= 20 ? 'text-emerald-300' : c.margemMedia >= 10 ? 'text-yellow-300' : 'text-red-300') : 'text-neutral-400'}`}>
+                  <div className="text-right text-[10px] font-semibold text-success/60">{c.ofertaMedia != null ? fmtBRL(c.ofertaMedia) : '—'}</div>
+                  <div className="text-right text-[10px] font-semibold text-warning/60">{c.selloutMedio != null ? fmtBRL(c.selloutMedio) : '—'}</div>
+                  <div className={`text-right text-[10px] font-semibold ${c.margemMedia != null ? (c.margemMedia >= 20 ? 'text-success/40' : c.margemMedia >= 10 ? 'text-warning/40' : 'text-danger/40') : 'text-neutral-400'}`}>
                     {c.margemMedia != null ? `${c.margemMedia.toFixed(1)}%` : '—'}
                   </div>
                 </div>
@@ -656,9 +641,7 @@ export default function CalendarioGeralPage() {
       )}
 
       {modalPdfGeral && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 animate-fade-in">
-          <div className="absolute inset-0 bg-neutral-900/60 backdrop-blur-sm" onClick={() => setModalPdfGeral(false)} />
-          <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 animate-slide-up">
+        <Dialog open onClose={() => setModalPdfGeral(false)} size="sm" className="overflow-y-auto p-6" ariaLabel="Gerar PDF Geral">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-bold text-neutral-900">Gerar PDF Geral</h3>
               <button
@@ -674,21 +657,15 @@ export default function CalendarioGeralPage() {
               onGerar={(codigos, inicio, fim) => gerarPdfGeral(codigos, inicio, fim)}
               onClose={() => setModalPdfGeral(false)}
             />
-          </div>
-        </div>
+          </Dialog>
       )}
 
       {pdfGeralPreviewUrl && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-5xl h-[90vh] flex flex-col">
+        <Dialog open onClose={fecharPreviewPdfGeral} size="xl" className="h-[90dvh]" ariaLabel="Pré-visualização do PDF Geral">
             <div className="flex items-center justify-between px-6 py-4 border-b border-neutral-200">
               <h3 className="text-lg font-bold text-neutral-900">Pré-visualização do PDF Geral</h3>
               <div className="flex items-center gap-2">
-                <button
-                  onClick={baixarPdfGeral}
-                  className="h-9 px-4 rounded-xl bg-brand text-white text-xs font-bold hover:opacity-90 active:scale-95 transition shadow-sm">
-                  📥 Baixar PDF
-                </button>
+                <Button size="sm" onClick={baixarPdfGeral}>Baixar PDF</Button>
                 <button
                   onClick={fecharPreviewPdfGeral}
                   className="h-9 w-9 rounded-xl bg-neutral-100 text-neutral-600 hover:bg-neutral-200 active:scale-95 transition flex items-center justify-center">
@@ -704,8 +681,7 @@ export default function CalendarioGeralPage() {
                 title="Preview do PDF Geral"
               />
             </div>
-          </div>
-        </div>
+          </Dialog>
       )}
     </>
   );

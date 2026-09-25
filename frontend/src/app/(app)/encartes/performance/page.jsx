@@ -1,5 +1,6 @@
 "use client";
 import { useTituloDaPagina } from "@/components/PageTitleContext";
+import { TONE, toneMargem } from "@/lib/tones";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
@@ -49,7 +50,7 @@ function Variacao({ v1, v2, isMoeda = false, inverter = false }) {
   if (Math.abs(diff) < 0.001) return <span className="text-neutral-400 text-xs ml-1">=</span>;
   const subiu = diff > 0;
   const bom = inverter ? !subiu : subiu; // ex: preço caiu = bom
-  const cor = bom ? "text-emerald-600" : "text-red-500";
+  const cor = bom ? "text-success" : "text-danger";
   const seta = subiu ? "▲" : "▼";
   const val = isMoeda ? fmtBRL(Math.abs(diff)) : `${Math.abs(diff).toFixed(1)}pp`;
   return (
@@ -61,30 +62,25 @@ function Variacao({ v1, v2, isMoeda = false, inverter = false }) {
 
 // ── Cor da margem ────────────────────────────────────────────────────────────
 function corMargem(v) {
-  if (v == null) return "text-neutral-400";
-  if (v >= 20) return "text-emerald-600";
-  if (v >= 10) return "text-amber-600";
-  return "text-red-600";
+  return TONE[toneMargem(v)].text;
 }
 
 function bgMargem(v) {
-  if (v == null) return "bg-neutral-50 border-neutral-200 text-neutral-400";
-  if (v >= 20) return "bg-emerald-50 border-emerald-200 text-emerald-700";
-  if (v >= 10) return "bg-amber-50 border-amber-200 text-amber-700";
-  return "bg-red-50 border-red-200 text-red-700";
+  const t = TONE[toneMargem(v)];
+  return `${t.bg} ${t.border} ${t.text}`;
 }
 
 // ── KPI Card ─────────────────────────────────────────────────────────────────
 function KpiCard({ label, v1, v2, isMoeda, isPct, inverterVariacao, icon }) {
   const fmt = isMoeda ? fmtBRL : isPct ? fmtPct : (v) => (v == null ? "—" : String(v));
   return (
-    <div className="bg-white rounded-2xl border border-neutral-200 shadow-sm p-5 flex flex-col gap-2">
+    <div className="surface p-5 flex flex-col gap-2">
       <div className="flex items-center gap-2 text-xs font-semibold text-neutral-500 uppercase tracking-widest">
         <span>{icon}</span>
         <span>{label}</span>
       </div>
       <div className="flex items-end gap-1 flex-wrap">
-        <span className="text-2xl font-black text-neutral-900">{fmt(v1)}</span>
+        <span className="text-2xl font-semibold text-neutral-900">{fmt(v1)}</span>
         <Variacao v1={v1} v2={v2} isMoeda={isMoeda} inverter={inverterVariacao} />
       </div>
       {v2 != null && (
@@ -134,7 +130,7 @@ function TabelaSellout({ p1, p2 }) {
                 {p2 && (
                   <td className="py-3 px-4 text-right">
                     {diff != null && (
-                      <span className={`text-xs font-bold ${diff > 0 ? "text-emerald-600" : "text-red-500"}`}>
+                      <span className={`text-xs font-bold ${diff > 0 ? "text-success" : "text-danger"}`}>
                         {diff > 0 ? "▲" : "▼"} {fmtBRL(Math.abs(diff))}
                       </span>
                     )}
@@ -196,7 +192,7 @@ function TabelaEncartes({ encartes, temP2 }) {
             onClick={() => setFiltroStatus(s)}
             className={`px-3 py-1 rounded-full text-xs font-semibold capitalize transition ${
               filtroStatus === s
-                ? "bg-brand text-white"
+                ? "bg-secondary text-white"
                 : "bg-neutral-100 text-neutral-600 hover:bg-neutral-200"
             }`}
           >
@@ -224,17 +220,17 @@ function TabelaEncartes({ encartes, temP2 }) {
           <tbody className="divide-y divide-neutral-50">
             {ordenados.map((enc, idx) => (
               <>
-                <tr key={enc._id} className={`hover:bg-neutral-50 transition cursor-pointer ${expandido === enc._id ? "bg-blue-50" : ""}`} onClick={() => setExpandido(expandido === enc._id ? null : enc._id)}>
+                <tr key={enc._id} className={`hover:bg-neutral-50 transition cursor-pointer ${expandido === enc._id ? "bg-info/10" : ""}`} onClick={() => setExpandido(expandido === enc._id ? null : enc._id)}>
                   <td className="text-center py-3 px-2 text-neutral-400 text-xs">{expandido === enc._id ? "▼" : "▶"}</td>
                   <td className="py-3 px-4">
-                    <Link href={`/encartes/${enc._id}`} className="font-semibold text-brand hover:underline" onClick={(e) => e.stopPropagation()}>
+                    <Link href={`/encartes/${enc._id}`} className="font-semibold text-secondary hover:underline" onClick={(e) => e.stopPropagation()}>
                       {enc.nome}
                     </Link>
                   </td>
                   <td className="py-3 px-4 text-neutral-600 text-xs">{enc.redeSubrede || enc.codigoRede}</td>
                   {temP2 && (
                     <td className="py-3 px-4 text-center">
-                      <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${enc.periodo === 1 ? "bg-blue-100 text-blue-700" : "bg-purple-100 text-purple-700"}`}>
+                      <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${enc.periodo === 1 ? "bg-info/15 text-info" : "bg-chart-3/15 text-chart-3"}`}>
                         P{enc.periodo}
                       </span>
                     </td>
@@ -244,7 +240,7 @@ function TabelaEncartes({ encartes, temP2 }) {
                     {fmtData(enc.periodoInicio)} – {fmtData(enc.periodoFim)}
                   </td>
                   <td className="py-3 px-4 text-center">
-                    <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${enc.status === "ativo" ? "bg-emerald-100 text-emerald-700" : "bg-neutral-100 text-neutral-500"}`}>
+                    <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${enc.status === "ativo" ? "bg-success/15 text-success" : "bg-neutral-100 text-neutral-500"}`}>
                       {enc.status === "ativo" ? "Ativo" : "Finalizado"}
                     </span>
                   </td>
@@ -259,24 +255,24 @@ function TabelaEncartes({ encartes, temP2 }) {
 
                 {/* Linha expandida com subcategorias */}
                 {expandido === enc._id && (
-                  <tr className="bg-blue-50 border-b-2 border-blue-200">
+                  <tr className="bg-info/10 border-b-2 border-info/30">
                     <td colSpan={temP2 ? 11 : 10} className="p-4">
                       <div className="space-y-3">
                         <h3 className="text-sm font-bold text-neutral-800">Subcategorias</h3>
                         <div className="overflow-x-auto">
                           <table className="w-full text-xs">
                             <thead>
-                              <tr className="border-b border-blue-200 text-neutral-600 font-semibold">
+                              <tr className="border-b border-info/30 text-neutral-600 font-semibold">
                                 <th className="text-left py-2 px-3">Subcategoria</th>
                                 <th className="text-right py-2 px-3">Margem média</th>
                                 <th className="text-right py-2 px-3">Sellout médio</th>
                                 <th className="text-center py-2 px-3">Nº itens</th>
                               </tr>
                             </thead>
-                            <tbody className="divide-y divide-blue-100">
+                            <tbody className="divide-y divide-info/15">
                               {(enc.subcategorias || []).length > 0 ? (
                                 enc.subcategorias.map((sub) => (
-                                  <tr key={sub.subcategoria} className="hover:bg-blue-100 transition">
+                                  <tr key={sub.subcategoria} className="hover:bg-info/15 transition">
                                     <td className="py-2 px-3 text-neutral-700 font-medium">{sub.subcategoria}</td>
                                     <td className="py-2 px-3 text-right">
                                       <span className={`font-bold ${corMargem(sub.margemMedia)}`}>
@@ -375,7 +371,7 @@ export default function PerformancePage() {
   return (
     <div className="space-y-6">
       {/* Filtros */}
-      <div className="bg-white rounded-2xl border border-neutral-200 shadow-sm p-4 space-y-4">
+      <div className="surface p-4 space-y-4">
         <div className="flex flex-wrap items-end gap-4">
           {/* Período 1 */}
           <div>
@@ -387,14 +383,14 @@ export default function PerformancePage() {
                 type="date"
                 value={p1inicio}
                 onChange={(e) => setP1inicio(e.target.value)}
-                className="border border-neutral-200 rounded-lg px-3 py-2 text-sm text-neutral-700 focus:outline-none focus:ring-2 focus:ring-brand/30"
+                className="border border-neutral-200 rounded-lg px-3 py-2 text-sm text-neutral-700 focus:outline-none focus:ring-2 focus:ring-secondary/30"
               />
               <span className="text-neutral-400 text-sm">até</span>
               <input
                 type="date"
                 value={p1fim}
                 onChange={(e) => setP1fim(e.target.value)}
-                className="border border-neutral-200 rounded-lg px-3 py-2 text-sm text-neutral-700 focus:outline-none focus:ring-2 focus:ring-brand/30"
+                className="border border-neutral-200 rounded-lg px-3 py-2 text-sm text-neutral-700 focus:outline-none focus:ring-2 focus:ring-secondary/30"
               />
             </div>
           </div>
@@ -403,7 +399,7 @@ export default function PerformancePage() {
           <button
             onClick={() => setUsarP2((v) => !v)}
             className={`px-3 py-2 rounded-lg text-xs font-semibold transition ${
-              usarP2 ? "bg-purple-100 text-purple-700 border border-purple-200" : "bg-neutral-100 text-neutral-600 border border-neutral-200 hover:bg-neutral-200"
+              usarP2 ? "bg-chart-3/15 text-chart-3 border border-chart-3/30" : "bg-neutral-100 text-neutral-600 border border-neutral-200 hover:bg-neutral-200"
             }`}
           >
             {usarP2 ? "✕ Remover comparação" : "+ Comparar período"}
@@ -418,14 +414,14 @@ export default function PerformancePage() {
                   type="date"
                   value={p2inicio}
                   onChange={(e) => setP2inicio(e.target.value)}
-                  className="border border-purple-200 bg-purple-50 rounded-lg px-3 py-2 text-sm text-neutral-700 focus:outline-none focus:ring-2 focus:ring-purple-300"
+                  className="border border-chart-3/30 bg-chart-3/10 rounded-lg px-3 py-2 text-sm text-neutral-700 focus:outline-none focus:ring-2 focus:ring-chart-3/40"
                 />
                 <span className="text-neutral-400 text-sm">até</span>
                 <input
                   type="date"
                   value={p2fim}
                   onChange={(e) => setP2fim(e.target.value)}
-                  className="border border-purple-200 bg-purple-50 rounded-lg px-3 py-2 text-sm text-neutral-700 focus:outline-none focus:ring-2 focus:ring-purple-300"
+                  className="border border-chart-3/30 bg-chart-3/10 rounded-lg px-3 py-2 text-sm text-neutral-700 focus:outline-none focus:ring-2 focus:ring-chart-3/40"
                 />
               </div>
             </div>
@@ -439,7 +435,7 @@ export default function PerformancePage() {
             <select
               value={codigoRede}
               onChange={(e) => setCodigoRede(e.target.value)}
-              className="border border-neutral-200 rounded-lg px-3 py-2 text-sm text-neutral-700 focus:outline-none focus:ring-2 focus:ring-brand/30 min-w-[160px]"
+              className="border border-neutral-200 rounded-lg px-3 py-2 text-sm text-neutral-700 focus:outline-none focus:ring-2 focus:ring-secondary/30 min-w-[160px]"
             >
               <option value="">Todas as redes</option>
               {redes.map((r) => (
@@ -455,7 +451,7 @@ export default function PerformancePage() {
               <select
                 value={criadoPorId}
                 onChange={(e) => setCriadoPorId(e.target.value)}
-                className="border border-neutral-200 rounded-lg px-3 py-2 text-sm text-neutral-700 focus:outline-none focus:ring-2 focus:ring-brand/30 min-w-[180px]"
+                className="border border-neutral-200 rounded-lg px-3 py-2 text-sm text-neutral-700 focus:outline-none focus:ring-2 focus:ring-secondary/30 min-w-[180px]"
               >
                 <option value="">Todos os supervisores</option>
                 {supervisores.map((s) => (
@@ -469,7 +465,7 @@ export default function PerformancePage() {
           <button
             onClick={buscar}
             disabled={loading}
-            className="px-5 py-2 bg-brand text-white rounded-lg text-sm font-semibold hover:bg-brand-600 transition disabled:opacity-50 flex items-center gap-2"
+            className="px-5 py-2 bg-secondary text-white rounded-lg text-sm font-semibold hover:bg-secondary-600 transition disabled:opacity-50 flex items-center gap-2"
           >
             {loading ? (
               <svg className="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
@@ -522,18 +518,18 @@ export default function PerformancePage() {
           {usarP2 && p2 && (
             <div className="flex items-center gap-4 text-xs">
               <div className="flex items-center gap-1.5">
-                <span className="w-3 h-3 rounded-full bg-blue-500 inline-block" />
+                <span className="w-3 h-3 rounded-full bg-info inline-block" />
                 <span className="text-neutral-600 font-medium">P1: {fmtData(p1inicio)} – {fmtData(p1fim)}</span>
               </div>
               <div className="flex items-center gap-1.5">
-                <span className="w-3 h-3 rounded-full bg-purple-500 inline-block" />
+                <span className="w-3 h-3 rounded-full bg-chart-3 inline-block" />
                 <span className="text-neutral-600 font-medium">P2: {fmtData(p2inicio)} – {fmtData(p2fim)}</span>
               </div>
             </div>
           )}
 
           {/* Sellout por subcategoria */}
-          <div className="bg-white rounded-2xl border border-neutral-200 shadow-sm overflow-hidden">
+          <div className="surface overflow-hidden">
             <div className="px-5 py-4 border-b border-neutral-100">
               <h2 className="text-sm font-bold text-neutral-800">Sellout por Subcategoria</h2>
               <p className="text-xs text-neutral-400 mt-0.5">Desconto médio concedido por subcategoria de produto</p>
@@ -542,7 +538,7 @@ export default function PerformancePage() {
           </div>
 
           {/* Encartes */}
-          <div className="bg-white rounded-2xl border border-neutral-200 shadow-sm overflow-hidden">
+          <div className="surface overflow-hidden">
             <div className="px-5 py-4 border-b border-neutral-100">
               <h2 className="text-sm font-bold text-neutral-800">Encartes</h2>
               <p className="text-xs text-neutral-400 mt-0.5">
@@ -560,7 +556,7 @@ export default function PerformancePage() {
       {loading && !dados && (
         <div className="flex items-center justify-center h-48">
           <div className="flex flex-col items-center gap-3">
-            <div className="h-7 w-7 rounded-full border-2 border-brand border-t-transparent animate-spin" />
+            <div className="h-7 w-7 rounded-full border-2 border-secondary border-t-transparent animate-spin" />
             <p className="text-sm text-neutral-400">Carregando dados...</p>
           </div>
         </div>

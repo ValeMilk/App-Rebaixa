@@ -1,26 +1,21 @@
 "use client";
 import { useTituloDaPagina } from "@/components/PageTitleContext";
+import Dialog from "@/components/ui/Dialog";
+import Button from "@/components/ui/Button";
 
 import { useEffect, useMemo, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth";
 import api from "@/lib/api";
 import { fmtData, formatarRede, fmtBRL } from "@/lib/utils";
-import { rankStatus } from "@/lib/estoque";
+import { rankStatus, SEGMENTO } from "@/lib/estoque";
 import { IcoSearch, IcoX, IcoChevronDown, IcoStore, IcoAlert, IcoClock, IcoPackage, IcoTrendDown, IcoTag, IcoUsers } from "@/components/Icons";
 import RebaixaModal, { MargemBadge } from "@/components/RebaixaModal";
 import AcaoAtivaBadge from "@/components/AcaoAtivaBadge";
 
-const CLS = {
-  critico:  { label: "Crítico",  bg: "bg-red-50",     text: "text-red-700",    border: "border-red-200",    dot: "bg-red-500",    ring: "ring-red-100" },
-  alerta:   { label: "Alerta",   bg: "bg-orange-50",  text: "text-orange-700", border: "border-orange-200", dot: "bg-orange-500", ring: "ring-orange-100" },
-  atencao:  { label: "Atenção",  bg: "bg-amber-50",   text: "text-amber-700",  border: "border-amber-200",  dot: "bg-amber-500",  ring: "ring-amber-100" },
-  ok:       { label: "Regular",  bg: "bg-emerald-50", text: "text-emerald-700",border: "border-emerald-200",dot: "bg-emerald-500",ring: "ring-emerald-100" },
-  vencido:  { label: "Vencido",  bg: "bg-neutral-50",   text: "text-neutral-600",  border: "border-neutral-200",  dot: "bg-neutral-400",  ring: "ring-neutral-100" },
-};
 
 function Badge({ cls }) {
-  const c = CLS[cls] || CLS.ok;
+  const c = SEGMENTO[cls] || SEGMENTO.ok;
   return (
     <span className={`inline-flex items-center gap-1 text-[10px] font-semibold px-1.5 py-0.5 rounded-full border shrink-0 whitespace-nowrap ${c.bg} ${c.text} ${c.border}`}>
       <span className={`w-1.5 h-1.5 rounded-full ${c.dot}`} />
@@ -134,15 +129,12 @@ function RedeRebaixaModal({ redeSubrede, codigoRede, produto, onClose, onEnviado
   const qtdTotal = produto.lojas.reduce((s, l) => s + (Number(l.quantidade) || 0), 0);
 
   return (
-    <div className="fixed inset-0 z-50 flex flex-col sm:items-center sm:justify-center sm:p-6 animate-fade-in">
-      <div className="absolute inset-0 bg-neutral-900/60 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative bg-white shadow-2xl flex flex-col w-full sm:max-w-md sm:rounded-3xl sm:max-h-[90dvh] animate-slide-up safe-area-pb"
-        style={{ height: "100dvh", maxHeight: "100dvh" }}>
+    <Dialog open onClose={onClose} sheet size="md" ariaLabel="Ação por rede">
 
-        <div className="shrink-0 px-4 pt-3 pb-2.5 border-b border-neutral-100 bg-white sm:rounded-t-3xl safe-area-pt">
+        <div className="shrink-0 px-4 pt-3 pb-2.5 border-b border-neutral-200 bg-white sm:rounded-t-2xl safe-area-pt">
           <div className="flex items-center justify-between gap-3">
             <div className="min-w-0 flex-1">
-              <div className="text-[10px] font-semibold text-blue-600 uppercase tracking-wider mb-0.5">Ação por Rede</div>
+              <div className="text-[10px] font-semibold text-info uppercase tracking-wider mb-0.5">Ação por Rede</div>
               <h2 className="font-bold text-neutral-900 text-base leading-snug line-clamp-2">{produto.produto}</h2>
             </div>
             <button onClick={onClose} aria-label="Fechar"
@@ -153,11 +145,11 @@ function RedeRebaixaModal({ redeSubrede, codigoRede, produto, onClose, onEnviado
           {/* Toggle Rebaixa / Oferta */}
           <div className="mt-2.5 flex gap-1.5 p-1 bg-neutral-100 rounded-xl">
             <button type="button" onClick={() => setTipoAcao("rebaixa")}
-              className={`flex-1 text-xs font-bold py-1.5 rounded-lg transition ${tipoAcao === "rebaixa" ? "bg-white text-brand shadow-sm" : "text-neutral-500"}`}>
+              className={`flex-1 text-xs font-bold py-1.5 rounded-lg transition ${tipoAcao === "rebaixa" ? "bg-white text-secondary" : "text-neutral-500"}`}>
               Rebaixa
             </button>
             <button type="button" onClick={() => setTipoAcao("oferta_interna")}
-              className={`flex-1 text-xs font-bold py-1.5 rounded-lg transition ${tipoAcao === "oferta_interna" ? "bg-white text-blue-600 shadow-sm" : "text-neutral-500"}`}>
+              className={`flex-1 text-xs font-bold py-1.5 rounded-lg transition ${tipoAcao === "oferta_interna" ? "bg-white text-info" : "text-neutral-500"}`}>
               Oferta
             </button>
           </div>
@@ -166,8 +158,8 @@ function RedeRebaixaModal({ redeSubrede, codigoRede, produto, onClose, onEnviado
         <div className="flex-1 overflow-y-auto px-4 pt-3 pb-4"
           style={{ WebkitOverflowScrolling: "touch", overscrollBehavior: "contain" }}>
 
-          <div className="mb-3 bg-blue-50 rounded-xl border border-blue-100 px-3 py-2.5">
-            <div className="flex items-center gap-1.5 text-[11px] text-blue-700 font-bold mb-1">
+          <div className="mb-3 bg-info/10 rounded-xl border border-info/15 px-3 py-2.5">
+            <div className="flex items-center gap-1.5 text-[11px] text-info font-bold mb-1">
               <IcoUsers className="w-3.5 h-3.5" />
               {redeSubrede}
             </div>
@@ -183,18 +175,18 @@ function RedeRebaixaModal({ redeSubrede, codigoRede, produto, onClose, onEnviado
             </div>
             <div className="flex-1 bg-white px-2 py-2 text-center border-x border-neutral-100">
               <div className="text-[9px] text-neutral-500 font-semibold uppercase tracking-wide">Min. Vence</div>
-              <div className={`font-bold text-lg leading-tight ${produto.menorDiasParaVencer <= 15 ? "text-red-600" : "text-neutral-800"}`}>
+              <div className={`font-bold text-lg leading-tight ${produto.menorDiasParaVencer <= 15 ? "text-danger" : "text-neutral-800"}`}>
                 {produto.menorDiasParaVencer ?? "—"}d
               </div>
               <div className="text-[9px] text-neutral-400">{fmtData(produto.menorDataValidade)}</div>
             </div>
-            <div className="flex-1 bg-brand/5 px-2 py-2 text-center">
-              <div className="text-[9px] text-brand/70 font-semibold uppercase tracking-wide">Últ. Compra</div>
+            <div className="flex-1 bg-secondary/5 px-2 py-2 text-center">
+              <div className="text-[9px] text-secondary/70 font-semibold uppercase tracking-wide">Últ. Compra</div>
               {loadingUC ? (
                 <div className="text-neutral-400 text-xs mt-1">…</div>
               ) : precoUC != null ? (
                 <>
-                  <div className="font-bold text-brand text-sm leading-tight mt-0.5">{fmtBRL(precoUC)}</div>
+                  <div className="font-bold text-secondary text-sm leading-tight mt-0.5">{fmtBRL(precoUC)}</div>
                   <div className="text-[9px] text-neutral-400">{fmtData(dataUC)}</div>
                 </>
               ) : (
@@ -204,7 +196,7 @@ function RedeRebaixaModal({ redeSubrede, codigoRede, produto, onClose, onEnviado
           </div>
 
           {!loadingUC && precoUC == null && (
-            <div className="mb-3 rounded-xl bg-amber-50 border border-amber-200 p-2.5 text-[11px] text-amber-800 flex items-start gap-2">
+            <div className="mb-3 rounded-xl bg-warning/10 border border-warning/30 p-2.5 text-[11px] text-warning flex items-start gap-2">
               <IcoAlert className="w-3.5 h-3.5 shrink-0 mt-0.5" />
               <span>Rede sem histórico de compra deste produto. As margens não poderão ser calculadas.</span>
             </div>
@@ -259,9 +251,9 @@ function RedeRebaixaModal({ redeSubrede, codigoRede, produto, onClose, onEnviado
                 <button
                   type="button"
                   onClick={() => setSellout(String(selloutSugerido))}
-                  className="mt-1.5 flex items-center gap-1.5 text-[11px] text-blue-600 font-semibold hover:text-blue-800 active:opacity-70 transition"
+                  className="mt-1.5 flex items-center gap-1.5 text-[11px] text-info font-semibold hover:text-info active:opacity-70 transition"
                 >
-                  <span className="inline-block w-3.5 h-3.5 rounded-full bg-blue-100 text-blue-600 text-[10px] font-bold flex items-center justify-center">↑</span>
+                  <span className="inline-block w-3.5 h-3.5 rounded-full bg-info/15 text-info text-[10px] font-bold flex items-center justify-center">↑</span>
                   Sugerido {fmtBRL(selloutSugerido)} — manter margem PDV ({margemPDV?.toFixed(1)}%)
                 </button>
               )}
@@ -297,7 +289,7 @@ function RedeRebaixaModal({ redeSubrede, codigoRede, produto, onClose, onEnviado
               </div>
             </div>
 
-            <div className="rounded-xl bg-blue-50 border border-blue-200 p-3 text-xs text-blue-700 flex items-start gap-2">
+            <div className="rounded-xl bg-info/10 border border-info/30 p-3 text-xs text-info flex items-start gap-2">
               <IcoUsers className="w-4 h-4 shrink-0 mt-0.5" />
               <span>Será criada <strong>1 solicitação por loja</strong> ({produto.lojas.length} no total) com os mesmos preços e margens.</span>
             </div>
@@ -315,7 +307,7 @@ function RedeRebaixaModal({ redeSubrede, codigoRede, produto, onClose, onEnviado
             </details>
 
             {erro && (
-              <div className="rounded-xl bg-red-50 border border-red-200 p-3 text-sm text-red-700 flex items-center gap-2 animate-fade-in">
+              <div className="rounded-xl bg-danger/10 border border-danger/30 p-3 text-sm text-danger flex items-center gap-2 animate-fade-in">
                 <IcoAlert className="w-4 h-4 shrink-0" />
                 {erro}
               </div>
@@ -323,20 +315,17 @@ function RedeRebaixaModal({ redeSubrede, codigoRede, produto, onClose, onEnviado
           </form>
         </div>
 
-        <div className="shrink-0 px-4 py-3 border-t border-neutral-100 bg-white sm:rounded-b-3xl">
-          <button type="submit" form="form-rede-rebaixa"
-            className="w-full py-3 text-base font-semibold text-white bg-blue-600 rounded-2xl hover:bg-blue-700 active:scale-[0.98] transition disabled:opacity-60"
-            disabled={enviando}>
+        <div className="shrink-0 px-4 py-3 border-t border-neutral-200 bg-white sm:rounded-b-2xl">
+          <Button type="submit" form="form-rede-rebaixa" size="lg" className="w-full" disabled={enviando}>
             {enviando ? `Enviando ${produto.lojas.length} sol...` : `Solicitar ${tipoAcao === "oferta_interna" ? "Oferta" : "Rebaixa"} para ${produto.lojas.length} Loja${produto.lojas.length !== 1 ? "s" : ""}`}
-          </button>
+          </Button>
         </div>
-      </div>
-    </div>
+      </Dialog>
   );
 }
 
 function ProdutoCard({ item, onRebaixar, acaoAtiva }) {
-  const c = CLS[item.classificacao] || CLS.ok;
+  const c = SEGMENTO[item.classificacao] || SEGMENTO.ok;
   return (
     <div className={`p-3 rounded-xl border ${c.border} ${c.bg}`}>
       <div className="flex items-start gap-2 mb-2.5">
@@ -354,7 +343,7 @@ function ProdutoCard({ item, onRebaixar, acaoAtiva }) {
       </div>
       <button
         onClick={() => onRebaixar(item)}
-        className={`w-full py-2 text-sm font-semibold rounded-xl active:scale-[0.98] transition ${acaoAtiva ? "text-neutral-500 border border-neutral-200 bg-neutral-50 hover:bg-neutral-100" : "text-brand border border-brand/30 bg-white hover:bg-brand/5"}`}
+        className={`w-full py-2 text-sm font-semibold rounded-xl active:scale-[0.98] transition ${acaoAtiva ? "text-neutral-500 border border-neutral-200 bg-neutral-50 hover:bg-neutral-100" : "text-secondary border border-secondary/30 bg-white hover:bg-secondary/5"}`}
       >
         {acaoAtiva ? "Nova rebaixa (já existe ação)" : "Solicitar Rebaixa"}
       </button>
@@ -365,15 +354,15 @@ function ProdutoCard({ item, onRebaixar, acaoAtiva }) {
 function LojaCard({ clienteCodigo, clienteNome, redeSubrede, subrede, itens, expanded, onToggle, onRebaixar, getAcaoAtiva }) {
   const criticos = itens.filter((i) => i.classificacao === "critico").length;
   const alertas  = itens.filter((i) => i.classificacao === "alerta").length;
-  const borda = criticos > 0 ? "border-red-200" : alertas > 0 ? "border-orange-200" : "border-neutral-200";
-  const iconBg = criticos > 0 ? "bg-red-50 text-red-600" : alertas > 0 ? "bg-orange-50 text-orange-600" : "bg-brand/10 text-brand";
+  const borda = criticos > 0 ? "border-danger/30" : alertas > 0 ? "border-warning/30" : "border-neutral-200";
+  const iconBg = criticos > 0 ? "bg-danger/10 text-danger" : alertas > 0 ? "bg-warning/10 text-warning" : "bg-secondary/10 text-secondary";
 
   // Esconde rede quando duplica o nome do cliente (ex.: cliente "COMPREMAX - X" e rede "COMPREMAX")
   const nomeRedeFmt = formatarRede({ redeSubrede, subrede });
   const mostrarRede = nomeRedeFmt && !clienteNome.toUpperCase().startsWith(nomeRedeFmt.toUpperCase());
 
   return (
-    <div className={`bg-white rounded-2xl border shadow-sm overflow-hidden ${borda}`}>
+    <div className={`surface overflow-hidden ${borda}`}>
       <button className="w-full flex items-center gap-3 px-3 py-3 text-left active:bg-neutral-50 transition-colors" onClick={onToggle}>
         <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${iconBg}`}>
           <IcoStore className="w-5 h-5" />
@@ -383,17 +372,17 @@ function LojaCard({ clienteCodigo, clienteNome, redeSubrede, subrede, itens, exp
           <div className="text-[11px] text-neutral-500 mt-1 flex items-center gap-1.5 flex-wrap">
             <span className="whitespace-nowrap">{itens.length} prod.</span>
             {criticos > 0 && (
-              <span className="inline-flex items-center gap-0.5 bg-red-100 text-red-700 px-1.5 py-0.5 rounded-full font-bold whitespace-nowrap">
-                <span className="w-1 h-1 rounded-full bg-red-500" />{criticos} crít.
+              <span className="inline-flex items-center gap-0.5 bg-danger/15 text-danger px-1.5 py-0.5 rounded-full font-bold whitespace-nowrap">
+                <span className="w-1 h-1 rounded-full bg-danger" />{criticos} crít.
               </span>
             )}
             {alertas > 0 && (
-              <span className="inline-flex items-center gap-0.5 bg-orange-100 text-orange-700 px-1.5 py-0.5 rounded-full font-bold whitespace-nowrap">
-                <span className="w-1 h-1 rounded-full bg-orange-500" />{alertas} alerta{alertas !== 1 ? "s" : ""}
+              <span className="inline-flex items-center gap-0.5 bg-warning/15 text-warning px-1.5 py-0.5 rounded-full font-bold whitespace-nowrap">
+                <span className="w-1 h-1 rounded-full bg-warning" />{alertas} alerta{alertas !== 1 ? "s" : ""}
               </span>
             )}
             {mostrarRede && (
-              <span className="inline-flex items-center gap-1 text-blue-600 font-semibold whitespace-nowrap">
+              <span className="inline-flex items-center gap-1 text-info font-semibold whitespace-nowrap">
                 <IcoUsers className="w-3 h-3" />{nomeRedeFmt}
               </span>
             )}
@@ -416,11 +405,11 @@ function RedeCard({ codigoRede, redeSubrede, lojas, produtos, expandedRede, onTo
   const totalCriticos = produtos.filter((p) => p.piorClassificacao === "critico").length;
   const totalAlertas  = produtos.filter((p) => p.piorClassificacao === "alerta").length;
 
-  const borda  = totalCriticos > 0 ? "border-red-200"          : totalAlertas > 0 ? "border-orange-200"        : "border-blue-200";
-  const iconBg = totalCriticos > 0 ? "bg-red-50 text-red-600"  : totalAlertas > 0 ? "bg-orange-50 text-orange-600" : "bg-blue-50 text-blue-600";
+  const borda  = totalCriticos > 0 ? "border-danger/30"          : totalAlertas > 0 ? "border-warning/30"        : "border-info/30";
+  const iconBg = totalCriticos > 0 ? "bg-danger/10 text-danger"  : totalAlertas > 0 ? "bg-warning/10 text-warning" : "bg-info/10 text-info";
 
   return (
-    <div className={`bg-white rounded-2xl border shadow-sm overflow-hidden ${borda}`}>
+    <div className={`surface overflow-hidden ${borda}`}>
       <button className="w-full flex items-center gap-3 px-3 py-3 text-left active:bg-neutral-50 transition-colors" onClick={onToggleRede}>
         <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${iconBg}`}>
           <IcoUsers className="w-5 h-5" />
@@ -430,13 +419,13 @@ function RedeCard({ codigoRede, redeSubrede, lojas, produtos, expandedRede, onTo
           <div className="text-[11px] text-neutral-500 mt-1 flex items-center gap-1.5 flex-wrap">
             <span className="whitespace-nowrap">{lojas.length} lojas · {produtos.length} prod.</span>
             {totalCriticos > 0 && (
-              <span className="inline-flex items-center gap-0.5 bg-red-100 text-red-700 px-1.5 py-0.5 rounded-full font-bold whitespace-nowrap">
-                <span className="w-1 h-1 rounded-full bg-red-500" />{totalCriticos} crít.
+              <span className="inline-flex items-center gap-0.5 bg-danger/15 text-danger px-1.5 py-0.5 rounded-full font-bold whitespace-nowrap">
+                <span className="w-1 h-1 rounded-full bg-danger" />{totalCriticos} crít.
               </span>
             )}
             {totalAlertas > 0 && (
-              <span className="inline-flex items-center gap-0.5 bg-orange-100 text-orange-700 px-1.5 py-0.5 rounded-full font-bold whitespace-nowrap">
-                <span className="w-1 h-1 rounded-full bg-orange-500" />{totalAlertas} alerta{totalAlertas !== 1 ? "s" : ""}
+              <span className="inline-flex items-center gap-0.5 bg-warning/15 text-warning px-1.5 py-0.5 rounded-full font-bold whitespace-nowrap">
+                <span className="w-1 h-1 rounded-full bg-warning" />{totalAlertas} alerta{totalAlertas !== 1 ? "s" : ""}
               </span>
             )}
           </div>
@@ -461,7 +450,7 @@ function RedeCard({ codigoRede, redeSubrede, lojas, produtos, expandedRede, onTo
 }
 
 function ProdutoRedeCard({ produto, onRebaixar, acaoAtiva }) {
-  const c = CLS[produto.piorClassificacao] || CLS.ok;
+  const c = SEGMENTO[produto.piorClassificacao] || SEGMENTO.ok;
   return (
     <div className={`p-3 rounded-xl border ${c.border} ${c.bg}`}>
       <div className="flex items-start gap-2 mb-2.5">
@@ -479,7 +468,7 @@ function ProdutoRedeCard({ produto, onRebaixar, acaoAtiva }) {
       </div>
       <button
         onClick={onRebaixar}
-        className={`w-full py-2 text-sm font-semibold rounded-xl active:scale-[0.98] transition ${acaoAtiva ? "text-neutral-500 border border-neutral-200 bg-neutral-50 hover:bg-neutral-100" : "text-blue-700 border border-blue-200 bg-white hover:bg-blue-50"}`}
+        className={`w-full py-2 text-sm font-semibold rounded-xl active:scale-[0.98] transition ${acaoAtiva ? "text-neutral-500 border border-neutral-200 bg-neutral-50 hover:bg-neutral-100" : "text-info border border-info/30 bg-white hover:bg-info/10"}`}
       >
         {acaoAtiva ? `Nova ação (já existe ${acaoAtiva.tipo === "oferta_interna" ? "oferta" : "rebaixa"})` : `Solicitar Ação (${produto.lojas.length} loja${produto.lojas.length !== 1 ? "s" : ""})`}
       </button>
@@ -686,26 +675,26 @@ export default function EstoquePage() {
     <div className="space-y-4">
       {/* Cards de resumo */}
       <div className="grid grid-cols-3 gap-2 overflow-hidden">
-        <div className="stat-card bg-red-50 border-red-100 min-w-0">
-          <div className="flex items-center justify-center text-red-500 mb-1">
+        <div className="min-w-0 overflow-hidden rounded-xl border p-3 text-center bg-danger/10 border-danger/15 min-w-0">
+          <div className="flex items-center justify-center text-danger mb-1">
             <IcoAlert className="w-4 h-4" />
           </div>
-          <div className="text-xl sm:text-2xl font-bold text-red-700 leading-none tabular-nums">{loading ? "…" : totCritico}</div>
-          <div className="text-[10px] text-red-600 font-semibold uppercase tracking-wide mt-1">Críticos</div>
+          <div className="text-xl sm:text-2xl font-bold text-danger leading-none tabular-nums">{loading ? "…" : totCritico}</div>
+          <div className="text-[10px] text-danger font-semibold uppercase tracking-wide mt-1">Críticos</div>
         </div>
-        <div className="stat-card bg-orange-50 border-orange-100 min-w-0">
-          <div className="flex items-center justify-center text-orange-500 mb-1">
+        <div className="min-w-0 overflow-hidden rounded-xl border p-3 text-center bg-warning/10 border-warning/15 min-w-0">
+          <div className="flex items-center justify-center text-warning mb-1">
             <IcoClock className="w-4 h-4" />
           </div>
-          <div className="text-xl sm:text-2xl font-bold text-orange-700 leading-none tabular-nums">{loading ? "…" : totAlerta}</div>
-          <div className="text-[10px] text-orange-600 font-semibold uppercase tracking-wide mt-1">Alertas</div>
+          <div className="text-xl sm:text-2xl font-bold text-warning leading-none tabular-nums">{loading ? "…" : totAlerta}</div>
+          <div className="text-[10px] text-warning font-semibold uppercase tracking-wide mt-1">Alertas</div>
         </div>
-        <div className="stat-card bg-brand/5 border-brand/10 min-w-0">
-          <div className="flex items-center justify-center text-brand/70 mb-1">
+        <div className="min-w-0 overflow-hidden rounded-xl border p-3 text-center bg-secondary/5 border-secondary/10 min-w-0">
+          <div className="flex items-center justify-center text-secondary/70 mb-1">
             <IcoStore className="w-4 h-4" />
           </div>
-          <div className="text-xl sm:text-2xl font-bold text-brand leading-none tabular-nums">{loading ? "…" : totalLojas}</div>
-          <div className="text-[10px] text-brand/80 font-semibold uppercase tracking-wide mt-1">Lojas</div>
+          <div className="text-xl sm:text-2xl font-bold text-secondary leading-none tabular-nums">{loading ? "…" : totalLojas}</div>
+          <div className="text-[10px] text-secondary/80 font-semibold uppercase tracking-wide mt-1">Lojas</div>
         </div>
       </div>
 
@@ -731,7 +720,7 @@ export default function EstoquePage() {
       {/* Lista */}
       {loading ? (
         <div className="flex flex-col items-center justify-center py-16 gap-3">
-          <div className="w-9 h-9 rounded-full border-4 border-neutral-200 border-t-brand animate-spin" />
+          <div className="w-9 h-9 rounded-full border-4 border-neutral-200 border-t-secondary animate-spin" />
           <p className="text-sm text-neutral-400">Carregando...</p>
         </div>
       ) : redeGrupos.length === 0 ? (
@@ -797,7 +786,7 @@ export default function EstoquePage() {
       )}
 
       {toast && (
-        <div className="fixed bottom-28 left-1/2 -translate-x-1/2 bg-emerald-600 text-white text-sm font-semibold px-5 py-2.5 rounded-full shadow-lg z-50 pointer-events-none animate-fade-in flex items-center gap-2">
+        <div className="fixed bottom-28 left-1/2 -translate-x-1/2 bg-success text-white text-sm font-semibold px-5 py-2.5 rounded-full z-50 pointer-events-none animate-fade-in flex items-center gap-2">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={3} strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4">
             <path d="M20 6L9 17l-5-5" />
           </svg>
