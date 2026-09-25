@@ -3,17 +3,16 @@
 import { useEffect, useMemo, useState } from "react";
 import api from "@/lib/api";
 import { fmtData, fmtBRL } from "@/lib/utils";
+import { TONE, toneMargem } from "@/lib/tones";
 import { IcoX, IcoUsers, IcoAlert } from "@/components/Icons";
+import Dialog from "@/components/ui/Dialog";
+import Button from "@/components/ui/Button";
 
 export function MargemBadge({ pct }) {
-  if (pct == null) return <span className="text-neutral-300 text-base font-bold">—</span>;
-  const cor = pct >= 20
-    ? "text-emerald-700 bg-emerald-50 border-emerald-200"
-    : pct >= 10
-      ? "text-amber-700 bg-amber-50 border-amber-200"
-      : "text-red-700 bg-red-50 border-red-200";
+  if (pct == null) return <span className="text-base font-semibold text-neutral-300">—</span>;
+  const t = TONE[toneMargem(pct)];
   return (
-    <span className={`inline-block font-bold text-xl px-3 py-0.5 rounded-xl border ${cor}`}>
+    <span className={`inline-block rounded-lg border px-3 py-0.5 text-xl font-semibold tabular-nums ${t.bg} ${t.text} ${t.border}`}>
       {pct.toFixed(1)}%
     </span>
   );
@@ -121,17 +120,12 @@ export default function RebaixaModal({ item, onClose, onEnviado, tipo = "rebaixa
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex flex-col sm:items-center sm:justify-center sm:p-6 animate-fade-in">
-      <div className="absolute inset-0 bg-neutral-900/60 backdrop-blur-sm" onClick={onClose} />
-
-      <div className="relative bg-white shadow-2xl flex flex-col w-full sm:max-w-md sm:rounded-3xl sm:max-h-[90dvh] animate-slide-up safe-area-pb"
-        style={{ height: "100dvh", maxHeight: "100dvh" }}>
-
+    <Dialog open onClose={onClose} sheet size="md" ariaLabel={isOferta ? "Nova oferta interna" : "Nova rebaixa"}>
         {/* Header fixo */}
-        <div className="shrink-0 px-4 pt-3 pb-2.5 border-b border-neutral-100 bg-white sm:rounded-t-3xl safe-area-pt">
+        <div className="shrink-0 px-4 pt-3 pb-2.5 border-b border-neutral-200 bg-white sm:rounded-t-2xl safe-area-pt">
           <div className="flex items-center justify-between gap-3">
             <div className="min-w-0 flex-1">
-              <div className="text-[10px] font-semibold text-brand uppercase tracking-wider mb-0.5">{isOferta ? "Nova Oferta Interna" : "Nova Rebaixa"}</div>
+              <div className="text-[10px] font-semibold text-secondary uppercase tracking-wider mb-0.5">{isOferta ? "Nova Oferta Interna" : "Nova Rebaixa"}</div>
               <h2 className="font-bold text-neutral-900 text-base leading-snug line-clamp-2">{item.produto}</h2>
             </div>
             <button onClick={onClose} aria-label="Fechar"
@@ -150,7 +144,7 @@ export default function RebaixaModal({ item, onClose, onEnviado, tipo = "rebaixa
             <div className="text-[10px] font-semibold text-neutral-500 uppercase tracking-wide">Cliente</div>
             <div className="text-sm font-semibold text-neutral-800 truncate">{item.cliente}</div>
             {item.redeSubrede && (
-              <div className="mt-1.5 flex items-center gap-1.5 text-[11px] text-blue-700 font-semibold">
+              <div className="mt-1.5 flex items-center gap-1.5 text-[11px] text-info font-semibold">
                 <IcoUsers className="w-3 h-3" />
                 <span className="truncate">Rebaixa para toda a rede</span>
               </div>
@@ -165,18 +159,18 @@ export default function RebaixaModal({ item, onClose, onEnviado, tipo = "rebaixa
             </div>
             <div className="flex-1 bg-white px-2 py-2 text-center border-x border-neutral-100">
               <div className="text-[9px] text-neutral-500 font-semibold uppercase tracking-wide">Vence</div>
-              <div className={`font-bold text-lg leading-tight ${item.diasParaVencer <= 15 ? "text-red-600" : "text-neutral-800"}`}>
+              <div className={`font-bold text-lg leading-tight ${item.diasParaVencer <= 15 ? "text-danger" : "text-neutral-800"}`}>
                 {item.diasParaVencer ?? "—"}d
               </div>
               <div className="text-[9px] text-neutral-400">{fmtData(item.dataValidade)}</div>
             </div>
-            <div className="flex-1 bg-brand/5 px-2 py-2 text-center">
-              <div className="text-[9px] text-brand/70 font-semibold uppercase tracking-wide">Últ. Compra</div>
+            <div className="flex-1 bg-secondary/5 px-2 py-2 text-center">
+              <div className="text-[9px] text-secondary/70 font-semibold uppercase tracking-wide">Últ. Compra</div>
               {loadingUC ? (
                 <div className="text-neutral-400 text-xs mt-1">…</div>
               ) : precoUC != null ? (
                 <>
-                  <div className="font-bold text-brand text-sm leading-tight mt-0.5">{fmtBRL(precoUC)}</div>
+                  <div className="font-bold text-secondary text-sm leading-tight mt-0.5">{fmtBRL(precoUC)}</div>
                   <div className="text-[9px] text-neutral-400">{fmtData(dataUC)}</div>
                 </>
               ) : (
@@ -186,7 +180,7 @@ export default function RebaixaModal({ item, onClose, onEnviado, tipo = "rebaixa
           </div>
 
           {!loadingUC && precoUC == null && (
-            <div className="mb-3 rounded-xl bg-amber-50 border border-amber-200 p-2.5 text-[11px] text-amber-800 flex items-start gap-2">
+            <div className="mb-3 rounded-xl bg-warning/10 border border-warning/30 p-2.5 text-[11px] text-warning flex items-start gap-2">
               <IcoAlert className="w-3.5 h-3.5 shrink-0 mt-0.5" />
               <span>Cliente sem histórico de compra deste produto. As margens não poderão ser calculadas.</span>
             </div>
@@ -245,9 +239,9 @@ export default function RebaixaModal({ item, onClose, onEnviado, tipo = "rebaixa
                 <button
                   type="button"
                   onClick={() => setSellout(String(selloutSugerido))}
-                  className="mt-1.5 flex items-center gap-1.5 text-[11px] text-blue-600 font-semibold hover:text-blue-800 active:opacity-70 transition"
+                  className="mt-1.5 flex items-center gap-1.5 text-[11px] text-info font-semibold hover:text-info active:opacity-70 transition"
                 >
-                  <span className="inline-block w-3.5 h-3.5 rounded-full bg-blue-100 text-blue-600 text-[10px] font-bold flex items-center justify-center">↑</span>
+                  <span className="inline-block w-3.5 h-3.5 rounded-full bg-info/15 text-info text-[10px] font-bold flex items-center justify-center">↑</span>
                   Sugerido {fmtBRL(selloutSugerido)} — manter margem PDV ({margemPDV?.toFixed(1)}%)
                 </button>
               )}
@@ -286,7 +280,7 @@ export default function RebaixaModal({ item, onClose, onEnviado, tipo = "rebaixa
             </div>
 
             {erro && (
-              <div className="rounded-xl bg-red-50 border border-red-200 p-3 text-sm text-red-700 flex items-center gap-2 animate-fade-in">
+              <div className="rounded-xl bg-danger/10 border border-danger/30 p-3 text-sm text-danger flex items-center gap-2 animate-fade-in">
                 <IcoAlert className="w-4 h-4 shrink-0" />
                 {erro}
               </div>
@@ -295,12 +289,11 @@ export default function RebaixaModal({ item, onClose, onEnviado, tipo = "rebaixa
         </div>
 
         {/* Footer fixo com botão */}
-        <div className="shrink-0 px-4 py-3 border-t border-neutral-100 bg-white sm:rounded-b-3xl">
-          <button type="submit" form="form-rebaixa" className="btn-primary w-full py-3 text-base" disabled={enviando}>
+        <div className="shrink-0 px-4 py-3 border-t border-neutral-200 bg-white sm:rounded-b-2xl">
+          <Button type="submit" form="form-rebaixa" size="lg" className="w-full" disabled={enviando}>
             {enviando ? "Enviando..." : isOferta ? "Solicitar Oferta" : "Solicitar Rebaixa"}
-          </button>
+          </Button>
         </div>
-      </div>
-    </div>
+    </Dialog>
   );
 }

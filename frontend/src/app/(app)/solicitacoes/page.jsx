@@ -8,23 +8,19 @@ import api from "@/lib/api";
 import { fmtDataHora } from "@/lib/utils";
 import { useAuth } from "@/lib/auth";
 import { IcoClipboard, IcoChevronRight, IcoChevronDown, IcoCheck, IcoX, IcoSync, IcoClock, IcoUser, IcoAlert, IcoUsers, IcoStore } from "@/components/Icons";
+import Badge from "@/components/ui/Badge";
 
 const STATUS = {
-  pendente_supervisor: { label: "Ag. Sup.",   bg: "bg-amber-50",   text: "text-amber-700",  border: "border-amber-200",   dot: "bg-amber-500" },
-  aprovado_supervisor: { label: "Ag. Dir.",   bg: "bg-blue-50",    text: "text-blue-700",   border: "border-blue-200",    dot: "bg-blue-500" },
-  aprovado_final:      { label: "Aprovado",   bg: "bg-emerald-50", text: "text-emerald-700",border: "border-emerald-200", dot: "bg-emerald-500" },
-  rejeitado:           { label: "Rejeitado",  bg: "bg-red-50",     text: "text-red-700",    border: "border-red-200",     dot: "bg-red-500" },
-  cancelado:           { label: "Cancelado",  bg: "bg-neutral-100",  text: "text-neutral-600",  border: "border-neutral-200",   dot: "bg-neutral-400" },
+  pendente_supervisor: { label: "Ag. Sup.",  tone: "warning" },
+  aprovado_supervisor: { label: "Ag. Dir.",  tone: "info" },
+  aprovado_final:      { label: "Aprovado",  tone: "success" },
+  rejeitado:           { label: "Rejeitado", tone: "danger" },
+  cancelado:           { label: "Cancelado", tone: "neutral" },
 };
 
 function StatusBadge({ s }) {
-  const st = STATUS[s] || { label: s, bg: "bg-neutral-100", text: "text-neutral-600", border: "border-neutral-200", dot: "bg-neutral-400" };
-  return (
-    <span className={`inline-flex items-center gap-1.5 text-[10px] font-semibold px-2 py-0.5 rounded-full border shrink-0 whitespace-nowrap ${st.bg} ${st.text} ${st.border}`}>
-      <span className={`w-1.5 h-1.5 rounded-full ${st.dot}`} />
-      {st.label}
-    </span>
-  );
+  const st = STATUS[s] || { label: s, tone: "neutral" };
+  return <Badge tone={st.tone} dot className="text-[10px] font-semibold">{st.label}</Badge>;
 }
 
 function fmtBRL(v) {
@@ -35,9 +31,9 @@ function fmtBRL(v) {
 function TipoBadge({ tipo }) {
   const isOferta = tipo === "oferta_interna";
   return (
-    <span className={`inline-flex items-center text-[10px] font-bold px-1.5 py-0.5 rounded uppercase tracking-wide ${isOferta ? "bg-blue-100 text-blue-700" : "bg-purple-100 text-purple-700"}`}>
+    <Badge tone={isOferta ? "info" : "chart3"} className="text-[10px] font-semibold uppercase tracking-wide">
       {isOferta ? "Oferta" : "Rebaixa"}
-    </span>
+    </Badge>
   );
 }
 
@@ -45,7 +41,7 @@ function TipoBadge({ tipo }) {
 function SolCard({ s, podeDecidir, decidindo, setDecidindo, motivoDecisao, setMotivoDecisao, onDecisao }) {
   const pode = podeDecidir(s);
   return (
-    <div className={`bg-white rounded-2xl border shadow-sm overflow-hidden transition ${pode ? "border-amber-200 ring-1 ring-amber-100" : "border-neutral-200"}`}>
+    <div className={`surface overflow-hidden transition ${pode ? "border-warning/30 ring-1 ring-warning/15" : "border-neutral-200"}`}>
       <div className="px-4 pt-3.5 pb-3">
         <div className="flex items-start justify-between gap-2 mb-2">
           <div className="flex-1 min-w-0">
@@ -63,9 +59,9 @@ function SolCard({ s, podeDecidir, decidindo, setDecidindo, motivoDecisao, setMo
             <div key={i} className="flex items-center justify-between text-sm gap-2">
               <span className="text-neutral-700 truncate flex-1">{it.produto}</span>
               <div className="flex gap-2 items-center shrink-0">
-                {it.precoOferta && <span className="text-brand font-bold text-xs">{fmtBRL(it.precoOferta)}</span>}
+                {it.precoOferta && <span className="text-secondary font-bold text-xs">{fmtBRL(it.precoOferta)}</span>}
                 {it.margemOferta != null && (
-                  <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${it.margemOferta >= 20 ? "bg-emerald-100 text-emerald-700" : it.margemOferta >= 10 ? "bg-amber-100 text-amber-700" : "bg-red-100 text-red-700"}`}>
+                  <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${it.margemOferta >= 20 ? "bg-success/15 text-success" : it.margemOferta >= 10 ? "bg-warning/15 text-warning" : "bg-danger/15 text-danger"}`}>
                     {it.margemOferta?.toFixed(1)}%
                   </span>
                 )}
@@ -77,19 +73,19 @@ function SolCard({ s, podeDecidir, decidindo, setDecidindo, motivoDecisao, setMo
         {s.motivo && <div className="mt-2.5 text-xs text-neutral-500 italic bg-neutral-50 rounded-lg px-2.5 py-1.5">"{s.motivo}"</div>}
       </div>
       <div className="border-t border-neutral-100 px-4 py-2.5 flex items-center justify-between gap-2 bg-neutral-50/50">
-        <Link href={`/solicitacoes/${s._id}`} className="inline-flex items-center gap-1 text-xs text-brand font-semibold active:scale-95 transition">
+        <Link href={`/solicitacoes/${s._id}`} className="inline-flex items-center gap-1 text-xs text-secondary font-semibold active:scale-95 transition">
           Ver detalhes <IcoChevronRight className="w-3.5 h-3.5" />
         </Link>
         {pode && (
           decidindo === s._id ? (
             <div className="flex items-center gap-1.5">
               <input className="input text-xs py-1 px-2 w-28" placeholder="Motivo" value={motivoDecisao} onChange={(e) => setMotivoDecisao(e.target.value)} />
-              <button onClick={() => onDecisao(s._id, "aprovado")} aria-label="Aprovar" className="h-8 w-8 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg flex items-center justify-center active:scale-95 transition"><IcoCheck className="w-4 h-4" /></button>
-              <button onClick={() => onDecisao(s._id, "rejeitado")} aria-label="Rejeitar" className="h-8 w-8 bg-red-500 hover:bg-red-600 text-white rounded-lg flex items-center justify-center active:scale-95 transition"><IcoX className="w-4 h-4" /></button>
+              <button onClick={() => onDecisao(s._id, "aprovado")} aria-label="Aprovar" className="h-8 w-8 bg-success hover:bg-success text-white rounded-lg flex items-center justify-center active:scale-95 transition"><IcoCheck className="w-4 h-4" /></button>
+              <button onClick={() => onDecisao(s._id, "rejeitado")} aria-label="Rejeitar" className="h-8 w-8 bg-danger hover:bg-danger text-white rounded-lg flex items-center justify-center active:scale-95 transition"><IcoX className="w-4 h-4" /></button>
               <button onClick={() => { setDecidindo(null); setMotivoDecisao(""); }} aria-label="Cancelar" className="h-8 w-8 text-neutral-400 hover:bg-neutral-100 rounded-lg flex items-center justify-center"><IcoX className="w-4 h-4" /></button>
             </div>
           ) : (
-            <button onClick={() => setDecidindo(s._id)} className="inline-flex items-center gap-1.5 text-xs bg-amber-500 hover:bg-amber-600 text-white px-3 py-1.5 rounded-lg font-semibold active:scale-95 transition shadow-sm">
+            <button onClick={() => setDecidindo(s._id)} className="inline-flex items-center gap-1.5 text-xs bg-warning hover:bg-warning text-white px-3 py-1.5 rounded-lg font-semibold active:scale-95 transition">
               <IcoCheck className="w-3.5 h-3.5" /> Decidir
             </button>
           )
@@ -116,7 +112,7 @@ function ProdutoGrupoCard({ prodGrupo, redeKey, podeDecidir, decidindo, setDecid
   const criadoEm = sols[0]?.createdAt;
 
   return (
-    <div className={`rounded-xl border overflow-hidden ${podeDecidirAlgum ? "border-amber-200 bg-amber-50/20" : "border-neutral-200 bg-white"}`}>
+    <div className={`rounded-xl border overflow-hidden ${podeDecidirAlgum ? "border-warning/30 bg-warning/20" : "border-neutral-200 bg-white"}`}>
       <div className="px-3 pt-3 pb-2">
         <div className="flex items-start justify-between gap-2">
           <div className="flex-1 min-w-0">
@@ -134,9 +130,9 @@ function ProdutoGrupoCard({ prodGrupo, redeKey, podeDecidir, decidindo, setDecid
             <StatusBadge s={statusRep} />
             {precoOferta != null && (
               <div className="flex items-center gap-1.5">
-                <span className="text-brand font-bold text-sm">{fmtBRL(precoOferta)}</span>
+                <span className="text-secondary font-bold text-sm">{fmtBRL(precoOferta)}</span>
                 {margemOferta != null && (
-                  <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${margemOferta >= 20 ? "bg-emerald-100 text-emerald-700" : margemOferta >= 10 ? "bg-amber-100 text-amber-700" : "bg-red-100 text-red-700"}`}>
+                  <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${margemOferta >= 20 ? "bg-success/15 text-success" : margemOferta >= 10 ? "bg-warning/15 text-warning" : "bg-danger/15 text-danger"}`}>
                     {margemOferta?.toFixed(1)}%
                   </span>
                 )}
@@ -160,7 +156,7 @@ function ProdutoGrupoCard({ prodGrupo, redeKey, podeDecidir, decidindo, setDecid
           {sols.map((s) => {
             const pode = podeDecidir(s);
             return (
-              <div key={s._id} className={`bg-white rounded-xl border px-3 py-2.5 flex items-center justify-between gap-2 ${pode ? "border-amber-200" : "border-neutral-200"}`}>
+              <div key={s._id} className={`bg-white rounded-xl border px-3 py-2.5 flex items-center justify-between gap-2 ${pode ? "border-warning/30" : "border-neutral-200"}`}>
                 <div className="flex-1 min-w-0">
                   <div className="text-sm font-medium text-neutral-800 truncate">{s.cliente}</div>
                   <div className="text-[11px] text-neutral-500 mt-0.5 flex gap-2 flex-wrap">
@@ -169,17 +165,17 @@ function ProdutoGrupoCard({ prodGrupo, redeKey, podeDecidir, decidindo, setDecid
                   </div>
                 </div>
                 <div className="flex items-center gap-1.5 shrink-0">
-                  <Link href={`/solicitacoes/${s._id}`} className="text-[10px] text-brand font-semibold whitespace-nowrap">Ver</Link>
+                  <Link href={`/solicitacoes/${s._id}`} className="text-[10px] text-secondary font-semibold whitespace-nowrap">Ver</Link>
                   {pode && (
                     decidindo === s._id ? (
                       <>
                         <input className="input text-xs py-0.5 px-1.5 w-20" placeholder="Motivo" value={motivoDecisao} onChange={(e) => setMotivoDecisao(e.target.value)} />
-                        <button onClick={() => onDecisao(s._id, "aprovado")} className="h-7 w-7 bg-emerald-600 text-white rounded-lg flex items-center justify-center"><IcoCheck className="w-3.5 h-3.5" /></button>
-                        <button onClick={() => onDecisao(s._id, "rejeitado")} className="h-7 w-7 bg-red-500 text-white rounded-lg flex items-center justify-center"><IcoX className="w-3.5 h-3.5" /></button>
+                        <button onClick={() => onDecisao(s._id, "aprovado")} className="h-7 w-7 bg-success text-white rounded-lg flex items-center justify-center"><IcoCheck className="w-3.5 h-3.5" /></button>
+                        <button onClick={() => onDecisao(s._id, "rejeitado")} className="h-7 w-7 bg-danger text-white rounded-lg flex items-center justify-center"><IcoX className="w-3.5 h-3.5" /></button>
                         <button onClick={() => { setDecidindo(null); setMotivoDecisao(""); }} className="h-7 w-7 text-neutral-400 rounded-lg flex items-center justify-center"><IcoX className="w-3.5 h-3.5" /></button>
                       </>
                     ) : (
-                      <button onClick={() => setDecidindo(s._id)} className="text-[10px] bg-amber-500 text-white px-2 py-1 rounded-lg font-semibold whitespace-nowrap">Decidir</button>
+                      <button onClick={() => setDecidindo(s._id)} className="text-[10px] bg-warning text-white px-2 py-1 rounded-lg font-semibold whitespace-nowrap">Decidir</button>
                     )
                   )}
                 </div>
@@ -195,14 +191,14 @@ function ProdutoGrupoCard({ prodGrupo, redeKey, podeDecidir, decidindo, setDecid
           {decidindo === idGrupo ? (
             <div className="flex items-center gap-1.5">
               <input className="input text-xs py-1 px-2 w-28" placeholder="Motivo" value={motivoDecisao} onChange={(e) => setMotivoDecisao(e.target.value)} />
-              <button onClick={() => onDecisaoGrupo(sols.filter(podeDecidir).map((s) => s._id), "aprovado")} className="h-8 px-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg flex items-center justify-center gap-1 text-xs font-semibold active:scale-95 transition">
+              <button onClick={() => onDecisaoGrupo(sols.filter(podeDecidir).map((s) => s._id), "aprovado")} className="h-8 px-2 bg-success hover:bg-success text-white rounded-lg flex items-center justify-center gap-1 text-xs font-semibold active:scale-95 transition">
                 <IcoCheck className="w-3.5 h-3.5" /> Aprovar todas
               </button>
-              <button onClick={() => onDecisaoGrupo(sols.filter(podeDecidir).map((s) => s._id), "rejeitado")} className="h-8 w-8 bg-red-500 hover:bg-red-600 text-white rounded-lg flex items-center justify-center active:scale-95 transition"><IcoX className="w-4 h-4" /></button>
+              <button onClick={() => onDecisaoGrupo(sols.filter(podeDecidir).map((s) => s._id), "rejeitado")} className="h-8 w-8 bg-danger hover:bg-danger text-white rounded-lg flex items-center justify-center active:scale-95 transition"><IcoX className="w-4 h-4" /></button>
               <button onClick={() => { setDecidindo(null); setMotivoDecisao(""); }} className="h-8 w-8 text-neutral-400 hover:bg-neutral-100 rounded-lg flex items-center justify-center"><IcoX className="w-4 h-4" /></button>
             </div>
           ) : (
-            <button onClick={() => setDecidindo(idGrupo)} className="inline-flex items-center gap-1.5 text-xs bg-amber-500 hover:bg-amber-600 text-white px-3 py-1.5 rounded-lg font-semibold active:scale-95 transition shadow-sm">
+            <button onClick={() => setDecidindo(idGrupo)} className="inline-flex items-center gap-1.5 text-xs bg-warning hover:bg-warning text-white px-3 py-1.5 rounded-lg font-semibold active:scale-95 transition">
               <IcoCheck className="w-3.5 h-3.5" /> Decidir todas ({sols.filter(podeDecidir).length})
             </button>
           )}
@@ -222,21 +218,21 @@ function RedeCard({ redeGrupo, podeDecidir, decidindo, setDecidindo, motivoDecis
   const podeDecidirAlguma = totalPendentes > 0;
 
   return (
-    <div className={`bg-white rounded-2xl border shadow-sm overflow-hidden transition ${podeDecidirAlguma ? "border-amber-200 ring-1 ring-amber-100" : "border-neutral-200"}`}>
+    <div className={`surface overflow-hidden transition ${podeDecidirAlguma ? "border-warning/30 ring-1 ring-warning/15" : "border-neutral-200"}`}>
       <button
         onClick={() => setExpanded((v) => !v)}
         className="w-full px-4 pt-3.5 pb-3 flex items-center justify-between gap-2 text-left"
       >
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-1.5 mb-0.5">
-            <IcoUsers className="w-4 h-4 text-blue-500 shrink-0" />
-            <span className="text-sm font-bold text-blue-600 truncate">{redeNome}</span>
+            <IcoUsers className="w-4 h-4 text-info shrink-0" />
+            <span className="text-sm font-bold text-info truncate">{redeNome}</span>
           </div>
           <div className="text-xs text-neutral-500 flex flex-wrap items-center gap-x-3 gap-y-0.5">
             <span>{produtos.length} produto{produtos.length !== 1 ? "s" : ""}</span>
             <span>{totalLojas} loja{totalLojas !== 1 ? "s" : ""}</span>
             {podeDecidirAlguma && (
-              <span className="text-amber-600 font-semibold">{totalPendentes} p/ decidir</span>
+              <span className="text-warning font-semibold">{totalPendentes} p/ decidir</span>
             )}
           </div>
         </div>
@@ -394,7 +390,7 @@ export default function SolicitacoesPage() {
     <div className="space-y-4">
       {pendentesAprovacao > 0 && (
         <div className="flex justify-end">
-          <span className="inline-flex items-center gap-1.5 bg-amber-500 text-white text-[11px] font-bold px-2.5 py-1.5 rounded-full">
+          <span className="inline-flex items-center gap-1.5 bg-warning text-white text-[11px] font-bold px-2.5 py-1.5 rounded-full">
             <IcoAlert className="w-3.5 h-3.5" />
             {pendentesAprovacao} p/ aprovar
           </span>
@@ -410,12 +406,12 @@ export default function SolicitacoesPage() {
 
       {loading ? (
         <div className="flex flex-col items-center justify-center py-16 gap-3">
-          <div className="w-9 h-9 rounded-full border-4 border-neutral-200 border-t-brand animate-spin" />
+          <div className="w-9 h-9 rounded-full border-4 border-neutral-200 border-t-secondary animate-spin" />
           <p className="text-sm text-neutral-400">Carregando...</p>
         </div>
       ) : lista.length === 0 ? (
         <div className="text-center py-16 px-6">
-          <div className="w-14 h-14 mx-auto rounded-2xl bg-neutral-100 text-neutral-400 flex items-center justify-center mb-3">
+          <div className="w-14 h-14 mx-auto rounded-xl bg-neutral-100 text-neutral-400 flex items-center justify-center mb-3">
             <IcoClipboard className="w-7 h-7" />
           </div>
           <p className="text-neutral-500 font-medium">Nenhuma solicitação</p>

@@ -185,8 +185,8 @@ export default function ResponsabilidadesPage() {
                 <td className="px-3 py-2 text-neutral-800">{r.supervisorNome}</td>
                 <td className="px-3 py-2 text-neutral-500">{r.supervisorCodigo}</td>
                 <td className="px-3 py-2 text-right">
-                  <button onClick={() => editar(r)} className="text-brand font-medium hover:underline mr-3">Editar</button>
-                  <button onClick={() => remover(r)} className="text-red-600 font-medium hover:underline">Remover</button>
+                  <button onClick={() => editar(r)} className="text-secondary font-medium hover:underline mr-3">Editar</button>
+                  <button onClick={() => remover(r)} className="text-danger font-medium hover:underline">Remover</button>
                 </td>
               </tr>
             ))}

@@ -6,13 +6,15 @@ import { useParams, useRouter } from "next/navigation";
 import api from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { fmtData, fmtDataHora, formatarRede } from "@/lib/utils";
+import { TONE, toneMargem } from "@/lib/tones";
+import Badge from "@/components/ui/Badge";
 
 const STATUS_LABEL = {
-  pendente_supervisor: { l: "Ag. Supervisor", cls: "bg-amber-50 text-amber-700 border-amber-200" },
-  aprovado_supervisor: { l: "Ag. Diretoria",  cls: "bg-blue-50 text-blue-700 border-blue-200" },
-  aprovado_final:      { l: "Aprovado",       cls: "bg-emerald-50 text-emerald-700 border-emerald-200" },
-  rejeitado:           { l: "Rejeitado",      cls: "bg-red-50 text-red-700 border-red-200" },
-  cancelado:           { l: "Cancelado",      cls: "bg-neutral-100 text-neutral-600 border-neutral-200" },
+  pendente_supervisor: { l: "Ag. Supervisor", tone: "warning" },
+  aprovado_supervisor: { l: "Ag. Diretoria",  tone: "info" },
+  aprovado_final:      { l: "Aprovado",       tone: "success" },
+  rejeitado:           { l: "Rejeitado",      tone: "danger" },
+  cancelado:           { l: "Cancelado",      tone: "neutral" },
 };
 
 function fmtBRL(v) {
@@ -24,17 +26,15 @@ function fmtPct(v) {
   return `${Number(v).toFixed(1)}%`;
 }
 function corMargem(m) {
-  if (m == null) return "bg-neutral-100 text-neutral-600";
-  if (m >= 20) return "bg-emerald-100 text-emerald-700";
-  if (m >= 10) return "bg-amber-100 text-amber-700";
-  return "bg-red-100 text-red-700";
+  const t = TONE[toneMargem(m)];
+  return `${t.bg} ${t.text}`;
 }
 
 function CampoValor({ label, valor, sub, destaque }) {
   return (
-    <div className={`rounded-xl border px-3 py-2 ${destaque ? "border-brand/30 bg-brand/5" : "border-neutral-200 bg-white"}`}>
+    <div className={`rounded-xl border px-3 py-2 ${destaque ? "border-secondary/30 bg-secondary/5" : "border-neutral-200 bg-white"}`}>
       <div className="text-[10px] font-semibold uppercase tracking-wide text-neutral-500">{label}</div>
-      <div className={`text-sm font-bold mt-0.5 ${destaque ? "text-brand" : "text-neutral-900"}`}>{valor}</div>
+      <div className={`text-sm font-bold mt-0.5 ${destaque ? "text-secondary" : "text-neutral-900"}`}>{valor}</div>
       {sub && <div className="text-[10px] text-neutral-500 mt-0.5">{sub}</div>}
     </div>
   );
@@ -91,7 +91,7 @@ export default function DetalheSolicitacao() {
       (s.status === "pendente_supervisor" || s.status === "aprovado_supervisor"));
 
   const podeCancelar = ["pendente_supervisor", "aprovado_supervisor"].includes(s.status);
-  const statusInfo = STATUS_LABEL[s.status] || { l: s.status, cls: "bg-neutral-100 text-neutral-600 border-neutral-200" };
+  const statusInfo = STATUS_LABEL[s.status] || { l: s.status, tone: "neutral" };
 
   return (
     <div>
@@ -104,13 +104,11 @@ export default function DetalheSolicitacao() {
               {s.tipo.replace("_", " ")} - {s.cliente}
             </h2>
             <p className="text-neutral-500">Cod {s.clienteCodigo} • criada em {fmtDataHora(s.createdAt)}</p>
-            {formatarRede(s) && <p className="text-blue-600 text-sm font-semibold">Rede: {formatarRede(s)}</p>}
+            {formatarRede(s) && <p className="text-info text-sm font-semibold">Rede: {formatarRede(s)}</p>}
             <p className="text-neutral-500 text-sm">Criado por: {s.criadoPorNome} ({s.criadoPorCodigo})</p>
             {s.supervisorNome && <p className="text-neutral-500 text-sm">Supervisor: {s.supervisorNome} ({s.supervisorCodigo})</p>}
           </div>
-          <span className={`inline-flex items-center text-xs font-semibold px-2.5 py-1 rounded-full border self-start ${statusInfo.cls}`}>
-            {statusInfo.l}
-          </span>
+          <Badge tone={statusInfo.tone} dot className="self-start">{statusInfo.l}</Badge>
         </div>
 
         {s.motivo && (<p className="mt-4 text-sm"><strong>Motivo:</strong> {s.motivo}</p>)}
@@ -139,7 +137,7 @@ export default function DetalheSolicitacao() {
                 <span className="px-2 py-1 rounded-lg bg-neutral-100 text-neutral-700 font-medium">{i.quantidade} un</span>
                 {i.dataValidade && <span className="px-2 py-1 rounded-lg bg-neutral-100 text-neutral-700 font-medium">Val. {fmtData(i.dataValidade)}</span>}
                 {i.diasParaVencer != null && (
-                  <span className={`px-2 py-1 rounded-lg font-medium ${i.diasParaVencer <= 15 ? "bg-red-100 text-red-700" : i.diasParaVencer <= 30 ? "bg-amber-100 text-amber-700" : "bg-emerald-100 text-emerald-700"}`}>
+                  <span className={`px-2 py-1 rounded-lg font-medium ${i.diasParaVencer <= 15 ? "bg-danger/15 text-danger" : i.diasParaVencer <= 30 ? "bg-warning/15 text-warning" : "bg-success/15 text-success"}`}>
                     {i.diasParaVencer} dias
                   </span>
                 )}
@@ -195,13 +193,13 @@ export default function DetalheSolicitacao() {
           <textarea className="input" rows={2} value={motivoDecisao} onChange={(e) => setMotivoDecisao(e.target.value)} />
           <div className="mt-3 flex gap-2">
             <button onClick={() => decidir("aprovado")} className="btn-primary">Aprovar</button>
-            <button onClick={() => decidir("rejeitado")} className="btn-secondary border-red-500 text-red-600 hover:bg-red-50">Rejeitar</button>
+            <button onClick={() => decidir("rejeitado")} className="btn-secondary border-danger text-danger hover:bg-danger/10">Rejeitar</button>
           </div>
         </div>
       )}
 
       {podeCancelar && (
-        <button onClick={cancelar} className="btn-ghost text-red-600">Cancelar solicitacao</button>
+        <button onClick={cancelar} className="btn-ghost text-danger">Cancelar solicitacao</button>
       )}
 
       <div className="card p-4 mt-6">

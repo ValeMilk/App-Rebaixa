@@ -4,7 +4,11 @@ import { useEffect, useMemo, useState } from "react";
 import api from "@/lib/api";
 import { fmtData, fmtBRL } from "@/lib/utils";
 import { STATUS_SHELF_MAP } from "@/lib/estoque";
+import { TONE, toneMargem } from "@/lib/tones";
 import { IcoX, IcoAlert, IcoStore } from "@/components/Icons";
+import Dialog from "@/components/ui/Dialog";
+import Button from "@/components/ui/Button";
+import Badge from "@/components/ui/Badge";
 
 // Tipo de solicitacao sugerido pelo status de shelf do item (giro -> oferta interna)
 const tipoDe = (it) => STATUS_SHELF_MAP[it.status]?.acao || "rebaixa";
@@ -25,15 +29,9 @@ function calcMargens({ precoPDV, precoOferta, sellout, precoUC }) {
 }
 
 function MargemMini({ label, pct }) {
-  const cor = pct == null
-    ? "text-neutral-400 bg-neutral-50 border-neutral-200"
-    : pct >= 20
-      ? "text-emerald-700 bg-emerald-50 border-emerald-200"
-      : pct >= 10
-        ? "text-amber-700 bg-amber-50 border-amber-200"
-        : "text-red-700 bg-red-50 border-red-200";
+  const t = TONE[toneMargem(pct)];
   return (
-    <span className={`inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded-lg border whitespace-nowrap ${cor}`}>
+    <span className={`inline-flex items-center gap-1 whitespace-nowrap rounded-lg border px-2 py-0.5 text-[11px] font-medium tabular-nums ${t.bg} ${t.text} ${t.border}`}>
       {label} <b>{pct == null ? "—" : `${pct.toFixed(1)}%`}</b>
     </span>
   );
@@ -154,17 +152,12 @@ export default function RebaixaLoteModal({ itens, onClose, onEnviado }) {
       : `Criar ${nRebaixas} ${nRebaixas === 1 ? "rebaixa" : "rebaixas"}`;
 
   return (
-    <div className="fixed inset-0 z-50 flex flex-col sm:items-center sm:justify-center sm:p-6 animate-fade-in">
-      <div className="absolute inset-0 bg-neutral-900/60 backdrop-blur-sm" onClick={onClose} />
-
-      <div className="relative bg-white shadow-2xl flex flex-col w-full sm:max-w-2xl sm:rounded-3xl sm:max-h-[92dvh] animate-slide-up safe-area-pb"
-        style={{ height: "100dvh", maxHeight: "100dvh" }}>
-
+    <Dialog open onClose={onClose} sheet size="lg" ariaLabel="Rebaixa em lote">
         {/* Header fixo */}
-        <div className="shrink-0 px-4 pt-3 pb-2.5 border-b border-neutral-100 bg-white sm:rounded-t-3xl safe-area-pt">
+        <div className="shrink-0 px-4 pt-3 pb-2.5 border-b border-neutral-200 bg-white sm:rounded-t-2xl safe-area-pt">
           <div className="flex items-center justify-between gap-3">
             <div className="min-w-0 flex-1">
-              <div className="text-[10px] font-semibold text-brand uppercase tracking-wider mb-0.5">Rebaixa em lote</div>
+              <div className="text-[10px] font-semibold text-secondary uppercase tracking-wider mb-0.5">Rebaixa em lote</div>
               <h2 className="font-bold text-neutral-900 text-base leading-snug">
                 {itens.length} {itens.length === 1 ? "item" : "itens"} · {lojas.length} {lojas.length === 1 ? "loja" : "lojas"}
               </h2>
@@ -196,7 +189,7 @@ export default function RebaixaLoteModal({ itens, onClose, onEnviado }) {
             </div>
 
             {semHistorico > 0 && (
-              <div className="rounded-xl bg-amber-50 border border-amber-200 p-2.5 text-[11px] text-amber-800 flex items-start gap-2">
+              <div className="rounded-xl bg-warning/10 border border-warning/30 p-2.5 text-[11px] text-warning flex items-start gap-2">
                 <IcoAlert className="w-3.5 h-3.5 shrink-0 mt-0.5" />
                 <span>{semHistorico} {semHistorico === 1 ? "item sem" : "itens sem"} histórico de compra — as margens desses não serão calculadas.</span>
               </div>
@@ -204,7 +197,7 @@ export default function RebaixaLoteModal({ itens, onClose, onEnviado }) {
 
             {/* Itens agrupados por loja */}
             {lojas.map((loja) => (
-              <div key={loja.clienteCodigo} className="rounded-2xl border border-neutral-100 overflow-hidden">
+              <div key={loja.clienteCodigo} className="surface overflow-hidden">
                 <div className="flex items-center gap-2 bg-neutral-50 px-3 py-2 border-b border-neutral-100">
                   <IcoStore className="w-4 h-4 text-neutral-400 shrink-0" />
                   <div className="min-w-0">
@@ -224,15 +217,13 @@ export default function RebaixaLoteModal({ itens, onClose, onEnviado }) {
                           <div className="min-w-0">
                             <div className="flex items-center gap-2 flex-wrap">
                               <div className="text-sm font-medium text-neutral-800 leading-snug">{it.produto}</div>
-                              <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full border whitespace-nowrap ${
-                                tipoDe(it) === "oferta_interna" ? "bg-blue-50 text-blue-700 border-blue-200" : "bg-red-50 text-red-700 border-red-200"
-                              }`}>
+                              <Badge tone={tipoDe(it) === "oferta_interna" ? "info" : "danger"} className="text-[10px] font-semibold">
                                 {tipoDe(it) === "oferta_interna" ? "Oferta" : "Rebaixa"}
-                              </span>
+                              </Badge>
                             </div>
                             <div className="text-[11px] text-neutral-400 mt-0.5">
                               {it.quantidade} un · vence {fmtData(it.dataValidade)}
-                              <span className={`font-semibold ${it.diasParaVencer <= 15 ? "text-red-600" : "text-neutral-500"}`}> ({it.diasParaVencer ?? "—"}d)</span>
+                              <span className={`font-semibold ${it.diasParaVencer <= 15 ? "text-danger" : "text-neutral-500"}`}> ({it.diasParaVencer ?? "—"}d)</span>
                             </div>
                           </div>
                           <div className="shrink-0 text-right text-[11px]">
@@ -241,7 +232,7 @@ export default function RebaixaLoteModal({ itens, onClose, onEnviado }) {
                               <div className="text-neutral-400">…</div>
                             ) : d.precoUC != null ? (
                               <>
-                                <div className="font-bold text-brand">{fmtBRL(d.precoUC)}</div>
+                                <div className="font-bold text-secondary">{fmtBRL(d.precoUC)}</div>
                                 <div className="text-neutral-400">{fmtData(d.dataUC)}</div>
                               </>
                             ) : (
@@ -273,7 +264,7 @@ export default function RebaixaLoteModal({ itens, onClose, onEnviado }) {
                           <MargemMini label="Margem oferta" pct={d.margemOferta} />
                           {d.selloutSugerido != null && String(d.c.sellout || "") !== String(d.selloutSugerido) && (
                             <button type="button" onClick={() => setCampo(it._id, "sellout", String(d.selloutSugerido))}
-                              className="text-[11px] text-blue-600 font-semibold hover:text-blue-800 active:opacity-70 transition">
+                              className="text-[11px] text-info font-semibold hover:text-info active:opacity-70 transition">
                               ↑ Sellout sugerido {fmtBRL(d.selloutSugerido)}
                             </button>
                           )}
@@ -286,7 +277,7 @@ export default function RebaixaLoteModal({ itens, onClose, onEnviado }) {
             ))}
 
             {erro && (
-              <div className="rounded-xl bg-red-50 border border-red-200 p-3 text-sm text-red-700 flex items-center gap-2 animate-fade-in">
+              <div className="rounded-xl bg-danger/10 border border-danger/30 p-3 text-sm text-danger flex items-center gap-2 animate-fade-in">
                 <IcoAlert className="w-4 h-4 shrink-0" />
                 {erro}
               </div>
@@ -296,11 +287,10 @@ export default function RebaixaLoteModal({ itens, onClose, onEnviado }) {
 
         {/* Footer fixo */}
         <div className="shrink-0 px-4 py-3 border-t border-neutral-100 bg-white sm:rounded-b-3xl">
-          <button type="submit" form="form-rebaixa-lote" className="btn-primary w-full py-3 text-base" disabled={enviando}>
+          <Button type="submit" form="form-rebaixa-lote" size="lg" className="w-full" disabled={enviando}>
             {enviando ? "Enviando..." : rotuloEnviar}
-          </button>
+          </Button>
         </div>
-      </div>
-    </div>
+    </Dialog>
   );
 }

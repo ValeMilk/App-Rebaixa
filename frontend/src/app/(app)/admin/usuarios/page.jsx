@@ -111,7 +111,7 @@ export default function UsuariosPage() {
                 <button
                   key={r} type="button"
                   onClick={() => toggleRoleExtra(r)}
-                  className={`px-3 py-1 rounded-full text-xs font-semibold border transition ${marcado ? "bg-brand text-white border-brand" : "bg-white text-neutral-600 border-neutral-200 hover:border-brand/50"}`}
+                  className={`px-3 py-1 rounded-full text-xs font-semibold border transition ${marcado ? "bg-secondary text-white border-secondary" : "bg-white text-neutral-600 border-neutral-200 hover:border-secondary/50"}`}
                 >
                   {ROLE_LABEL[r]}
                 </button>
@@ -146,7 +146,7 @@ export default function UsuariosPage() {
             {loading ? (
               <tr><td colSpan={8} className="px-3 py-6 text-center text-neutral-500">Carregando...</td></tr>
             ) : users.map((u) => (
-              <tr key={u._id} className={`border-t border-neutral-100 ${editId === u._id ? "bg-brand/5" : ""}`}>
+              <tr key={u._id} className={`border-t border-neutral-100 ${editId === u._id ? "bg-secondary/5" : ""}`}>
                 <td className="px-3 py-2 font-medium">{u.nome}</td>
                 <td className="px-3 py-2 text-neutral-500">{u.email}</td>
                 <td className="px-3 py-2">{u.codigo}</td>
@@ -159,7 +159,7 @@ export default function UsuariosPage() {
                   </div>
                 </td>
                 <td className="px-3 py-2">
-                  <span className="inline-block px-2 py-0.5 rounded-full text-xs font-semibold bg-brand/10 text-brand capitalize">
+                  <span className="inline-block px-2 py-0.5 rounded-full text-xs font-semibold bg-secondary/10 text-secondary capitalize">
                     {ROLE_LABEL[u.role] || u.role}
                   </span>
                 </td>
@@ -173,14 +173,14 @@ export default function UsuariosPage() {
                   </div>
                 </td>
                 <td className="px-3 py-2">
-                  <span className={`text-xs font-semibold ${u.ativo ? "text-emerald-600" : "text-neutral-400"}`}>
+                  <span className={`text-xs font-semibold ${u.ativo ? "text-success" : "text-neutral-400"}`}>
                     {u.ativo ? "Sim" : "Não"}
                   </span>
                 </td>
                 <td className="px-3 py-2 text-right space-x-2 whitespace-nowrap">
-                  <button onClick={() => editar(u)} className="text-brand hover:underline text-sm">Editar</button>
+                  <button onClick={() => editar(u)} className="text-secondary hover:underline text-sm">Editar</button>
                   {u.ativo && (
-                    <button onClick={() => desativar(u)} className="text-red-600 hover:underline text-sm">Desativar</button>
+                    <button onClick={() => desativar(u)} className="text-danger hover:underline text-sm">Desativar</button>
                   )}
                 </td>
               </tr>

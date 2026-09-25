@@ -65,7 +65,7 @@ export default function SyncPage() {
           <p className="text-sm text-neutral-500 mb-4">
             Atualiza carteira de clientes + catalogo de produtos de uma vez.
             {status && !status.erpConfigurado && (
-              <span className="block mt-1 text-amber-600 font-medium">
+              <span className="block mt-1 text-warning font-medium">
                 ⚠ ERP não configurado — preencha ERP_* no .env da VPS.
               </span>
             )}
@@ -100,7 +100,7 @@ export default function SyncPage() {
           <p className="text-sm text-neutral-500 mb-4">
             Atualiza carteira de clientes + catálogo de produtos do Esigma de uma vez.
             {status && !status.esigmaConfigurado && (
-              <span className="block mt-1 text-amber-600 font-medium">
+              <span className="block mt-1 text-warning font-medium">
                 ⚠ Esigma não configurado — preencha ERP_*2 no .env da VPS.
               </span>
             )}
