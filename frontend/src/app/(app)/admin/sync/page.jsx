@@ -1,4 +1,5 @@
 "use client";
+import { useTituloDaPagina } from "@/components/PageTitleContext";
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
@@ -7,6 +8,7 @@ import api from "@/lib/api";
 import { fmtDataHora } from "@/lib/utils";
 
 export default function SyncPage() {
+  useTituloDaPagina("Sincronização", "Atualize manualmente os dados da ATIVMOB e do ERP");
   const router = useRouter();
   const { user, loading: authLoading } = useAuth();
   const [status, setStatus] = useState(null);
@@ -47,9 +49,6 @@ export default function SyncPage() {
 
   return (
     <div>
-      <h1 className="text-2xl font-bold text-neutral-900 mb-1">Sincronizacao</h1>
-      <p className="text-neutral-500 mb-6">Atualize manualmente os dados da ATIVMOB e do ERP</p>
-
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
         <div className="card p-5">
           <h2 className="font-semibold mb-2">Estoque (ATIVMOB)</h2>

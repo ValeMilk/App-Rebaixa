@@ -70,7 +70,7 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen flex flex-col md:flex-row">
       {/* Painel esquerdo — logo */}
-      <div className="bg-brand flex flex-col items-center justify-center md:w-1/2 py-16 px-8">
+      <div className="bg-primary flex flex-col items-center justify-center md:w-1/2 py-16 px-8">
         <div className="flex flex-col items-center gap-6">
           {/* Coloque logo.png ou logo.svg em frontend/public/ */}
           <Image
@@ -81,27 +81,27 @@ export default function LoginPage() {
             className="object-contain drop-shadow-lg"
             priority
           />
-          <p className="text-white/80 text-sm tracking-wide text-center">
+          <p className="text-white/80 text-sm text-center">
             Sistema de Gestão de Ações Comerciais
           </p>
         </div>
       </div>
 
       {/* Painel direito — formulário */}
-      <div className="flex flex-col items-center justify-center md:w-1/2 bg-white px-8 py-14 safe-area-pt safe-area-pb">
+      <div className="flex flex-col items-center justify-center md:w-1/2 bg-page px-8 py-14 safe-area-pt safe-area-pb">
         <div className="w-full max-w-sm">
-          <h1 className="text-2xl font-bold text-neutral-900 mb-1">Bem-vindo</h1>
-          <p className="text-neutral-500 text-sm mb-8">Faça login para continuar</p>
+          <h1 className="text-2xl font-semibold text-neutral-900 mb-1">Bem-vindo</h1>
+          <p className="text-sm text-neutral-500 mb-8">Faça login para continuar</p>
 
           <form onSubmit={handleSubmit} className="space-y-5">
             {/* Usuário */}
             <div>
-              <label className="block text-[11px] font-bold uppercase tracking-widest text-neutral-500 mb-1.5">
+              <label className="mb-1.5 block text-xs font-medium text-neutral-600">
                 Usuário
               </label>
               <div className="relative">
                 <select
-                  className="w-full h-12 rounded-xl border border-neutral-200 bg-white px-4 pr-10 text-sm text-neutral-800 appearance-none focus:outline-none focus:ring-2 focus:ring-brand/40 focus:border-brand transition"
+                  className="select"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
@@ -112,7 +112,7 @@ export default function LoginPage() {
                     <option key={u.email} value={u.email}>{u.nome}</option>
                   ))}
                 </select>
-                <span className="absolute right-3.5 top-1/2 -translate-y-1/2 text-neutral-400 pointer-events-none">
+                <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-neutral-400">
                   <IcoChevronDown className="w-4 h-4" />
                 </span>
               </div>
@@ -120,14 +120,14 @@ export default function LoginPage() {
 
             {/* Senha */}
             <div>
-              <label className="block text-[11px] font-bold uppercase tracking-widest text-neutral-500 mb-1.5">
+              <label className="mb-1.5 block text-xs font-medium text-neutral-600">
                 Senha
               </label>
               <div className="relative">
                 <input
                   type={mostrarSenha ? "text" : "password"}
                   inputMode="numeric"
-                  className="w-full h-12 rounded-xl border border-neutral-200 bg-white px-4 pr-12 text-sm text-neutral-800 placeholder-neutral-300 focus:outline-none focus:ring-2 focus:ring-brand/40 focus:border-brand transition"
+                  className="input pr-11"
                   value={senha}
                   onChange={(e) => setSenha(e.target.value)}
                   placeholder="••••••••"
@@ -136,7 +136,7 @@ export default function LoginPage() {
                 <button
                   type="button"
                   onClick={() => setMostrarSenha(v => !v)}
-                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-600 transition"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-600 transition"
                   tabIndex={-1}
                 >
                   <IcoEye open={mostrarSenha} />
@@ -145,7 +145,7 @@ export default function LoginPage() {
             </div>
 
             {erro && (
-              <div className="rounded-xl bg-red-50 border border-red-200 px-3.5 py-3 text-sm text-red-700">
+              <div className="rounded-lg border border-danger/30 bg-danger/10 px-3.5 py-3 text-sm text-danger">
                 {erro}
               </div>
             )}
@@ -153,7 +153,7 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full h-12 rounded-xl bg-brand text-white font-semibold text-sm flex items-center justify-center gap-2 hover:opacity-90 active:scale-[.98] transition disabled:opacity-60 mt-1"
+              className="btn mt-1 h-11 w-full text-base"
             >
               {loading ? "Entrando..." : <><IcoArrow /> Entrar</>}
             </button>

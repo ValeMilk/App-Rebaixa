@@ -1,4 +1,5 @@
 "use client";
+import { useTituloDaPagina } from "@/components/PageTitleContext";
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
@@ -11,6 +12,7 @@ const ROLE_LABEL = { vendedor: "Vendedor", supervisor: "Supervisor", diretoria: 
 const formVazio = { nome: "", email: "", codigo: "", codigoEsigma: "", role: "supervisor", roles: [] };
 
 export default function UsuariosPage() {
+  useTituloDaPagina("Usuários", "A senha inicial é igual ao código");
   const router = useRouter();
   const { user, loading: authLoading } = useAuth();
   const [users, setUsers] = useState([]);
@@ -82,9 +84,6 @@ export default function UsuariosPage() {
 
   return (
     <div>
-      <h1 className="text-2xl font-bold text-neutral-900 mb-1">Usuários</h1>
-      <p className="text-neutral-500 mb-6">Gerencie usuários. A senha inicial é igual ao código.</p>
-
       <form onSubmit={salvar} className="card p-4 space-y-3 mb-6">
         <div className="grid grid-cols-1 md:grid-cols-5 gap-3">
           <input className="input" placeholder="Nome completo" value={form.nome}

@@ -1,4 +1,5 @@
 "use client";
+import { useTituloDaPagina } from "@/components/PageTitleContext";
 
 import { useEffect, useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
@@ -6,6 +7,7 @@ import api from "@/lib/api";
 import { IcoCalendar, IcoPackage, IcoSearch, IcoStore } from "@/components/Icons";
 
 export default function DashboardSupervisor() {
+  useTituloDaPagina("Métricas Redes", "Últimos 30 dias por rede");
   const router = useRouter();
   const [metricas, setMetricas] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -104,7 +106,7 @@ export default function DashboardSupervisor() {
   // Spinner de tela cheia só na primeira carga; trocas de filtro mantêm a lista atual visível
   if (loading && metricas.length === 0) {
     return (
-      <div className="flex items-center justify-center h-screen bg-neutral-50">
+      <div className="flex items-center justify-center py-24">
         <div className="text-center">
           <div className="w-10 h-10 rounded-full border-4 border-neutral-200 border-t-brand animate-spin mx-auto mb-3" />
           <p className="text-sm text-neutral-500 font-medium">Carregando métricas...</p>
@@ -114,15 +116,9 @@ export default function DashboardSupervisor() {
   }
 
   return (
-    <div className="min-h-screen bg-neutral-50">
-      {/* Header */}
-      <div className="bg-white border-b border-neutral-200 px-4 py-4">
-        <h1 className="text-xl font-bold text-neutral-900">Dashboard Supervisor</h1>
-        <p className="text-xs text-neutral-500 mt-1">Métricas dos últimos 30 dias por rede</p>
-      </div>
-
+    <div className="space-y-4">
       {/* Barra de ferramentas */}
-      <div className="bg-white border-b border-neutral-200 px-4 py-3">
+      <div className="surface px-4 py-3">
         <div className="flex flex-col gap-3">
           {/* Linha 1: Busca */}
           <div className="flex-1 relative">

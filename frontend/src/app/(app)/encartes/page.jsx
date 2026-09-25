@@ -1,4 +1,5 @@
 ﻿"use client";
+import { useTituloDaPagina } from "@/components/PageTitleContext";
 
 import { useEffect, useState, useCallback, useMemo } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -559,6 +560,7 @@ function CalendarioRede({ grupo, subredeInicial, onClickEncarte }) {
 const STORAGE_KEY = "encartes_rede_sel";
 
 export default function EncartesPage() {
+  useTituloDaPagina("Agenda de Encartes", "Selecione uma rede para ver o calendário");
   const router = useRouter();
   const searchParams = useSearchParams();
   const [grupos, setGrupos] = useState([]);
@@ -670,14 +672,10 @@ export default function EncartesPage() {
   }
 
   return (
-    <div className="flex flex-col min-h-screen bg-neutral-50">
-      {/* Header com título + botão Novo Encarte */}
-      <div className="bg-white border-b border-neutral-100 px-4 py-3 safe-area-pt">
-        <div className="flex items-center justify-between gap-3">
-          <div>
-            <h1 className="font-bold text-neutral-900 text-lg leading-tight">Agenda de Encartes</h1>
-            <p className="text-neutral-500 text-xs mt-0.5">Selecione uma rede para ver o calendário</p>
-          </div>
+    <div className="flex flex-col gap-4">
+      {/* Acoes da tela (titulo fica na TopBar) */}
+      <div className="surface px-4 py-3">
+        <div className="flex items-center justify-end gap-3">
           <div className="flex items-center gap-2">
             <Link
               href="/encartes/calendario"
@@ -703,7 +701,7 @@ export default function EncartesPage() {
         </div>
       </div>
 
-      <div className="flex-1 p-4 pb-24 space-y-4">
+      <div className="flex-1 space-y-4">
         <div>
           <label className="block text-xs font-semibold text-neutral-500 uppercase tracking-wide mb-1.5">Rede</label>
           {loading ? (

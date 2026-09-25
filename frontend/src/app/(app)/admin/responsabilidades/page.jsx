@@ -1,4 +1,5 @@
 "use client";
+import { useTituloDaPagina } from "@/components/PageTitleContext";
 
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
@@ -6,6 +7,7 @@ import { useAuth } from "@/lib/auth";
 import api from "@/lib/api";
 
 export default function ResponsabilidadesPage() {
+  useTituloDaPagina("Responsabilidades de Rede", "Supervisor responsável por rede");
   const router = useRouter();
   const { user, loading: authLoading } = useAuth();
   const [itens, setItens] = useState([]);
@@ -100,8 +102,7 @@ export default function ResponsabilidadesPage() {
 
   return (
     <div>
-      <h1 className="text-2xl font-bold text-neutral-900 mb-1">Responsabilidades de Rede</h1>
-      <p className="text-neutral-500 mb-6 max-w-3xl">
+      <p className="text-sm text-neutral-600 mb-6 max-w-3xl">
         Override opcional: define o <strong>supervisor responsável</strong> por uma rede.
         Quando cadastrado, este supervisor passa a ver TODAS as solicitações daquela rede e é o
         único que decide na etapa de supervisor. Demais supervisores com lojas dessa rede na

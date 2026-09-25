@@ -159,3 +159,18 @@ export const IcoChart = (p) => (
     <line x1="6" y1="20" x2="6" y2="14" />
   </Base>
 );
+
+export const IcoMenu = (p) => (
+  <Base {...p}>
+    <line x1="4" y1="7" x2="20" y2="7" />
+    <line x1="4" y1="12" x2="20" y2="12" />
+    <line x1="4" y1="17" x2="20" y2="17" />
+  </Base>
+);
+
+export const IcoPanelLeft = (p) => (
+  <Base {...p}>
+    <rect x="3" y="4" width="18" height="16" rx="2" />
+    <line x1="9" y1="4" x2="9" y2="20" />
+  </Base>
+);

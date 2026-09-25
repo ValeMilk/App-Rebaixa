@@ -1,4 +1,5 @@
 "use client";
+import { useTituloDaPagina } from "@/components/PageTitleContext";
 
 import { useEffect, useMemo, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
@@ -487,6 +488,7 @@ function ProdutoRedeCard({ produto, onRebaixar, acaoAtiva }) {
 }
 
 export default function EstoquePage() {
+  useTituloDaPagina("Lojas", "Produtos próximos ao vencimento");
   const router = useRouter();
   const { user, loading: authLoading } = useAuth();
   const [itens, setItens] = useState([]);
@@ -682,16 +684,6 @@ export default function EstoquePage() {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-end justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-bold text-neutral-900 tracking-tight">Lojas</h1>
-          <p className="text-neutral-500 text-sm mt-0.5">Produtos próximos ao vencimento</p>
-        </div>
-        <div className="w-10 h-10 rounded-2xl bg-brand/10 text-brand flex items-center justify-center">
-          <IcoStore className="w-5 h-5" />
-        </div>
-      </div>
-
       {/* Cards de resumo */}
       <div className="grid grid-cols-3 gap-2 overflow-hidden">
         <div className="stat-card bg-red-50 border-red-100 min-w-0">

@@ -1,4 +1,5 @@
 "use client";
+import { useTituloDaPagina } from "@/components/PageTitleContext";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
@@ -314,6 +315,7 @@ function TabelaEncartes({ encartes, temP2 }) {
 
 // ── Página principal ─────────────────────────────────────────────────────────
 export default function PerformancePage() {
+  useTituloDaPagina("Performance de Encartes", "Períodos, margens, preços e sellout por subcategoria");
   const router = useRouter();
   const { user, loading: authLoading } = useAuth();
 
@@ -372,13 +374,6 @@ export default function PerformancePage() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div>
-        <p className="text-xs font-semibold uppercase tracking-widest text-brand mb-1">Diretoria · Análise</p>
-        <h1 className="text-xl sm:text-2xl font-black text-neutral-900">Performance de Encartes</h1>
-        <p className="text-xs text-neutral-400 mt-0.5">Compare períodos, acompanhe margens, preços e sellout por subcategoria</p>
-      </div>
-
       {/* Filtros */}
       <div className="bg-white rounded-2xl border border-neutral-200 shadow-sm p-4 space-y-4">
         <div className="flex flex-wrap items-end gap-4">

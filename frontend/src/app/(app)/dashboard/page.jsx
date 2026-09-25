@@ -1,4 +1,5 @@
 "use client";
+import { useTituloDaPagina } from "@/components/PageTitleContext";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
@@ -108,6 +109,7 @@ function Spinner({ texto }) {
 
 // ── Página ───────────────────────────────────────────────────────────────────
 export default function DashboardPage() {
+  useTituloDaPagina("Painel de Vencimentos", "Estoque em giro/rebaixa · fonte: relatório BI (Ativmob)");
   const router = useRouter();
   const { user, loading } = useAuth();
 
@@ -380,12 +382,7 @@ export default function DashboardPage() {
   return (
     <div>
       {/* Header */}
-      <div className="flex items-start justify-between gap-3 mb-5 flex-wrap">
-        <div>
-          <p className="text-xs font-semibold uppercase tracking-widest text-brand mb-1">Valemilk · Controle Comercial</p>
-          <h1 className="text-xl sm:text-2xl font-black text-neutral-900">Painel de Vencimentos</h1>
-          <p className="text-xs text-neutral-400 mt-0.5">Estoque em giro/rebaixa · fonte: relatório BI (Ativmob)</p>
-        </div>
+      <div className="flex items-center justify-end gap-3 mb-5 flex-wrap">
         <div className="flex items-center gap-2 flex-wrap">
           <ChipsHorizonte value={horizonte} onChange={setHorizonte} />
           {atualizado && <span className="hidden sm:block text-xs text-neutral-400">{fmtDataHora(atualizado)}</span>}

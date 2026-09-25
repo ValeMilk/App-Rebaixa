@@ -1,4 +1,5 @@
 "use client";
+import { useTituloDaPagina } from "@/components/PageTitleContext";
 
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
@@ -46,6 +47,7 @@ export default function DetalheSolicitacao() {
   const [s, setS] = useState(null);
   const [loading, setLoading] = useState(true);
   const [motivoDecisao, setMotivoDecisao] = useState("");
+  useTituloDaPagina(s ? `${s.tipo === "oferta_interna" ? "Oferta interna" : "Rebaixa"} · ${s.cliente}` : "Solicitação", s ? `Cód. ${s.clienteCodigo}` : undefined);
 
   async function carregar() {
     setLoading(true);
@@ -98,9 +100,9 @@ export default function DetalheSolicitacao() {
       <div className="card p-6 mb-4">
         <div className="flex flex-wrap justify-between gap-3">
           <div>
-            <h1 className="text-2xl font-bold text-neutral-900 capitalize">
+            <h2 className="text-base font-semibold text-neutral-800 capitalize">
               {s.tipo.replace("_", " ")} - {s.cliente}
-            </h1>
+            </h2>
             <p className="text-neutral-500">Cod {s.clienteCodigo} • criada em {fmtDataHora(s.createdAt)}</p>
             {formatarRede(s) && <p className="text-blue-600 text-sm font-semibold">Rede: {formatarRede(s)}</p>}
             <p className="text-neutral-500 text-sm">Criado por: {s.criadoPorNome} ({s.criadoPorCodigo})</p>

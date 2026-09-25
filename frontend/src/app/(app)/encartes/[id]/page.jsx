@@ -1,4 +1,5 @@
 ﻿"use client";
+import { useTituloDaPagina } from "@/components/PageTitleContext";
 
 import { useEffect, useState, useCallback, useMemo } from "react";
 import { useRouter, useParams } from "next/navigation";
@@ -1153,6 +1154,7 @@ export default function EncarteDetalhe() {
   const { id } = useParams();
   const router = useRouter();
   const [encarte, setEncarte] = useState(null);
+  useTituloDaPagina(encarte?.nome || "Encarte", encarte ? (encarte.redeSubrede || encarte.codigoRede) : undefined);
   const [loading, setLoading] = useState(true);
   const [modalAberto, setModalAberto] = useState(false);
   const [itemEditando, setItemEditando] = useState(null); // { _id, produtoCodigo, subcategoria, precoPDV, precoOferta, sellout, margemPDV, margemOferta, precoUltimaCompra }
@@ -1269,9 +1271,9 @@ export default function EncarteDetalhe() {
   };
 
   return (
-    <div className="flex flex-col min-h-screen bg-neutral-50">
+    <div className="flex flex-col gap-4">
       {/* Header */}
-      <div className="bg-white border-b border-neutral-200 px-4 py-3 safe-area-pt">
+      <div className="surface px-4 py-3">
         <div className="flex items-center gap-3">
           <button onClick={() => router.back()}
             className="h-8 w-8 rounded-lg bg-neutral-100 hover:bg-neutral-200 flex items-center justify-center text-neutral-600 transition shrink-0">
@@ -1289,7 +1291,7 @@ export default function EncarteDetalhe() {
                 </span>
               )}
             </div>
-            <h1 className="font-semibold text-neutral-900 text-base leading-tight truncate">{encarte.nome}</h1>
+            <h2 className="text-base font-semibold text-neutral-800 leading-tight truncate">{encarte.nome}</h2>
           </div>
           {encarte.podeEditar ? (
             <div className="flex gap-1.5 shrink-0">

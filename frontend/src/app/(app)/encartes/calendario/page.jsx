@@ -1,4 +1,5 @@
 "use client";
+import { useTituloDaPagina } from "@/components/PageTitleContext";
 
 import { useEffect, useState, useCallback, useMemo } from "react";
 import { useRouter } from "next/navigation";
@@ -142,6 +143,7 @@ function SelecaoRedesPdfModal({ redes, onGerar, onClose, gerando }) {
 const STORAGE_KEY_SUPERVISOR = "calendario_supervisor_sel";
 
 export default function CalendarioGeralPage() {
+  useTituloDaPagina("Calendário Geral", "Todos os encartes de todas as redes");
   const router = useRouter();
   const [grupos, setGrupos] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -398,21 +400,16 @@ export default function CalendarioGeralPage() {
 
   return (
     <>
-    <div className="flex flex-col min-h-screen bg-neutral-50">
+    <div className="flex flex-col gap-4">
       {/* Header */}
-      <div className="bg-white border-b border-neutral-100 px-4 py-3 safe-area-pt">
+      <div className="surface px-4 py-3">
         <div className="flex items-center justify-between gap-3">
-          <div className="flex items-center gap-3 min-w-0">
-            <button
-              onClick={() => router.back()}
-              className="h-9 w-9 rounded-xl bg-neutral-100 flex items-center justify-center text-neutral-600 hover:bg-neutral-200 transition shrink-0">
-              <IcoChevronRight className="w-5 h-5 rotate-180" />
-            </button>
-            <div className="min-w-0">
-              <h1 className="font-bold text-neutral-900 text-lg leading-tight">Calendário Geral</h1>
-              <p className="text-neutral-500 text-xs mt-0.5">Todos os encartes de todas as redes</p>
-            </div>
-          </div>
+          <button
+            onClick={() => router.back()}
+            className="btn-ghost h-9 gap-1.5 px-2">
+            <IcoChevronRight className="w-5 h-5 rotate-180" />
+            Voltar
+          </button>
           {redesParaPdfGeral.length > 0 && (
             <button
               onClick={() => setModalPdfGeral(true)}
@@ -423,7 +420,7 @@ export default function CalendarioGeralPage() {
         </div>
       </div>
 
-      <div className="flex-1 p-4 pb-24">
+      <div className="flex-1">
         {loading ? (
           <div className="space-y-3">
             <div className="h-8 bg-neutral-100 rounded-xl animate-pulse w-2/3" />

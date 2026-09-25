@@ -113,3 +113,11 @@ button, a, [role="button"] {
 .animate-fade-in {
   animation: fadeIn 0.2s ease-out;
 }
+
+@keyframes slideInLeft {
+  from { transform: translateX(-100%); }
+  to { transform: translateX(0); }
+}
+.animate-slide-in-left {
+  animation: slideInLeft 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+}

@@ -1,65 +1,35 @@
 "use client";
 
-import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { useAuth } from "@/lib/auth";
 import api from "@/lib/api";
-import { IcoStore, IcoClipboard, IcoGrid, IcoSync, IcoUser, IcoUsers, IcoLogout, IcoTag, IcoCalendar, IcoChart, IcoChevronDown } from "@/components/Icons";
+import { navVisivel, hrefAtivo, itensBarraInferior } from "@/lib/nav";
+import { PageTitleProvider } from "@/components/PageTitleContext";
+import Sidebar from "@/components/shell/Sidebar";
+import TopBar from "@/components/shell/TopBar";
+import MobileHeader from "@/components/shell/MobileHeader";
+import BottomBar from "@/components/shell/BottomBar";
+import NavSheet from "@/components/shell/NavSheet";
 
-// Links principais da navbar desktop (linha rolável, sem os de admin — esses vão no dropdown "Admin")
-const NAV_SIDEBAR = [
-  { href: "/dashboard", label: "Dashboard", Icon: IcoGrid, roles: ["admin"] }, // Apenas admin
-  { href: "/dashboard/supervisor", label: "Métricas Redes", Icon: IcoGrid, roles: ["supervisor", "diretoria", "admin"] },
-  { href: "/estoque", label: "Lojas", Icon: IcoStore, roles: ["vendedor", "admin"] }, // Removido diretoria
-  { href: "/solicitacoes", label: "Solicitações", Icon: IcoClipboard, roles: ["vendedor", "admin"] }, // Removido diretoria
-  { href: "/encartes", label: "Encartes", Icon: IcoTag, roles: ["supervisor", "diretoria", "admin"] },
-  { href: "/encartes/calendario", label: "Calendário Geral", Icon: IcoCalendar, roles: ["supervisor", "diretoria", "admin"] },
-  { href: "/encartes/performance", label: "Performance", Icon: IcoChart, roles: ["diretoria", "admin"] },
-];
-
-// Telas exclusivas de admin — agrupadas num dropdown fixo para não serem cortadas pelo overflow da navbar
-const NAV_ADMIN = [
-  { href: "/admin/usuarios", label: "Usuários", Icon: IcoUsers, roles: ["admin"] },
-  { href: "/admin/responsabilidades", label: "Resp. Rede", Icon: IcoUsers, roles: ["admin"] },
-  { href: "/admin/sync", label: "Sincronização", Icon: IcoSync, roles: ["admin"] }, // Removido diretoria
-];
-
-const NAV_BOTTOM = [
-  { href: "/estoque", label: "Lojas", Icon: IcoStore, roles: ["vendedor", "admin"] }, // Removido diretoria
-  { href: "/solicitacoes", label: "Pedidos", Icon: IcoClipboard, roles: ["vendedor", "admin"] }, // Removido diretoria
-  { href: "/encartes", label: "Encartes", Icon: IcoTag, roles: ["supervisor", "diretoria", "admin"] },
-  { href: "/encartes/calendario", label: "Cal. Geral", Icon: IcoCalendar, roles: ["supervisor", "diretoria", "admin"] },
-  { href: "/encartes/performance", label: "Performance", Icon: IcoChart, roles: ["diretoria", "admin"] },
-  { href: "/dashboard", label: "Gráficos", Icon: IcoGrid, roles: ["admin"] }, // Removido diretoria
-  { href: "/dashboard/supervisor", label: "Métricas", Icon: IcoGrid, roles: ["supervisor", "diretoria", "admin"] },
-  { href: "/admin/sync", label: "Sync", Icon: IcoSync, roles: ["admin"] }, // Removido diretoria
-  { href: "/admin/usuarios", label: "Usuários", Icon: IcoUsers, roles: ["admin"] },
-  { href: "/admin/responsabilidades", label: "Resp. Rede", Icon: IcoUsers, roles: ["admin"] },
-];
+const CHAVE_SIDEBAR = "iv.sidebar";
 
 export default function AppLayout({ children }) {
   const router = useRouter();
   const pathname = usePathname();
   const { user, token, init, loading, logout } = useAuth();
   const syncedRef = useRef(false);
-  const [adminMenuOpen, setAdminMenuOpen] = useState(false);
-  const adminMenuRef = useRef(null);
+  const [collapsed, setCollapsed] = useState(false);
+  const [sheetOpen, setSheetOpen] = useState(false);
 
   useEffect(() => { init(); }, [init]);
   useEffect(() => { if (!loading && !token) router.replace("/login"); }, [loading, token, router]);
 
-  // Fecha o dropdown "Admin" ao clicar fora ou trocar de rota
+  // Preferencia de sidebar recolhida: lida depois de montar (evita hydration mismatch)
   useEffect(() => {
-    function onClickOutside(ev) {
-      if (adminMenuRef.current && !adminMenuRef.current.contains(ev.target)) {
-        setAdminMenuOpen(false);
-      }
-    }
-    document.addEventListener("mousedown", onClickOutside);
-    return () => document.removeEventListener("mousedown", onClickOutside);
+    try { setCollapsed(localStorage.getItem(CHAVE_SIDEBAR) === "collapsed"); } catch {}
   }, []);
-  useEffect(() => { setAdminMenuOpen(false); }, [pathname]);
+  useEffect(() => { setSheetOpen(false); }, [pathname]);
 
   useEffect(() => {
     if (user && token && !syncedRef.current) {
@@ -68,172 +38,57 @@ export default function AppLayout({ children }) {
     }
   }, [user, token]);
 
+  function toggleCollapse() {
+    setCollapsed((c) => {
+      const novo = !c;
+      try { localStorage.setItem(CHAVE_SIDEBAR, novo ? "collapsed" : "expanded"); } catch {}
+      return novo;
+    });
+  }
+
   if (loading || !user) {
     return (
-      <div className="flex h-screen items-center justify-center bg-neutral-50">
+      <div className="flex h-screen items-center justify-center bg-page">
         <div className="flex flex-col items-center gap-3">
-          <div className="w-10 h-10 rounded-full border-4 border-neutral-200 border-t-brand animate-spin" />
-          <p className="text-neutral-500 text-sm">Carregando...</p>
+          <div className="h-10 w-10 animate-spin rounded-full border-4 border-neutral-200 border-t-secondary" />
+          <p className="text-sm text-neutral-500">Carregando...</p>
         </div>
       </div>
     );
   }
 
-  const effectiveRoles = [user.role, ...(user.roles || [])];
-  const navLinks = NAV_SIDEBAR.filter((n) => n.roles.some((r) => effectiveRoles.includes(r)));
-  const adminLinks = NAV_ADMIN.filter((n) => n.roles.some((r) => effectiveRoles.includes(r)));
-  const bottomLinks = NAV_BOTTOM.filter((n) => n.roles.some((r) => effectiveRoles.includes(r)));
-  const initials = (user.nome || "?").split(" ").map(p => p[0]).slice(0, 2).join("").toUpperCase();
+  const itens = navVisivel(user);
+  const ativo = hrefAtivo(itens, pathname);
 
   return (
-    <div className="flex flex-col min-h-screen bg-neutral-50 w-screen max-w-full overflow-x-clip">
-      {/* Navbar horizontal no topo */}
-      <header className="sticky top-0 z-50 bg-white border-b border-neutral-200 shadow-sm">
-        <div className="max-w-[1920px] mx-auto px-4 lg:px-6">
-          <div className="flex items-center justify-between min-h-16 py-2 gap-y-2">
-            {/* Logo */}
-            <div className="flex items-center gap-3">
-              <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-brand to-brand-600 flex items-center justify-center font-black text-white shadow-md">
-                VM
-              </div>
-              <div className="hidden sm:block">
-                <div className="text-lg font-bold text-neutral-900 leading-tight">InfoVale</div>
-                <div className="text-xs text-neutral-500">Valemilk</div>
-              </div>
-            </div>
+    <PageTitleProvider>
+      <div className="flex min-h-screen w-full max-w-full overflow-x-clip bg-page">
+        <Sidebar
+          className="hidden lg:flex"
+          user={user}
+          itens={itens}
+          ativo={ativo}
+          collapsed={collapsed}
+          onLogout={logout}
+        />
 
-            {/* Nav links — desktop (quebra linha em vez de rolar, pra nenhum item ficar escondido) */}
-            <nav className="hidden lg:flex items-center flex-wrap gap-1 flex-1 min-w-0 mx-4 xl:mx-8">
-              {navLinks.map(({ href, label, Icon }) => {
-                const active = pathname === href || pathname.startsWith(href + "/");
-                return (
-                  <Link
-                    key={href}
-                    href={href}
-                    className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition whitespace-nowrap ${
-                      active
-                        ? "bg-brand text-white shadow-sm"
-                        : "text-neutral-600 hover:bg-neutral-100 hover:text-neutral-900"
-                    }`}
-                  >
-                    <Icon className="w-4 h-4" />
-                    <span>{label}</span>
-                  </Link>
-                );
-              })}
-            </nav>
+        <div className="flex min-w-0 flex-1 flex-col">
+          <TopBar className="hidden lg:flex" collapsed={collapsed} onToggle={toggleCollapse} />
+          <MobileHeader user={user} onMenu={() => setSheetOpen(true)} />
 
-            {/* Dropdown Admin — desktop, fora da área rolável para nunca ficar escondido */}
-            {adminLinks.length > 0 && (
-              <div className="hidden lg:block relative shrink-0 mr-3" ref={adminMenuRef}>
-                <button
-                  onClick={() => setAdminMenuOpen((v) => !v)}
-                  className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition whitespace-nowrap ${
-                    adminLinks.some((l) => pathname === l.href || pathname.startsWith(l.href + "/"))
-                      ? "bg-brand text-white shadow-sm"
-                      : "text-neutral-600 hover:bg-neutral-100 hover:text-neutral-900"
-                  }`}
-                >
-                  <IcoUsers className="w-4 h-4" />
-                  <span>Admin</span>
-                  <IcoChevronDown className={`w-3.5 h-3.5 transition-transform ${adminMenuOpen ? "rotate-180" : ""}`} />
-                </button>
+          <main className="min-w-0 flex-1 px-4 py-4 pb-24 md:px-6 lg:px-8 lg:py-6 lg:pb-16">
+            <div className="mx-auto flex max-w-[1600px] flex-col gap-6">{children}</div>
+          </main>
 
-                {adminMenuOpen && (
-                  <div className="absolute right-0 top-full mt-1.5 w-56 bg-white rounded-xl border border-neutral-200 shadow-lg py-1.5 z-50">
-                    {adminLinks.map(({ href, label, Icon }) => {
-                      const active = pathname === href || pathname.startsWith(href + "/");
-                      return (
-                        <Link
-                          key={href}
-                          href={href}
-                          onClick={() => setAdminMenuOpen(false)}
-                          className={`flex items-center gap-2.5 px-3.5 py-2 text-sm font-medium transition ${
-                            active ? "text-brand bg-brand/5" : "text-neutral-600 hover:bg-neutral-50"
-                          }`}
-                        >
-                          <Icon className="w-4 h-4" />
-                          {label}
-                        </Link>
-                      );
-                    })}
-                  </div>
-                )}
-              </div>
-            )}
+          <footer className="hidden border-t border-white/40 px-8 py-6 text-center text-xs text-neutral-600 lg:block">
+            InfoVale · Valemilk © {new Date().getFullYear()}
+          </footer>
 
-            {/* User menu — desktop */}
-            <div className="hidden lg:flex items-center gap-3 shrink-0">
-              <div className="flex items-center gap-2.5 px-3 py-1.5 rounded-lg bg-neutral-50 border border-neutral-200 max-w-[200px]">
-                <div className="h-8 w-8 rounded-full bg-gradient-to-br from-brand to-brand-600 flex items-center justify-center text-xs font-bold text-white shrink-0">
-                  {initials}
-                </div>
-                <div className="min-w-0 overflow-hidden">
-                  <div className="text-sm font-semibold text-neutral-900 truncate">{user.nome}</div>
-                  <div className="text-xs text-neutral-500 capitalize truncate">{user.role}</div>
-                </div>
-              </div>
-              <button
-                onClick={logout}
-                className="h-10 px-4 flex items-center gap-2 text-sm font-medium text-neutral-600 hover:text-neutral-900 hover:bg-neutral-100 rounded-lg transition shrink-0"
-              >
-                <IcoLogout className="w-4 h-4" />
-                <span className="hidden xl:inline">Sair</span>
-              </button>
-            </div>
-
-            {/* Mobile user badge + logout */}
-            <div className="lg:hidden flex items-center gap-2">
-              <div className="flex items-center gap-2 px-2 py-1 rounded-lg bg-neutral-50">
-                <div className="h-8 w-8 rounded-full bg-gradient-to-br from-brand to-brand-600 flex items-center justify-center text-xs font-bold text-white">
-                  {initials}
-                </div>
-                <div className="text-xs font-medium text-neutral-700 capitalize">{user.role}</div>
-              </div>
-              <button
-                onClick={logout}
-                aria-label="Sair"
-                className="h-10 w-10 rounded-lg bg-neutral-100 hover:bg-neutral-200 active:scale-95 transition flex items-center justify-center"
-              >
-                <IcoLogout className="w-5 h-5 text-neutral-600" />
-              </button>
-            </div>
-          </div>
+          <BottomBar itens={itensBarraInferior(itens)} ativo={ativo} onMenu={() => setSheetOpen(true)} />
         </div>
-      </header>
+      </div>
 
-      {/* Conteúdo principal */}
-      <main className="flex-1 overflow-y-auto pb-20 lg:pb-6">
-        <div className="max-w-[1920px] mx-auto px-4 py-4 lg:px-6 lg:py-6">{children}</div>
-      </main>
-
-      {/* Bottom nav — apenas mobile */}
-      <nav className="lg:hidden fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-md border-t border-neutral-200 z-50 safe-area-pb shadow-[0_-4px_20px_-8px_rgba(0,0,0,0.08)]">
-        <div className="flex items-stretch px-1 pt-1.5">
-          {bottomLinks.map(({ href, label, Icon }) => {
-            const active = pathname === href || pathname.startsWith(href + "/");
-            return (
-              <Link
-                key={href}
-                href={href}
-                className="flex-1 flex flex-col items-center justify-center py-1.5 active:scale-95 transition-transform"
-              >
-                <span
-                  className={`flex items-center justify-center w-12 h-7 rounded-full transition-colors ${
-                    active ? "bg-brand/10 text-brand" : "text-neutral-400"
-                  }`}
-                >
-                  <Icon className="w-[22px] h-[22px]" />
-                </span>
-                <span className={`text-[10px] mt-0.5 font-medium ${active ? "text-brand" : "text-neutral-500"}`}>
-                  {label}
-                </span>
-              </Link>
-            );
-          })}
-        </div>
-      </nav>
-    </div>
+      <NavSheet open={sheetOpen} onClose={() => setSheetOpen(false)} user={user} itens={itens} ativo={ativo} onLogout={logout} />
+    </PageTitleProvider>
   );
 }
-
