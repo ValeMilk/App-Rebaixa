@@ -1,12 +1,15 @@
-// Fonte unica de classificacao/cores/ordem do estoque por validade.
+// Classificacao/ordem do estoque por validade. Cores vem dos tons semanticos (lib/tones.js).
 // Limiares iguais ao backend (services/classificadorService.js).
+import { TONE } from "@/lib/tones";
+
+const seg = (key, label, faixa, tone, extra) => ({ key, label, faixa, tone, ...TONE[tone], ...extra });
 
 export const SEGMENTOS = [
-  { key: "critico", label: "Crítico", faixa: "1 – 15 dias",  hex: "#dc2626", bg: "bg-red-50",     text: "text-red-700",     border: "border-red-200",     dot: "bg-red-500" },
-  { key: "alerta",  label: "Alerta",  faixa: "16 – 30 dias", hex: "#ea580c", bg: "bg-orange-50",  text: "text-orange-700",  border: "border-orange-200",  dot: "bg-orange-500" },
-  { key: "atencao", label: "Atenção", faixa: "31 – 60 dias", hex: "#ca8a04", bg: "bg-amber-50",   text: "text-amber-700",   border: "border-amber-200",   dot: "bg-amber-500" },
-  { key: "ok",      label: "Regular", faixa: "> 60 dias",    hex: "#16a34a", bg: "bg-emerald-50", text: "text-emerald-700", border: "border-emerald-200", dot: "bg-emerald-500" },
-  { key: "vencido", label: "Vencido", faixa: "vencido",      hex: "#64748b", bg: "bg-neutral-50",   text: "text-neutral-600",   border: "border-neutral-200",   dot: "bg-neutral-400" },
+  seg("critico", "Crítico", "1 – 15 dias",  "danger"),
+  seg("alerta",  "Alerta",  "16 – 30 dias", "warning"),
+  seg("atencao", "Atenção", "31 – 60 dias", "caution"),
+  seg("ok",      "Regular", "> 60 dias",    "success"),
+  seg("vencido", "Vencido", "vencido",      "neutral"),
 ];
 
 export const SEGMENTO = Object.fromEntries(SEGMENTOS.map((s) => [s.key, s]));
@@ -78,10 +81,10 @@ export function acaoAtivaDe(idx, item) {
 // (oferta interna), >= 73% -> rebaixa. Aqui so ficam rotulos, cores e pesos.
 
 export const STATUS_SHELF = [
-  { key: "rebaixa",   label: "Rebaixa",   faixa: "≥ 73% do shelf",     hex: "#dc2626", bg: "bg-red-50",     text: "text-red-700",     border: "border-red-200",     dot: "bg-red-500",     acao: "rebaixa" },
-  { key: "giro",      label: "Giro",      faixa: "45 – 73% do shelf",  hex: "#2563eb", bg: "bg-blue-50",    text: "text-blue-700",    border: "border-blue-200",    dot: "bg-blue-500",    acao: "oferta_interna" },
-  { key: "ok",        label: "Ok",        faixa: "< 45% do shelf",     hex: "#16a34a", bg: "bg-emerald-50", text: "text-emerald-700", border: "border-emerald-200", dot: "bg-emerald-500", acao: null },
-  { key: "sem_shelf", label: "Sem shelf", faixa: "sem cadastro no ERP", hex: "#64748b", bg: "bg-neutral-50",   text: "text-neutral-600",   border: "border-neutral-200",   dot: "bg-neutral-400",   acao: null },
+  seg("rebaixa",   "Rebaixa",   "≥ 73% do shelf",      "danger",  { acao: "rebaixa" }),
+  seg("giro",      "Giro",      "45 – 73% do shelf",   "info",    { acao: "oferta_interna" }),
+  seg("ok",        "Ok",        "< 45% do shelf",      "success", { acao: null }),
+  seg("sem_shelf", "Sem shelf", "sem cadastro no ERP", "neutral", { acao: null }),
 ];
 
 export const STATUS_SHELF_MAP = Object.fromEntries(STATUS_SHELF.map((s) => [s.key, s]));

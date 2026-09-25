@@ -1,14 +1,16 @@
 "use client";
 
+import clsx from "clsx";
 import { fmtData, formatarRede } from "@/lib/utils";
 import { STATUS_SHELF_MAP } from "@/lib/estoque";
 import AcaoAtivaBadge from "@/components/AcaoAtivaBadge";
+import Badge from "@/components/ui/Badge";
+import Button from "@/components/ui/Button";
+import Surface from "@/components/ui/Surface";
+import EmptyState from "@/components/ui/EmptyState";
 import { IcoSearch, IcoX, IcoPackage } from "@/components/Icons";
 
 const fmtNum = (n) => Number(n || 0).toLocaleString("pt-BR");
-
-const SELECT_CLS =
-  "w-full sm:w-auto px-3 py-2.5 text-sm border border-neutral-200 rounded-xl bg-white text-neutral-700 focus:outline-none focus:ring-4 focus:ring-brand/10 focus:border-brand transition";
 
 const COLUNAS = [
   { campo: "cliente",    label: "Loja",     align: "left" },
@@ -19,27 +21,22 @@ const COLUNAS = [
   { campo: "status",     label: "Status",   align: "left" },
 ];
 
-function BadgeStatus({ cls }) {
-  const c = STATUS_SHELF_MAP[cls] || STATUS_SHELF_MAP.sem_shelf;
-  return (
-    <span className={`inline-flex items-center gap-1 text-[10px] font-semibold px-1.5 py-0.5 rounded-full border whitespace-nowrap ${c.bg} ${c.text} ${c.border}`}>
-      <span className={`w-1.5 h-1.5 rounded-full ${c.dot}`} />
-      {c.label}
-    </span>
-  );
-}
-
 function Th({ col, ordem, onOrdenar }) {
   const ativa = ordem.campo === col.campo;
+  const direcao = ativa ? (ordem.dir === 1 ? "crescente" : "decrescente") : "sem ordenação";
   return (
     <th
       onClick={() => onOrdenar(col.campo)}
-      className={`py-2.5 px-3 font-medium cursor-pointer select-none whitespace-nowrap hover:text-neutral-700 ${
-        col.align === "right" ? "text-right" : "text-left"
-      } ${ativa ? "text-neutral-800" : ""}`}
+      aria-sort={ativa ? (ordem.dir === 1 ? "ascending" : "descending") : "none"}
+      title={`${col.label}: ${direcao}. Clique para ordenar.`}
+      className={clsx(
+        "cursor-pointer select-none whitespace-nowrap px-3 py-2.5 text-xs font-medium hover:text-neutral-900",
+        col.align === "right" ? "text-right" : "text-left",
+        ativa ? "text-neutral-900" : "text-neutral-600"
+      )}
     >
       {col.label}{" "}
-      <span className={ativa ? "" : "opacity-30"}>{ativa ? (ordem.dir === 1 ? "↑" : "↓") : "↕"}</span>
+      <span className={ativa ? "" : "opacity-30"} aria-hidden>{ativa ? (ordem.dir === 1 ? "↑" : "↓") : "↕"}</span>
     </th>
   );
 }
@@ -68,21 +65,22 @@ export default function TabelaVencimentos({
   const todosVisiveis = linhas.length > 0 && visiveisMarcados === linhas.length;
 
   return (
-    <section className="bg-white rounded-2xl border border-neutral-100 p-5">
-      <div className="flex items-center justify-between gap-3 mb-3">
-        <h2 className="text-xs font-semibold uppercase tracking-widest text-neutral-400">Detalhe por loja</h2>
-        <span className="text-xs text-neutral-400 whitespace-nowrap">
+    <Surface as="section" className="p-5">
+      <div className="mb-3 flex items-center justify-between gap-3">
+        <h2 className="text-base font-semibold text-neutral-800">Detalhe por loja</h2>
+        <span className="whitespace-nowrap text-xs text-neutral-500">
           {fmtNum(totalLinhas)} {totalLinhas === 1 ? "item" : "itens"}
         </span>
       </div>
 
-      {/* Toolbar */}
-      <div className="flex flex-col sm:flex-row sm:items-center gap-2 mb-3">
-        <div className="relative flex-1 min-w-0">
-          <IcoSearch className="w-4 h-4 text-neutral-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+      {/* Toolbar: busca sempre visivel + filtros */}
+      <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-center">
+        <div className="relative min-w-0 flex-1">
+          <IcoSearch className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-neutral-400" aria-hidden />
           <input
             className="input pl-10 pr-9"
             placeholder="Buscar loja ou produto"
+            aria-label="Buscar loja ou produto"
             value={filtros.busca}
             onChange={(e) => setFiltros((f) => ({ ...f, busca: e.target.value }))}
           />
@@ -93,13 +91,14 @@ export default function TabelaVencimentos({
               aria-label="Limpar busca"
               className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-neutral-400 hover:text-neutral-600"
             >
-              <IcoX className="w-4 h-4" />
+              <IcoX className="h-4 w-4" />
             </button>
           )}
         </div>
 
         <select
-          className={SELECT_CLS}
+          className="select sm:w-auto"
+          aria-label="Rede"
           value={filtros.rede}
           onChange={(e) => setFiltros((f) => ({ ...f, rede: e.target.value, loja: "" }))}
         >
@@ -110,7 +109,8 @@ export default function TabelaVencimentos({
         </select>
 
         <select
-          className={SELECT_CLS}
+          className="select sm:w-auto"
+          aria-label="Loja"
           value={filtros.loja}
           onChange={(e) => setFiltros((f) => ({ ...f, loja: e.target.value }))}
         >
@@ -121,12 +121,12 @@ export default function TabelaVencimentos({
           ))}
         </select>
 
-        <label className="flex items-center gap-2 rounded-xl border border-neutral-200 bg-white px-3 py-2 text-sm text-neutral-500 whitespace-nowrap focus-within:border-brand focus-within:ring-4 focus-within:ring-brand/10 transition">
+        <label className="flex h-10 items-center gap-2 whitespace-nowrap rounded-lg border border-neutral-200 bg-white px-3 text-sm text-neutral-600 transition focus-within:border-primary-400 focus-within:ring-2 focus-within:ring-primary-400/30">
           Vence até
           <input
             type="date"
             aria-label="Vence até"
-            className="bg-transparent text-neutral-700 focus:outline-none min-w-0"
+            className="min-w-0 bg-transparent text-neutral-800 focus:outline-none"
             value={filtros.venceAte}
             onChange={(e) => setFiltros((f) => ({ ...f, venceAte: e.target.value }))}
           />
@@ -134,7 +134,7 @@ export default function TabelaVencimentos({
       </div>
 
       {(produtoFiltradoNome || temFiltro) && (
-        <div className="flex items-center gap-2 mb-3 flex-wrap">
+        <div className="mb-3 flex flex-wrap items-center gap-2" role="group" aria-label="Filtros ativos">
           {produtoFiltradoNome && (
             <button
               type="button"
@@ -142,42 +142,35 @@ export default function TabelaVencimentos({
               className="chip chip-active"
               title="Remover filtro de produto"
             >
-              <IcoPackage className="w-3.5 h-3.5" />
+              <IcoPackage className="h-3.5 w-3.5" aria-hidden />
               <span className="max-w-[220px] truncate">{produtoFiltradoNome}</span>
-              <IcoX className="w-3.5 h-3.5" />
+              <IcoX className="h-3.5 w-3.5" aria-hidden />
             </button>
           )}
           {temFiltro && (
-            <button type="button" onClick={onLimpar} className="text-xs font-semibold text-brand hover:underline">
-              Limpar filtros
-            </button>
+            <Button variant="link" size="sm" onClick={onLimpar}>Limpar filtros</Button>
           )}
         </div>
       )}
 
       {linhas.length === 0 ? (
-        <div className="py-10 text-center">
-          <div className="mx-auto mb-3 h-11 w-11 rounded-2xl bg-neutral-100 flex items-center justify-center text-neutral-400">
-            <IcoPackage className="w-5 h-5" />
-          </div>
-          <p className="text-sm font-medium text-neutral-600">Nenhum item com esses filtros</p>
-          {temFiltro && (
-            <button type="button" onClick={onLimpar} className="mt-2 text-xs font-semibold text-brand hover:underline">
-              Limpar filtros
-            </button>
-          )}
-        </div>
+        <EmptyState
+          icon={IcoPackage}
+          titulo={temFiltro ? "Nenhum item corresponde aos filtros" : "Nenhum item em giro ou rebaixa"}
+          descricao={temFiltro ? "Ajuste ou limpe os filtros para ver mais itens." : "Quando o estoque entrar na régua do shelf, os itens aparecem aqui."}
+          acao={temFiltro ? <Button variant="outline" size="sm" onClick={onLimpar}>Limpar filtros</Button> : null}
+        />
       ) : (
         <>
-          <div className="overflow-x-auto -mx-5 px-5">
-            <table className="w-full text-sm min-w-[780px]">
+          <div className="-mx-5 overflow-x-auto px-5">
+            <table className="w-full min-w-[780px] text-sm">
               <thead>
-                <tr className="border-b border-neutral-100 text-xs text-neutral-400 uppercase tracking-wider">
-                  <th className="py-2.5 px-3 w-8">
+                <tr className="border-b border-neutral-200 bg-neutral-50">
+                  <th className="w-8 px-3 py-2.5">
                     <input
                       type="checkbox"
                       aria-label="Selecionar todos os visíveis"
-                      className="h-4 w-4 rounded border-neutral-300 accent-brand cursor-pointer align-middle"
+                      className="h-4 w-4 cursor-pointer rounded border-neutral-300 align-middle accent-secondary"
                       checked={todosVisiveis}
                       ref={(el) => { if (el) el.indeterminate = visiveisMarcados > 0 && !todosVisiveis; }}
                       onChange={(e) => onToggleVisiveis(linhas.map((l) => l._id), e.target.checked)}
@@ -186,10 +179,10 @@ export default function TabelaVencimentos({
                   {COLUNAS.map((c) => (
                     <Th key={c.campo} col={c} ordem={ordem} onOrdenar={onOrdenar} />
                   ))}
-                  <th className="py-2.5 px-3" />
+                  <th className="px-3 py-2.5" />
                 </tr>
               </thead>
-              <tbody className="divide-y divide-neutral-50">
+              <tbody className="divide-y divide-neutral-100">
                 {linhas.map((l) => {
                   const seg = STATUS_SHELF_MAP[l.status] || STATUS_SHELF_MAP.sem_shelf;
                   const acao = seg.acao === "oferta_interna" ? "oferta" : "rebaixa";
@@ -197,48 +190,41 @@ export default function TabelaVencimentos({
                   const rede = formatarRede({ redeSubrede: l.redeSubrede, subrede: l.subrede, codigoRede: l.codigoRede });
                   const marcado = selecionados.has(l._id);
                   return (
-                    <tr key={l._id} className={`transition-colors ${marcado ? "bg-brand/5" : "hover:bg-neutral-50"}`}>
-                      <td className="py-2 px-3">
+                    <tr key={l._id} className={clsx("transition-colors", marcado ? "bg-secondary/5" : "hover:bg-neutral-50")}>
+                      <td className="px-3 py-2">
                         <input
                           type="checkbox"
                           aria-label={`Selecionar ${l.produto} em ${l.cliente}`}
-                          className="h-4 w-4 rounded border-neutral-300 accent-brand cursor-pointer align-middle"
+                          className="h-4 w-4 cursor-pointer rounded border-neutral-300 align-middle accent-secondary"
                           checked={marcado}
                           onChange={() => onToggleItem(l._id)}
                         />
                       </td>
-                      <td className="py-2 px-3 max-w-[220px]">
-                        <div className="font-medium text-neutral-800 truncate">{l.cliente}</div>
-                        {rede && <div className="text-[10px] text-neutral-400 truncate">{rede}</div>}
+                      <td className="max-w-[220px] px-3 py-2">
+                        <div className="truncate font-medium text-neutral-800">{l.cliente}</div>
+                        {rede && <div className="truncate text-[11px] text-neutral-500">{rede}</div>}
                       </td>
-                      <td className="py-2 px-3 max-w-[260px] text-neutral-700 truncate">{l.produto}</td>
-                      <td className="py-2 px-3 text-right font-mono tabular-nums text-neutral-800">{fmtNum(l.quantidade)}</td>
-                      <td className="py-2 px-3 text-right font-mono text-neutral-500 whitespace-nowrap">{fmtData(l.dataValidade)}</td>
-                      <td className="py-2 px-3 text-right">
-                        <span
-                          className="inline-block rounded-full px-2 py-0.5 text-xs font-bold tabular-nums"
-                          style={{ color: seg.hex, backgroundColor: seg.hex + "18" }}
-                        >
+                      <td className="max-w-[260px] truncate px-3 py-2 text-neutral-700">{l.produto}</td>
+                      <td className="px-3 py-2 text-right tabular-nums text-neutral-800">{fmtNum(l.quantidade)}</td>
+                      <td className="whitespace-nowrap px-3 py-2 text-right tabular-nums text-neutral-600">{fmtData(l.dataValidade)}</td>
+                      <td className="px-3 py-2 text-right">
+                        <span className={clsx("inline-block rounded-full px-2 py-0.5 text-xs font-semibold tabular-nums", seg.bg, seg.text)}>
                           {l.diasParaVencer ?? "—"}d
                         </span>
-                        <div className="text-[10px] text-neutral-400 whitespace-nowrap mt-0.5">
+                        <div className="mt-0.5 whitespace-nowrap text-[11px] text-neutral-500">
                           {l.pct != null ? `${Math.round(l.pct * 100)}% do shelf` : "sem shelf"}
                         </div>
                       </td>
-                      <td className="py-2 px-3">
+                      <td className="px-3 py-2">
                         <div className="flex items-center gap-1.5">
-                          <BadgeStatus cls={l.status} />
+                          <Badge tone={seg.tone} dot>{seg.label}</Badge>
                           {ativa && <AcaoAtivaBadge ativa={ativa} />}
                         </div>
                       </td>
-                      <td className="py-2 px-3 text-right">
-                        <button
-                          type="button"
-                          onClick={() => onSolicitar(l)}
-                          className="rounded-lg border border-brand/30 text-brand text-xs font-semibold px-3 py-1.5 hover:bg-brand/5 active:scale-95 transition whitespace-nowrap"
-                        >
+                      <td className="px-3 py-2 text-right">
+                        <Button variant="outline" size="sm" onClick={() => onSolicitar(l)}>
                           {ativa ? `Nova ${acao}` : acao === "oferta" ? "Oferta" : "Rebaixar"}
-                        </button>
+                        </Button>
                       </td>
                     </tr>
                   );
@@ -248,16 +234,13 @@ export default function TabelaVencimentos({
           </div>
 
           {totalLinhas > linhas.length && (
-            <button
-              type="button"
-              onClick={onMais}
-              className="mt-3 w-full rounded-xl border border-neutral-200 py-2.5 text-sm font-semibold text-brand hover:bg-neutral-50 active:scale-[0.99] transition"
-            >
-              Mostrar mais ({fmtNum(totalLinhas - linhas.length)} restantes)
-            </button>
+            <div className="mt-3 flex items-center justify-between gap-3 text-sm text-neutral-600">
+              <span>Mostrando {fmtNum(linhas.length)} de {fmtNum(totalLinhas)}</span>
+              <Button variant="outline" size="sm" onClick={onMais}>Mostrar mais</Button>
+            </div>
           )}
         </>
       )}
-    </section>
+    </Surface>
   );
 }

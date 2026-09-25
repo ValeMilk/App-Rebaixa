@@ -19,6 +19,8 @@ import Ranking from "@/components/dashboard/Ranking";
 import TabelaVencimentos from "@/components/dashboard/TabelaVencimentos";
 import RebaixaModal from "@/components/RebaixaModal";
 import RebaixaLoteModal from "@/components/RebaixaLoteModal";
+import Button from "@/components/ui/Button";
+import StatTile from "@/components/ui/StatTile";
 
 const HORIZONTES = [
   { value: "todos", label: "Todos" },
@@ -50,29 +52,13 @@ function ChipsHorizonte({ value, onChange }) {
   );
 }
 
-function StatTile({ label, faixa, itens, unidades, hex, alerta }) {
-  return (
-    <div className="bg-white rounded-2xl border p-4 sm:p-5 min-w-0" style={{ borderColor: alerta ? hex + "55" : "#e2e8f0" }}>
-      <div className="flex items-center justify-between gap-2">
-        <span className="text-[11px] font-semibold uppercase tracking-widest truncate" style={{ color: hex }}>{label}</span>
-        {alerta && <span className="h-2 w-2 rounded-full animate-pulse shrink-0" style={{ backgroundColor: hex }} />}
-      </div>
-      <div className="mt-2 text-3xl sm:text-4xl font-black tabular-nums leading-none" style={{ color: hex }}>{fmtNum(itens)}</div>
-      <div className="mt-1.5 flex items-baseline justify-between gap-2 text-xs text-neutral-400">
-        <span className="truncate">{faixa}</span>
-        <span className="font-semibold text-neutral-600 tabular-nums whitespace-nowrap">{fmtNum(unidades)} un</span>
-      </div>
-    </div>
-  );
-}
-
 function BarraComposicao({ resumo }) {
   const total = resumo.totalItens;
   if (!total) return null;
   const segs = STATUS_SHELF.filter((s) => resumo.por[s.key].itens > 0);
   const pct = (s) => (resumo.por[s.key].itens / total) * 100;
   return (
-    <div className="bg-white rounded-2xl border border-neutral-100 px-5 py-4 mb-5">
+    <div className="surface px-5 py-4 mb-5">
       <div className="flex h-2.5 w-full overflow-hidden rounded-full gap-0.5">
         {segs.map((s) => (pct(s) < 0.5 ? null : (
           <div
@@ -100,7 +86,7 @@ function Spinner({ texto }) {
   return (
     <div className="flex items-center justify-center h-64">
       <div className="flex flex-col items-center gap-3">
-        <div className="h-7 w-7 rounded-full border-2 border-brand border-t-transparent animate-spin" />
+        <div className="h-7 w-7 rounded-full border-2 border-secondary border-t-transparent animate-spin" />
         <p className="text-sm text-neutral-400">{texto}</p>
       </div>
     </div>
@@ -386,42 +372,37 @@ export default function DashboardPage() {
         <div className="flex items-center gap-2 flex-wrap">
           <ChipsHorizonte value={horizonte} onChange={setHorizonte} />
           {atualizado && <span className="hidden sm:block text-xs text-neutral-400">{fmtDataHora(atualizado)}</span>}
-          <button
-            type="button"
-            onClick={carregar}
-            disabled={pageLoading}
-            className="rounded-xl border border-neutral-200 bg-white px-3 py-2 text-xs font-medium text-neutral-600 hover:bg-neutral-50 transition disabled:opacity-40 flex items-center gap-1.5"
-          >
+          <Button variant="outline" size="sm" onClick={carregar} disabled={pageLoading}>
             <svg className={`h-3.5 w-3.5 ${pageLoading ? "animate-spin" : ""}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
               <path d="M4 4v5h5M20 20v-5h-5M4 9a9 9 0 0 1 15-4.2M20 15a9 9 0 0 1-15 4.2" strokeLinecap="round" />
             </svg>
             Atualizar
-          </button>
+          </Button>
         </div>
       </div>
 
       {pageLoading ? (
         <Spinner texto="Carregando dados..." />
       ) : erro ? (
-        <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{erro}</div>
+        <div className="rounded-lg border border-danger/30 bg-danger/10 px-4 py-3 text-sm text-danger">{erro}</div>
       ) : (
         <>
           {/* Resumo */}
           <div className={`grid grid-cols-2 ${gridTiles} gap-3 mb-3`}>
-            <StatTile label="Total" faixa="itens monitorados" itens={resumo.totalItens} unidades={resumo.totalUnidades} hex="#0056a6" />
+            <StatTile label="Total" valor={fmtNum(resumo.totalItens)} apoio="itens monitorados" direita={`${fmtNum(resumo.totalUnidades)} un`} tone="primary" />
             {STATUS_SHELF.filter((s) => PRINCIPAIS.has(s.key)).map((s) => (
               <StatTile
                 key={s.key}
                 label={s.label}
-                faixa={s.faixa}
-                itens={resumo.por[s.key].itens}
-                unidades={resumo.por[s.key].unidades}
-                hex={s.hex}
-                alerta={s.key === "rebaixa" && resumo.por.rebaixa.itens > 0}
+                valor={fmtNum(resumo.por[s.key].itens)}
+                apoio={s.faixa}
+                direita={`${fmtNum(resumo.por[s.key].unidades)} un`}
+                tone={s.tone}
+                destaque={s.key === "rebaixa" && resumo.por.rebaixa.itens > 0}
               />
             ))}
             {tilesExtras.map((s) => (
-              <StatTile key={s.key} label={s.label} faixa={s.faixa} itens={resumo.por[s.key].itens} unidades={resumo.por[s.key].unidades} hex={s.hex} />
+              <StatTile key={s.key} label={s.label} valor={fmtNum(resumo.por[s.key].itens)} apoio={s.faixa} direita={`${fmtNum(resumo.por[s.key].unidades)} un`} tone={s.tone} />
             ))}
           </div>
           <BarraComposicao resumo={resumo} />
@@ -450,7 +431,7 @@ export default function DashboardPage() {
                 <select
                   value={ordemLojas}
                   onChange={(e) => setOrdemLojas(e.target.value)}
-                  className="shrink-0 text-xs border border-neutral-200 rounded-lg px-2 py-1.5 bg-white text-neutral-600 focus:outline-none focus:ring-2 focus:ring-brand/20"
+                  className="select h-8 w-auto py-0 text-xs"
                 >
                   <option value="unidades">Unidades</option>
                   <option value="criticidade">Criticidade</option>
@@ -508,13 +489,7 @@ export default function DashboardPage() {
           <button type="button" onClick={limparSelecao} className="text-xs text-neutral-300 hover:text-white underline whitespace-nowrap">
             Limpar
           </button>
-          <button
-            type="button"
-            onClick={() => setLoteAberto(true)}
-            className="rounded-xl bg-brand px-4 py-2 text-sm font-semibold text-white hover:bg-brand-600 active:scale-[0.98] transition whitespace-nowrap"
-          >
-            Criar rebaixa
-          </button>
+          <Button size="sm" onClick={() => setLoteAberto(true)}>Criar rebaixa</Button>
         </div>
       )}
 
@@ -536,7 +511,7 @@ export default function DashboardPage() {
       )}
 
       {toast && (
-        <div className="fixed bottom-28 left-1/2 -translate-x-1/2 bg-emerald-600 text-white text-sm font-semibold px-5 py-2.5 rounded-full shadow-lg z-50 pointer-events-none animate-fade-in flex items-center gap-2">
+        <div className="fixed bottom-28 left-1/2 -translate-x-1/2 bg-success text-white text-sm font-medium px-5 py-2.5 rounded-full shadow-float z-50 pointer-events-none animate-fade-in flex items-center gap-2">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={3} strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4">
             <path d="M20 6L9 17l-5-5" />
           </svg>

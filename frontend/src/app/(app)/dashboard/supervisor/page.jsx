@@ -1,5 +1,6 @@
 "use client";
 import { useTituloDaPagina } from "@/components/PageTitleContext";
+import { TONE } from "@/lib/tones";
 
 import { useEffect, useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
@@ -108,7 +109,7 @@ export default function DashboardSupervisor() {
     return (
       <div className="flex items-center justify-center py-24">
         <div className="text-center">
-          <div className="w-10 h-10 rounded-full border-4 border-neutral-200 border-t-brand animate-spin mx-auto mb-3" />
+          <div className="w-10 h-10 rounded-full border-4 border-neutral-200 border-t-secondary animate-spin mx-auto mb-3" />
           <p className="text-sm text-neutral-500 font-medium">Carregando métricas...</p>
         </div>
       </div>
@@ -128,7 +129,7 @@ export default function DashboardSupervisor() {
               placeholder="Buscar rede..."
               value={busca}
               onChange={(e) => setBusca(e.target.value)}
-              className="w-full pl-10 pr-4 py-2.5 text-sm border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand transition"
+              className="input pl-10"
             />
           </div>
 
@@ -139,7 +140,7 @@ export default function DashboardSupervisor() {
               <select
                 value={filtroCobertura}
                 onChange={(e) => setFiltroCobertura(e.target.value)}
-                className="w-full px-3 py-2.5 text-sm border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand transition bg-white"
+                className="select"
               >
                 <option value="todas">Cobertura: Todas as redes</option>
                 <option value="criticas">🔴 Críticas (0%)</option>
@@ -153,7 +154,7 @@ export default function DashboardSupervisor() {
               <select
                 value={ordenacao}
                 onChange={(e) => setOrdenacao(e.target.value)}
-                className="w-full px-3 py-2.5 text-sm border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand transition bg-white"
+                className="select"
               >
                 <option value="cobertura-desc">Cobertura: Maior → Menor</option>
                 <option value="cobertura-asc">Cobertura: Menor → Maior</option>
@@ -168,7 +169,7 @@ export default function DashboardSupervisor() {
                 <select
                   value={supervisorFiltrado}
                   onChange={(e) => setSupervisorFiltrado(e.target.value)}
-                  className="w-full px-3 py-2.5 text-sm border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand transition bg-white"
+                  className="select"
                 >
                   <option value="">Supervisor: Todos</option>
                   {supervisores.map((sup) => (
@@ -183,7 +184,7 @@ export default function DashboardSupervisor() {
               <select
                 value={tipoFiltro}
                 onChange={(e) => setTipoFiltro(e.target.value)}
-                className="w-full px-3 py-2.5 text-sm border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand transition bg-white"
+                className="select"
               >
                 <option value="todos">Tipo: Todos</option>
                 <option value="encarte">Tipo: Encartes</option>
@@ -198,7 +199,7 @@ export default function DashboardSupervisor() {
           <span><span className="font-semibold text-neutral-700">{metricasFiltradas.length}</span> {metricasFiltradas.length === 1 ? 'rede encontrada' : 'redes encontradas'}</span>
           {loading && metricas.length > 0 && (
             <span className="flex items-center gap-1.5 text-neutral-400">
-              <span className="w-3 h-3 rounded-full border-2 border-neutral-200 border-t-brand animate-spin" />
+              <span className="w-3 h-3 rounded-full border-2 border-neutral-200 border-t-secondary animate-spin" />
               atualizando...
             </span>
           )}
@@ -237,45 +238,18 @@ function CardRedeLista({ metrica, expandido, onToggleExpand, onNavigate }) {
   const { codigoRede, redeSubrede, subredes, diasTotais, diasNegociados, percentualNegociacao, topProdutos, totalEncartes } = metrica;
 
   // Cores e badges baseados em % de negociação
+  // Tom pelo % negociado: 0 = danger solido, <40 danger, <70 warning, senao success (lib/tones.js)
   const getStatusVisual = (pct) => {
-    if (pct === 0) return {
-      border: 'border-l-red-600',
-      bgPct: 'bg-red-100',
-      textPct: 'text-red-700',
-      badge: 'CRÍTICO!',
-      badgeBg: 'bg-red-600',
-      badgeText: 'text-white'
-    };
-    if (pct < 40) return {
-      border: 'border-l-red-500',
-      bgPct: 'bg-red-50',
-      textPct: 'text-red-700',
-      badge: 'URGENTE',
-      badgeBg: 'bg-red-500',
-      badgeText: 'text-white'
-    };
-    if (pct < 70) return {
-      border: 'border-l-amber-500',
-      bgPct: 'bg-amber-50',
-      textPct: 'text-amber-700',
-      badge: 'ATENÇÃO',
-      badgeBg: 'bg-amber-500',
-      badgeText: 'text-white'
-    };
-    return {
-      border: 'border-l-emerald-500',
-      bgPct: 'bg-emerald-50',
-      textPct: 'text-emerald-700',
-      badge: 'BOA',
-      badgeBg: 'bg-emerald-500',
-      badgeText: 'text-white'
-    };
+    if (pct === 0) return { border: 'border-l-danger', bgPct: TONE.danger.bg, textPct: TONE.danger.text, badge: 'CRÍTICO!', badgeBg: 'bg-danger', badgeText: 'text-white' };
+    if (pct < 40) return { border: 'border-l-danger', bgPct: TONE.danger.bg, textPct: TONE.danger.text, badge: 'URGENTE', badgeBg: 'bg-danger/80', badgeText: 'text-white' };
+    if (pct < 70) return { border: 'border-l-warning', bgPct: TONE.warning.bg, textPct: TONE.warning.text, badge: 'ATENÇÃO', badgeBg: 'bg-warning', badgeText: 'text-white' };
+    return { border: 'border-l-success', bgPct: TONE.success.bg, textPct: TONE.success.text, badge: 'BOA', badgeBg: 'bg-success', badgeText: 'text-white' };
   };
 
   const status = getStatusVisual(percentualNegociacao);
 
   return (
-    <div className={`bg-white rounded-lg border-l-[3px] ${status.border} border border-neutral-200 shadow-sm hover:shadow-lg hover:scale-[1.01] transition-all overflow-hidden`}>
+    <div className={`surface border-l-[3px] ${status.border} hover:border-secondary/40 transition-colors overflow-hidden`}>
       {/* Header clicável - Layout inline otimizado */}
       <div 
         onClick={() => onNavigate(codigoRede)}
@@ -284,7 +258,7 @@ function CardRedeLista({ metrica, expandido, onToggleExpand, onNavigate }) {
         <div className="px-4 py-2 flex items-center justify-between gap-4">
           {/* Coluna esquerda: Nome da rede */}
           <div className="flex-1 min-w-0">
-            <h3 className="font-bold text-neutral-900 text-base truncate group-hover:text-brand transition">
+            <h3 className="font-bold text-neutral-900 text-base truncate group-hover:text-secondary transition">
               {redeSubrede}
             </h3>
             <p className="text-xs text-neutral-500 mt-0.5">
@@ -301,7 +275,7 @@ function CardRedeLista({ metrica, expandido, onToggleExpand, onNavigate }) {
           <div className="flex items-center gap-3 flex-shrink-0">
             {/* Percentual gigante */}
             <div className={`${status.bgPct} px-4 py-1.5 rounded-lg`}>
-              <div className={`text-3xl font-black ${status.textPct} leading-none tabular-nums`}>
+              <div className={`text-2xl font-semibold ${status.textPct} leading-none tabular-nums`}>
                 {percentualNegociacao}%
               </div>
             </div>
@@ -330,7 +304,7 @@ function CardRedeLista({ metrica, expandido, onToggleExpand, onNavigate }) {
 
             {/* Ícone de navegação */}
             <svg 
-              className="w-5 h-5 text-neutral-400 group-hover:text-brand group-hover:translate-x-1 transition-all flex-shrink-0" 
+              className="w-5 h-5 text-neutral-400 group-hover:text-secondary group-hover:translate-x-1 transition-all flex-shrink-0" 
               fill="none" 
               viewBox="0 0 24 24" 
               stroke="currentColor" 
@@ -349,11 +323,11 @@ function CardRedeLista({ metrica, expandido, onToggleExpand, onNavigate }) {
           <div className="grid grid-cols-2 gap-3 mb-3 text-xs">
             <div className="bg-white rounded-lg px-3 py-2 border border-neutral-200">
               <div className="text-neutral-500 mb-0.5">Negociados</div>
-              <div className="font-bold text-emerald-700">{diasNegociados} dias</div>
+              <div className="font-bold text-success">{diasNegociados} dias</div>
             </div>
             <div className="bg-white rounded-lg px-3 py-2 border border-neutral-200">
               <div className="text-neutral-500 mb-0.5">Não negociados</div>
-              <div className="font-bold text-red-600">{diasTotais - diasNegociados} dias</div>
+              <div className="font-bold text-danger">{diasTotais - diasNegociados} dias</div>
             </div>
           </div>
 
@@ -389,7 +363,7 @@ function CardRedeLista({ metrica, expandido, onToggleExpand, onNavigate }) {
                 {topProdutos.map((p, i) => (
                   <div key={i} className="flex items-center justify-between bg-white rounded-lg px-3 py-2 border border-neutral-200">
                     <div className="flex items-center gap-2 flex-1 min-w-0">
-                      <span className="flex-shrink-0 w-5 h-5 rounded-full bg-brand/10 text-brand text-xs font-bold flex items-center justify-center">
+                      <span className="flex-shrink-0 w-5 h-5 rounded-full bg-secondary/10 text-secondary text-xs font-bold flex items-center justify-center">
                         {i + 1}
                       </span>
                       <span className="text-xs text-neutral-700 font-medium truncate">{p.produto}</span>
