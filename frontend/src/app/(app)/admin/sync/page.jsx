@@ -50,7 +50,7 @@ export default function SyncPage() {
   return (
     <div>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-        <div className="card p-5">
+        <div className="surface p-5">
           <h2 className="font-semibold mb-2">Estoque (ATIVMOB)</h2>
           <p className="text-sm text-neutral-500 mb-4">
             Busca e classifica eventos de estoque e vencimento (janela: hoje -90d → +31d).
@@ -60,7 +60,7 @@ export default function SyncPage() {
           </button>
         </div>
 
-        <div className="card p-5">
+        <div className="surface p-5">
           <h2 className="font-semibold mb-2">ERP Completo</h2>
           <p className="text-sm text-neutral-500 mb-4">
             Atualiza carteira de clientes + catalogo de produtos de uma vez.
@@ -75,7 +75,7 @@ export default function SyncPage() {
           </button>
         </div>
 
-        <div className="card p-5">
+        <div className="surface p-5">
           <h2 className="font-semibold mb-2">Carteira (ERP)</h2>
           <p className="text-sm text-neutral-500 mb-4">
             Atualiza vínculo Cliente → Vendedor → Supervisor.
@@ -85,7 +85,7 @@ export default function SyncPage() {
           </button>
         </div>
 
-        <div className="card p-5">
+        <div className="surface p-5">
           <h2 className="font-semibold mb-2">Produtos / Preços (ERP)</h2>
           <p className="text-sm text-neutral-500 mb-4">
             Importa catálogo com Tabela 70, Preço Mínimo, Promo e Custo.
@@ -95,7 +95,7 @@ export default function SyncPage() {
           </button>
         </div>
 
-        <div className="card p-5">
+        <div className="surface p-5">
           <h2 className="font-semibold mb-2">Esigma Completo</h2>
           <p className="text-sm text-neutral-500 mb-4">
             Atualiza carteira de clientes + catálogo de produtos do Esigma de uma vez.
@@ -110,7 +110,7 @@ export default function SyncPage() {
           </button>
         </div>
 
-        <div className="card p-5">
+        <div className="surface p-5">
           <h2 className="font-semibold mb-2">Carteira (Esigma)</h2>
           <p className="text-sm text-neutral-500 mb-4">
             Atualiza clientes do Esigma (aparecem como subredes de "Esigma" em Encartes).
@@ -120,7 +120,7 @@ export default function SyncPage() {
           </button>
         </div>
 
-        <div className="card p-5">
+        <div className="surface p-5">
           <h2 className="font-semibold mb-2">Produtos (Esigma)</h2>
           <p className="text-sm text-neutral-500 mb-4">
             Importa catálogo do Esigma (sem preços — precificação manual).
@@ -131,7 +131,7 @@ export default function SyncPage() {
         </div>
       </div>
 
-      <div className="card p-5">
+      <div className="surface p-5">
         <h2 className="font-semibold mb-2">Status</h2>
         <div className="text-sm">
           <p>Em execucao: <strong>{status?.executando ? "Sim" : "Nao"}</strong></p>

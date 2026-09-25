@@ -79,21 +79,14 @@ button, a, [role="button"] {
     @apply input appearance-none pr-9;
   }
   /* Superficie unica: "isto e um bloco de conteudo". Sem sombra decorativa. */
-  .surface,
-  .card {
+  .surface {
     @apply rounded-xl border border-neutral-200 bg-white;
-  }
-  .badge {
-    @apply inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium;
   }
   .chip {
     @apply inline-flex h-8 shrink-0 items-center gap-1.5 rounded-full border border-neutral-200 bg-white px-3 text-xs font-medium text-neutral-600 transition active:scale-95;
   }
   .chip-active {
     @apply border-secondary bg-secondary text-white;
-  }
-  .stat-card {
-    @apply min-w-0 overflow-hidden rounded-xl border p-3 text-center;
   }
 }
 

@@ -97,7 +97,7 @@ export default function DetalheSolicitacao() {
     <div>
       <button onClick={() => router.back()} className="btn-ghost mb-3">← Voltar</button>
 
-      <div className="card p-6 mb-4">
+      <div className="surface p-6 mb-4">
         <div className="flex flex-wrap justify-between gap-3">
           <div>
             <h2 className="text-base font-semibold text-neutral-800 capitalize">
@@ -127,7 +127,7 @@ export default function DetalheSolicitacao() {
       {/* Itens da solicitacao com detalhes de preco/margem */}
       <div className="space-y-4 mb-4">
         {s.itens.map((i, idx) => (
-          <div key={idx} className="card p-4">
+          <div key={idx} className="surface p-4">
             <div className="flex flex-wrap items-start justify-between gap-3 mb-3">
               <div className="flex-1 min-w-0">
                 <div className="font-semibold text-neutral-900 text-base">{i.produto}</div>
@@ -188,7 +188,7 @@ export default function DetalheSolicitacao() {
       </div>
 
       {podeDecidir && (
-        <div className="card p-4 mb-4">
+        <div className="surface p-4 mb-4">
           <label className="block text-xs font-medium text-neutral-600 mb-1">Comentario da decisao</label>
           <textarea className="input" rows={2} value={motivoDecisao} onChange={(e) => setMotivoDecisao(e.target.value)} />
           <div className="mt-3 flex gap-2">
@@ -202,7 +202,7 @@ export default function DetalheSolicitacao() {
         <button onClick={cancelar} className="btn-ghost text-danger">Cancelar solicitacao</button>
       )}
 
-      <div className="card p-4 mt-6">
+      <div className="surface p-4 mt-6">
         <h2 className="font-semibold mb-3">Historico</h2>
         <ul className="space-y-2 text-sm">
           {s.historico?.map((h, i) => (

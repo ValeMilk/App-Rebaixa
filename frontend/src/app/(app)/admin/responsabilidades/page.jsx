@@ -110,7 +110,7 @@ export default function ResponsabilidadesPage() {
         Redes não listadas aqui seguem a regra padrão (carteira).
       </p>
 
-      <form onSubmit={salvar} className="card p-4 grid grid-cols-1 md:grid-cols-[1fr_1fr_auto_auto] gap-3 mb-6">
+      <form onSubmit={salvar} className="surface p-4 grid grid-cols-1 md:grid-cols-[1fr_1fr_auto_auto] gap-3 mb-6">
         <select
           className="input"
           value={form.codigoRede}
@@ -160,7 +160,7 @@ export default function ResponsabilidadesPage() {
         />
       </div>
 
-      <div className="card overflow-x-auto">
+      <div className="surface overflow-x-auto">
         <table className="w-full text-sm">
           <thead className="bg-neutral-50 text-neutral-600 text-left">
             <tr>

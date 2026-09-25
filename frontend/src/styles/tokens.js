@@ -37,9 +37,6 @@ const colors = {
   gradient: { from: "#f5f9fd", via: "#e6f0fa", to: "#cfe0f2" },
 };
 
-// Alias temporario: `brand` aponta pra cor de acao para os ~240 usos existentes
-// migrarem sem tocar JSX. Removido na ultima fase do rebrand.
-colors.brand = { ...secondary };
 
 const radius = { sm: "8px", md: "12px", lg: "16px" };
 

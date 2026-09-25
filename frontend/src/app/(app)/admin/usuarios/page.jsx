@@ -84,7 +84,7 @@ export default function UsuariosPage() {
 
   return (
     <div>
-      <form onSubmit={salvar} className="card p-4 space-y-3 mb-6">
+      <form onSubmit={salvar} className="surface p-4 space-y-3 mb-6">
         <div className="grid grid-cols-1 md:grid-cols-5 gap-3">
           <input className="input" placeholder="Nome completo" value={form.nome}
             onChange={(e) => setForm({ ...form, nome: e.target.value })} required />
@@ -128,7 +128,7 @@ export default function UsuariosPage() {
         </div>
       </form>
 
-      <div className="card overflow-x-auto">
+      <div className="surface overflow-x-auto">
         <table className="w-full text-sm">
           <thead className="bg-neutral-50 text-neutral-600 text-left">
             <tr>
