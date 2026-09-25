@@ -52,9 +52,9 @@ export default function Sidebar({ user, itens, ativo, collapsed = false, variant
           onClick={onToggle}
           aria-label={compacta ? "Expandir menu" : "Recolher menu"}
           title={compacta ? "Expandir menu" : "Recolher menu"}
-          className="absolute -right-3 top-[76px] z-10 flex h-6 w-6 items-center justify-center rounded-full border border-neutral-200 bg-white text-neutral-500 shadow-float transition hover:border-secondary hover:text-secondary"
+          className="absolute -right-2.5 top-1/2 z-10 flex h-7 w-5 -translate-y-1/2 items-center justify-center rounded-full border border-neutral-200 bg-white text-neutral-400 transition hover:border-secondary hover:text-secondary"
         >
-          <IcoChevronRight className={clsx("h-3.5 w-3.5 transition-transform", !compacta && "rotate-180")} aria-hidden />
+          <IcoChevronRight className={clsx("h-3 w-3 transition-transform", !compacta && "rotate-180")} aria-hidden />
         </button>
       )}
 
