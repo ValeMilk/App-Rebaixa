@@ -3,7 +3,7 @@
 import Link from "next/link";
 import clsx from "clsx";
 import { GRUPOS } from "@/lib/nav";
-import { IcoLogout } from "@/components/Icons";
+import { IcoLogout, IcoChevronRight } from "@/components/Icons";
 
 function iniciais(nome) {
   return (nome || "?").split(" ").map((p) => p[0]).slice(0, 2).join("").toUpperCase();
@@ -13,14 +13,14 @@ function iniciais(nome) {
  * Sidebar de navegacao. `variant="desktop"`: fixa, colapsavel para icones.
  * `variant="sheet"`: a mesma sidebar dentro do painel off-canvas do celular.
  */
-export default function Sidebar({ user, itens, ativo, collapsed = false, variant = "desktop", onNavigate, onLogout, className }) {
+export default function Sidebar({ user, itens, ativo, collapsed = false, variant = "desktop", onNavigate, onLogout, onToggle, className }) {
   const compacta = variant === "desktop" && collapsed;
   const inicio = itens[0]?.href || "/";
 
   return (
     <aside
       className={clsx(
-        "flex flex-col bg-white",
+        "relative flex flex-col bg-white",
         variant === "desktop" && "sticky top-0 h-screen shrink-0 border-r border-neutral-200 transition-[width] duration-200",
         variant === "desktop" && (compacta ? "w-16" : "w-64"),
         variant === "sheet" && "h-full w-full",
@@ -44,6 +44,19 @@ export default function Sidebar({ user, itens, ativo, collapsed = false, variant
           </span>
         )}
       </Link>
+
+      {/* Alca de recolher/expandir, na borda direita (so no desktop) */}
+      {variant === "desktop" && onToggle && (
+        <button
+          type="button"
+          onClick={onToggle}
+          aria-label={compacta ? "Expandir menu" : "Recolher menu"}
+          title={compacta ? "Expandir menu" : "Recolher menu"}
+          className="absolute -right-3 top-[76px] z-10 flex h-6 w-6 items-center justify-center rounded-full border border-neutral-200 bg-white text-neutral-500 shadow-float transition hover:border-secondary hover:text-secondary"
+        >
+          <IcoChevronRight className={clsx("h-3.5 w-3.5 transition-transform", !compacta && "rotate-180")} aria-hidden />
+        </button>
+      )}
 
       {/* Grupos de itens */}
       <nav className="flex-1 overflow-y-auto px-2 py-3">

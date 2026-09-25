@@ -69,6 +69,7 @@ export default function AppLayout({ children }) {
           itens={itens}
           ativo={ativo}
           collapsed={collapsed}
+          onToggle={toggleCollapse}
           onLogout={logout}
         />
 
