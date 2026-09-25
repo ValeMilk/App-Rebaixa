@@ -28,7 +28,7 @@ const PALETTE = [
 ];
 
 // Cor fixa para ofertas internas (preto)
-const COR_OFERTA_INTERNA = { bg: "bg-slate-900", text: "text-white" };
+const COR_OFERTA_INTERNA = { bg: "bg-neutral-900", text: "text-white" };
 
 const DIAS_SEMANA = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sab"];
 
@@ -64,10 +64,10 @@ function SelecaoRedesPdfModal({ redes, onGerar, onClose, gerando }) {
 
   return (
     <div className="space-y-4">
-      <p className="text-xs text-slate-500">Selecione as redes que devem entrar no PDF geral</p>
+      <p className="text-xs text-neutral-500">Selecione as redes que devem entrar no PDF geral</p>
 
       <div className="flex items-center justify-between">
-        <label className="flex items-center gap-2 text-xs font-semibold text-slate-700 cursor-pointer">
+        <label className="flex items-center gap-2 text-xs font-semibold text-neutral-700 cursor-pointer">
           <input
             type="checkbox"
             checked={todasSelecionadas}
@@ -76,14 +76,14 @@ function SelecaoRedesPdfModal({ redes, onGerar, onClose, gerando }) {
           />
           Selecionar todas ({redes.length})
         </label>
-        <span className="text-xs text-slate-400">{selecionadas.length} selecionada(s)</span>
+        <span className="text-xs text-neutral-400">{selecionadas.length} selecionada(s)</span>
       </div>
 
-      <div className="max-h-56 overflow-y-auto border border-slate-200 rounded-xl divide-y divide-slate-100">
+      <div className="max-h-56 overflow-y-auto border border-neutral-200 rounded-xl divide-y divide-neutral-100">
         {redes.map((r) => (
           <label
             key={r.codigoRede}
-            className="flex items-center gap-2.5 px-3 py-2 text-sm cursor-pointer hover:bg-slate-50 transition"
+            className="flex items-center gap-2.5 px-3 py-2 text-sm cursor-pointer hover:bg-neutral-50 transition"
           >
             <input
               type="checkbox"
@@ -92,35 +92,35 @@ function SelecaoRedesPdfModal({ redes, onGerar, onClose, gerando }) {
               className="w-4 h-4 rounded accent-brand shrink-0"
             />
             <span className={`inline-block w-2.5 h-2.5 rounded-sm shrink-0 ${r.cor.bg}`} />
-            <span className="text-slate-700 truncate">{r.nome}</span>
+            <span className="text-neutral-700 truncate">{r.nome}</span>
           </label>
         ))}
       </div>
 
       <div>
-        <label className="block text-xs font-semibold text-slate-600 mb-2">Período (opcional)</label>
+        <label className="block text-xs font-semibold text-neutral-600 mb-2">Período (opcional)</label>
         <div className="flex gap-2">
           <input
             type="date"
             value={periodoInicio}
             onChange={(e) => setPeriodoInicio(e.target.value)}
-            className="flex-1 border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand/40"
+            className="flex-1 border border-neutral-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand/40"
           />
           <input
             type="date"
             value={periodoFim}
             onChange={(e) => setPeriodoFim(e.target.value)}
-            className="flex-1 border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand/40"
+            className="flex-1 border border-neutral-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand/40"
           />
         </div>
-        <p className="text-[11px] text-slate-400 mt-1">Deixe em branco para incluir todos os períodos</p>
+        <p className="text-[11px] text-neutral-400 mt-1">Deixe em branco para incluir todos os períodos</p>
       </div>
 
       <div className="flex gap-2 pt-2">
         <button
           type="button"
           onClick={onClose}
-          className="flex-1 py-2 rounded-xl border border-slate-200 text-sm text-slate-600 hover:bg-slate-50 transition"
+          className="flex-1 py-2 rounded-xl border border-neutral-200 text-sm text-neutral-600 hover:bg-neutral-50 transition"
         >
           Cancelar
         </button>
@@ -398,25 +398,25 @@ export default function CalendarioGeralPage() {
 
   return (
     <>
-    <div className="flex flex-col min-h-screen bg-slate-50">
+    <div className="flex flex-col min-h-screen bg-neutral-50">
       {/* Header */}
-      <div className="bg-white border-b border-slate-100 px-4 py-3 safe-area-pt">
+      <div className="bg-white border-b border-neutral-100 px-4 py-3 safe-area-pt">
         <div className="flex items-center justify-between gap-3">
           <div className="flex items-center gap-3 min-w-0">
             <button
               onClick={() => router.back()}
-              className="h-9 w-9 rounded-xl bg-slate-100 flex items-center justify-center text-slate-600 hover:bg-slate-200 transition shrink-0">
+              className="h-9 w-9 rounded-xl bg-neutral-100 flex items-center justify-center text-neutral-600 hover:bg-neutral-200 transition shrink-0">
               <IcoChevronRight className="w-5 h-5 rotate-180" />
             </button>
             <div className="min-w-0">
-              <h1 className="font-bold text-slate-900 text-lg leading-tight">Calendário Geral</h1>
-              <p className="text-slate-500 text-xs mt-0.5">Todos os encartes de todas as redes</p>
+              <h1 className="font-bold text-neutral-900 text-lg leading-tight">Calendário Geral</h1>
+              <p className="text-neutral-500 text-xs mt-0.5">Todos os encartes de todas as redes</p>
             </div>
           </div>
           {redesParaPdfGeral.length > 0 && (
             <button
               onClick={() => setModalPdfGeral(true)}
-              className="shrink-0 h-9 px-4 rounded-xl bg-slate-700 text-white text-xs font-bold hover:bg-slate-800 active:scale-95 transition shadow-sm shadow-slate-700/20">
+              className="shrink-0 h-9 px-4 rounded-xl bg-neutral-700 text-white text-xs font-bold hover:bg-neutral-800 active:scale-95 transition shadow-sm shadow-neutral-700/20">
               📥 PDF Geral
             </button>
           )}
@@ -426,23 +426,23 @@ export default function CalendarioGeralPage() {
       <div className="flex-1 p-4 pb-24">
         {loading ? (
           <div className="space-y-3">
-            <div className="h-8 bg-slate-100 rounded-xl animate-pulse w-2/3" />
-            <div className="h-64 bg-slate-100 rounded-2xl animate-pulse" />
+            <div className="h-8 bg-neutral-100 rounded-xl animate-pulse w-2/3" />
+            <div className="h-64 bg-neutral-100 rounded-2xl animate-pulse" />
           </div>
         ) : (
           <>
             {/* Legenda de redes — clicável para filtrar */}
             {redesComEncartes.length > 0 && (
-              <div className="mb-4 p-3 bg-white rounded-2xl border border-slate-100 shadow-sm">
-                <div className="text-xs text-slate-500 font-semibold uppercase tracking-wide mb-2">Filtrar por rede (clique para selecionar)</div>
+              <div className="mb-4 p-3 bg-white rounded-2xl border border-neutral-100 shadow-sm">
+                <div className="text-xs text-neutral-500 font-semibold uppercase tracking-wide mb-2">Filtrar por rede (clique para selecionar)</div>
                 <div className="flex flex-wrap gap-x-3 gap-y-2">
                   {/* Botão "Mostrar tudo" */}
                   <button
                     onClick={() => setRedeFiltrada(null)}
                     className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium transition ${
                       redeFiltrada === null
-                        ? "bg-slate-200 text-slate-900"
-                        : "bg-slate-100 text-slate-600 hover:bg-slate-150"
+                        ? "bg-neutral-200 text-neutral-900"
+                        : "bg-neutral-100 text-neutral-600 hover:bg-neutral-150"
                     }`}
                   >
                     <span>✓ Todas</span>
@@ -456,7 +456,7 @@ export default function CalendarioGeralPage() {
                       className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition ${
                         redeFiltrada === r.codigoRede
                           ? `${r.cor.bg} ${r.cor.text} shadow-md`
-                          : `bg-slate-100 text-slate-600 hover:bg-slate-150`
+                          : `bg-neutral-100 text-neutral-600 hover:bg-neutral-150`
                       }`}
                     >
                       <span className={`inline-block w-2.5 h-2.5 rounded-sm shrink-0 ${r.cor.bg}`} />
@@ -469,12 +469,12 @@ export default function CalendarioGeralPage() {
 
             {/* Filtro de supervisor — apenas para admin/diretoria */}
             {(userRole === "admin" || userRole === "diretoria") && supervisores.length > 0 && (
-              <div className="mb-4 p-3 bg-white rounded-2xl border border-slate-100 shadow-sm">
-                <div className="text-xs text-slate-500 font-semibold uppercase tracking-wide mb-2">Filtrar por supervisor</div>
+              <div className="mb-4 p-3 bg-white rounded-2xl border border-neutral-100 shadow-sm">
+                <div className="text-xs text-neutral-500 font-semibold uppercase tracking-wide mb-2">Filtrar por supervisor</div>
                 <select
                   value={supervisorFiltrado || ""}
                   onChange={(e) => setSupervisorFiltrado(e.target.value || null)}
-                  className="w-full md:w-64 px-3 py-2 rounded-lg border border-slate-200 text-sm bg-white focus:outline-none focus:border-brand focus:ring-2 focus:ring-brand/20 transition"
+                  className="w-full md:w-64 px-3 py-2 rounded-lg border border-neutral-200 text-sm bg-white focus:outline-none focus:border-brand focus:ring-2 focus:ring-brand/20 transition"
                 >
                   <option value="">Todos os supervisores</option>
                   {supervisores.map((sup) => (
@@ -485,16 +485,16 @@ export default function CalendarioGeralPage() {
             )}
 
             {/* Filtros de negociação e tipo */}
-            <div className="mb-4 p-3 bg-white rounded-2xl border border-slate-100 shadow-sm">
-              <div className="text-xs text-slate-500 font-semibold uppercase tracking-wide mb-2">Filtros</div>
+            <div className="mb-4 p-3 bg-white rounded-2xl border border-neutral-100 shadow-sm">
+              <div className="text-xs text-neutral-500 font-semibold uppercase tracking-wide mb-2">Filtros</div>
               <div className="flex flex-wrap gap-3">
                 {/* Filtro de negociação */}
                 <div className="flex-1 min-w-[200px]">
-                  <label className="block text-xs text-slate-600 mb-1 font-medium">Negociação</label>
+                  <label className="block text-xs text-neutral-600 mb-1 font-medium">Negociação</label>
                   <select
                     value={filtroNegociacao}
                     onChange={(e) => setFiltroNegociacao(e.target.value)}
-                    className="w-full px-3 py-2 rounded-lg border border-slate-200 text-sm bg-white focus:outline-none focus:border-brand focus:ring-2 focus:ring-brand/20 transition"
+                    className="w-full px-3 py-2 rounded-lg border border-neutral-200 text-sm bg-white focus:outline-none focus:border-brand focus:ring-2 focus:ring-brand/20 transition"
                   >
                     <option value="todos">Todos ({encartesFlat.length})</option>
                     <option value="negociados">Negociados ({encartesFlat.filter(e => e.negociado).length})</option>
@@ -504,11 +504,11 @@ export default function CalendarioGeralPage() {
                 
                 {/* Filtro de tipo */}
                 <div className="flex-1 min-w-[200px]">
-                  <label className="block text-xs text-slate-600 mb-1 font-medium">Tipo</label>
+                  <label className="block text-xs text-neutral-600 mb-1 font-medium">Tipo</label>
                   <select
                     value={filtroTipo}
                     onChange={(e) => setFiltroTipo(e.target.value)}
-                    className="w-full px-3 py-2 rounded-lg border border-slate-200 text-sm bg-white focus:outline-none focus:border-brand focus:ring-2 focus:ring-brand/20 transition"
+                    className="w-full px-3 py-2 rounded-lg border border-neutral-200 text-sm bg-white focus:outline-none focus:border-brand focus:ring-2 focus:ring-brand/20 transition"
                   >
                     <option value="todos">Todos ({grupos.flatMap(g => g.encartes).length})</option>
                     <option value="encartes">Encartes ({grupos.flatMap(g => g.encartes).filter(e => e.tipo === "encarte" || !e.tipo).length})</option>
@@ -519,11 +519,11 @@ export default function CalendarioGeralPage() {
                 {/* Filtro de subrede — só aparece se houver encartes com subrede específica */}
                 {subredesDisponiveis.length > 0 && (
                   <div className="flex-1 min-w-[200px]">
-                    <label className="block text-xs text-slate-600 mb-1 font-medium">Subrede</label>
+                    <label className="block text-xs text-neutral-600 mb-1 font-medium">Subrede</label>
                     <select
                       value={filtroSubrede}
                       onChange={(e) => setFiltroSubrede(e.target.value)}
-                      className="w-full px-3 py-2 rounded-lg border border-slate-200 text-sm bg-white focus:outline-none focus:border-brand focus:ring-2 focus:ring-brand/20 transition"
+                      className="w-full px-3 py-2 rounded-lg border border-neutral-200 text-sm bg-white focus:outline-none focus:border-brand focus:ring-2 focus:ring-brand/20 transition"
                     >
                       <option value="todos">Todas</option>
                       <option value="__rede__">Toda a rede</option>
@@ -537,30 +537,30 @@ export default function CalendarioGeralPage() {
             </div>
 
             {/* Legenda de cores */}
-            <div className="mb-4 p-3 bg-gradient-to-r from-slate-50 to-slate-100 rounded-xl border border-slate-200">
-              <div className="text-xs text-slate-500 font-semibold uppercase tracking-wide mb-2">Legenda</div>
+            <div className="mb-4 p-3 bg-gradient-to-r from-neutral-50 to-neutral-100 rounded-xl border border-neutral-200">
+              <div className="text-xs text-neutral-500 font-semibold uppercase tracking-wide mb-2">Legenda</div>
               <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
                 <div className="flex items-center gap-2">
-                  <div className="w-4 h-4 rounded bg-slate-900 shrink-0"></div>
-                  <span className="text-xs text-slate-600 font-medium">Oferta Interna</span>
+                  <div className="w-4 h-4 rounded bg-neutral-900 shrink-0"></div>
+                  <span className="text-xs text-neutral-600 font-medium">Oferta Interna</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <span className="text-base shrink-0">✅</span>
-                  <span className="text-xs text-slate-600 font-medium">Negociado</span>
+                  <span className="text-xs text-neutral-600 font-medium">Negociado</span>
                 </div>
               </div>
             </div>
 
-            <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-4">
+            <div className="bg-white rounded-2xl border border-neutral-100 shadow-sm p-4">
               {/* Navegação de mês */}
               <div className="flex items-center justify-between mb-4">
                 <button onClick={prevMes}
-                  className="h-9 w-9 rounded-xl bg-slate-100 flex items-center justify-center text-slate-600 hover:bg-slate-200 transition">
+                  className="h-9 w-9 rounded-xl bg-neutral-100 flex items-center justify-center text-neutral-600 hover:bg-neutral-200 transition">
                   <IcoChevronRight className="w-5 h-5 rotate-180" />
                 </button>
-                <span className="font-bold text-slate-800 capitalize text-base">{nomeMes}</span>
+                <span className="font-bold text-neutral-800 capitalize text-base">{nomeMes}</span>
                 <button onClick={nextMes}
-                  className="h-9 w-9 rounded-xl bg-slate-100 flex items-center justify-center text-slate-600 hover:bg-slate-200 transition">
+                  className="h-9 w-9 rounded-xl bg-neutral-100 flex items-center justify-center text-neutral-600 hover:bg-neutral-200 transition">
                   <IcoChevronRight className="w-5 h-5" />
                 </button>
               </div>
@@ -568,7 +568,7 @@ export default function CalendarioGeralPage() {
               {/* Cabeçalho dias da semana */}
               <div className="grid grid-cols-7 mb-1">
                 {DIAS_SEMANA.map((d) => (
-                  <div key={d} className="text-center text-xs font-semibold text-slate-400 py-1">{d}</div>
+                  <div key={d} className="text-center text-xs font-semibold text-neutral-400 py-1">{d}</div>
                 ))}
               </div>
 
@@ -579,8 +579,8 @@ export default function CalendarioGeralPage() {
                   const isHoje = dia.dataStr === hojeStr;
                   return (
                     <div key={dia.d}
-                      className={`rounded-xl overflow-hidden min-h-[52px] ${dia.encartes.length > 0 ? "ring-1 ring-slate-200" : ""}`}>
-                      <div className={`text-xs font-bold text-center py-1 leading-none ${isHoje ? "bg-brand text-white" : "text-slate-600"}`}>
+                      className={`rounded-xl overflow-hidden min-h-[52px] ${dia.encartes.length > 0 ? "ring-1 ring-neutral-200" : ""}`}>
+                      <div className={`text-xs font-bold text-center py-1 leading-none ${isHoje ? "bg-brand text-white" : "text-neutral-600"}`}>
                         {dia.d}
                       </div>
                       <div className="space-y-[2px] pb-[3px] px-[3px]">
@@ -610,8 +610,8 @@ export default function CalendarioGeralPage() {
               {/* Sem encartes */}
               {encartesFlat.length === 0 && (
                 <div className="flex flex-col items-center justify-center py-16 text-center">
-                  <IcoCalendar className="w-12 h-12 text-slate-200 mb-3" />
-                  <p className="text-slate-400 text-sm">Nenhum encarte cadastrado ainda</p>
+                  <IcoCalendar className="w-12 h-12 text-neutral-200 mb-3" />
+                  <p className="text-neutral-400 text-sm">Nenhum encarte cadastrado ainda</p>
                 </div>
               )}
             </div>
@@ -623,18 +623,18 @@ export default function CalendarioGeralPage() {
       {tooltip && (
         <div
           style={{ position: 'fixed', left: tooltip.x, top: tooltip.y - 8, transform: 'translate(-50%, -100%)', zIndex: 9999 }}
-          className="pointer-events-none bg-slate-900 text-white rounded-xl shadow-xl px-3 py-2.5 text-xs min-w-[220px] max-w-[300px]"
+          className="pointer-events-none bg-neutral-900 text-white rounded-xl shadow-xl px-3 py-2.5 text-xs min-w-[220px] max-w-[300px]"
         >
           {!tooltip.data ? (
-            <div className="text-slate-400 text-center py-1 text-[11px]">Carregando...</div>
+            <div className="text-neutral-400 text-center py-1 text-[11px]">Carregando...</div>
           ) : (
             <>
               <div className="font-bold text-sm mb-1">{tooltip.data.rede}</div>
               {tooltip.data.dataUltimaCompra && (
-                <div className="text-slate-400 text-[9px] mb-2">Última compra: {new Date(tooltip.data.dataUltimaCompra).toLocaleDateString('pt-BR')}</div>
+                <div className="text-neutral-400 text-[9px] mb-2">Última compra: {new Date(tooltip.data.dataUltimaCompra).toLocaleDateString('pt-BR')}</div>
               )}
               {/* Cabeçalho da tabela */}
-              <div className="grid grid-cols-4 gap-x-2 text-[9px] text-slate-400 uppercase tracking-wide border-b border-slate-700 pb-1 mb-1">
+              <div className="grid grid-cols-4 gap-x-2 text-[9px] text-neutral-400 uppercase tracking-wide border-b border-neutral-700 pb-1 mb-1">
                 <div className="col-span-1">Subcategoria</div>
                 <div className="text-right">Preço oferta</div>
                 <div className="text-right">Sellout</div>
@@ -642,16 +642,16 @@ export default function CalendarioGeralPage() {
               </div>
               {/* Linhas por subcategoria */}
               {tooltip.data.categorias.map(c => (
-                <div key={c.sub} className="grid grid-cols-4 gap-x-2 py-[3px] border-b border-slate-800 last:border-0">
-                  <div className="col-span-1 text-[10px] text-slate-200 leading-tight truncate">{c.sub}</div>
+                <div key={c.sub} className="grid grid-cols-4 gap-x-2 py-[3px] border-b border-neutral-800 last:border-0">
+                  <div className="col-span-1 text-[10px] text-neutral-200 leading-tight truncate">{c.sub}</div>
                   <div className="text-right text-[10px] font-semibold text-emerald-400">{c.ofertaMedia != null ? fmtBRL(c.ofertaMedia) : '—'}</div>
                   <div className="text-right text-[10px] font-semibold text-amber-400">{c.selloutMedio != null ? fmtBRL(c.selloutMedio) : '—'}</div>
-                  <div className={`text-right text-[10px] font-semibold ${c.margemMedia != null ? (c.margemMedia >= 20 ? 'text-emerald-300' : c.margemMedia >= 10 ? 'text-yellow-300' : 'text-red-300') : 'text-slate-400'}`}>
+                  <div className={`text-right text-[10px] font-semibold ${c.margemMedia != null ? (c.margemMedia >= 20 ? 'text-emerald-300' : c.margemMedia >= 10 ? 'text-yellow-300' : 'text-red-300') : 'text-neutral-400'}`}>
                     {c.margemMedia != null ? `${c.margemMedia.toFixed(1)}%` : '—'}
                   </div>
                 </div>
               ))}
-              <div className="text-[9px] text-slate-500 mt-1.5 text-right">{tooltip.data.totalItens} produto{tooltip.data.totalItens !== 1 ? 's' : ''}</div>
+              <div className="text-[9px] text-neutral-500 mt-1.5 text-right">{tooltip.data.totalItens} produto{tooltip.data.totalItens !== 1 ? 's' : ''}</div>
             </>
           )}
           <div style={{ position: 'absolute', bottom: -5, left: '50%', transform: 'translateX(-50%)', width: 0, height: 0, borderLeft: '5px solid transparent', borderRight: '5px solid transparent', borderTop: '5px solid #0f172a' }} />
@@ -660,13 +660,13 @@ export default function CalendarioGeralPage() {
 
       {modalPdfGeral && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 animate-fade-in">
-          <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={() => setModalPdfGeral(false)} />
+          <div className="absolute inset-0 bg-neutral-900/60 backdrop-blur-sm" onClick={() => setModalPdfGeral(false)} />
           <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 animate-slide-up">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-bold text-slate-900">Gerar PDF Geral</h3>
+              <h3 className="text-lg font-bold text-neutral-900">Gerar PDF Geral</h3>
               <button
                 onClick={() => setModalPdfGeral(false)}
-                className="h-8 w-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-500 hover:bg-slate-200 transition">
+                className="h-8 w-8 rounded-full bg-neutral-100 flex items-center justify-center text-neutral-500 hover:bg-neutral-200 transition">
                 <IcoX className="w-4 h-4" />
               </button>
             </div>
@@ -684,8 +684,8 @@ export default function CalendarioGeralPage() {
       {pdfGeralPreviewUrl && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-5xl h-[90vh] flex flex-col">
-            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200">
-              <h3 className="text-lg font-bold text-slate-900">Pré-visualização do PDF Geral</h3>
+            <div className="flex items-center justify-between px-6 py-4 border-b border-neutral-200">
+              <h3 className="text-lg font-bold text-neutral-900">Pré-visualização do PDF Geral</h3>
               <div className="flex items-center gap-2">
                 <button
                   onClick={baixarPdfGeral}
@@ -694,7 +694,7 @@ export default function CalendarioGeralPage() {
                 </button>
                 <button
                   onClick={fecharPreviewPdfGeral}
-                  className="h-9 w-9 rounded-xl bg-slate-100 text-slate-600 hover:bg-slate-200 active:scale-95 transition flex items-center justify-center">
+                  className="h-9 w-9 rounded-xl bg-neutral-100 text-neutral-600 hover:bg-neutral-200 active:scale-95 transition flex items-center justify-center">
                   <IcoX className="w-5 h-5" />
                 </button>
               </div>

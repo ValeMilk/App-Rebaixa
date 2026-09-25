@@ -26,7 +26,7 @@ function calcMargens({ precoPDV, precoOferta, sellout, precoUC }) {
 
 function MargemMini({ label, pct }) {
   const cor = pct == null
-    ? "text-slate-400 bg-slate-50 border-slate-200"
+    ? "text-neutral-400 bg-neutral-50 border-neutral-200"
     : pct >= 20
       ? "text-emerald-700 bg-emerald-50 border-emerald-200"
       : pct >= 10
@@ -155,22 +155,22 @@ export default function RebaixaLoteModal({ itens, onClose, onEnviado }) {
 
   return (
     <div className="fixed inset-0 z-50 flex flex-col sm:items-center sm:justify-center sm:p-6 animate-fade-in">
-      <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={onClose} />
+      <div className="absolute inset-0 bg-neutral-900/60 backdrop-blur-sm" onClick={onClose} />
 
       <div className="relative bg-white shadow-2xl flex flex-col w-full sm:max-w-2xl sm:rounded-3xl sm:max-h-[92dvh] animate-slide-up safe-area-pb"
         style={{ height: "100dvh", maxHeight: "100dvh" }}>
 
         {/* Header fixo */}
-        <div className="shrink-0 px-4 pt-3 pb-2.5 border-b border-slate-100 bg-white sm:rounded-t-3xl safe-area-pt">
+        <div className="shrink-0 px-4 pt-3 pb-2.5 border-b border-neutral-100 bg-white sm:rounded-t-3xl safe-area-pt">
           <div className="flex items-center justify-between gap-3">
             <div className="min-w-0 flex-1">
               <div className="text-[10px] font-semibold text-brand uppercase tracking-wider mb-0.5">Rebaixa em lote</div>
-              <h2 className="font-bold text-slate-900 text-base leading-snug">
+              <h2 className="font-bold text-neutral-900 text-base leading-snug">
                 {itens.length} {itens.length === 1 ? "item" : "itens"} · {lojas.length} {lojas.length === 1 ? "loja" : "lojas"}
               </h2>
             </div>
             <button onClick={onClose} aria-label="Fechar"
-              className="shrink-0 h-9 w-9 rounded-full bg-slate-100 active:bg-slate-200 active:scale-95 transition flex items-center justify-center text-slate-600">
+              className="shrink-0 h-9 w-9 rounded-full bg-neutral-100 active:bg-neutral-200 active:scale-95 transition flex items-center justify-center text-neutral-600">
               <IcoX className="w-5 h-5" />
             </button>
           </div>
@@ -182,15 +182,15 @@ export default function RebaixaLoteModal({ itens, onClose, onEnviado }) {
             {/* Campos comuns */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
               <div className="sm:col-span-3">
-                <label className="block text-[10px] font-semibold text-slate-500 uppercase tracking-wide mb-1">Motivo (vale para todas)</label>
+                <label className="block text-[10px] font-semibold text-neutral-500 uppercase tracking-wide mb-1">Motivo (vale para todas)</label>
                 <input className="input" value={motivo} onChange={(e) => setMotivo(e.target.value)} placeholder="Ex: Produto próximo ao vencimento" />
               </div>
               <div>
-                <label className="block text-[10px] font-semibold text-slate-500 uppercase tracking-wide mb-1">Início *</label>
+                <label className="block text-[10px] font-semibold text-neutral-500 uppercase tracking-wide mb-1">Início *</label>
                 <input type="date" className="input" value={inicioAcao} onChange={(e) => setInicioAcao(e.target.value)} required />
               </div>
               <div>
-                <label className="block text-[10px] font-semibold text-slate-500 uppercase tracking-wide mb-1">Fim *</label>
+                <label className="block text-[10px] font-semibold text-neutral-500 uppercase tracking-wide mb-1">Fim *</label>
                 <input type="date" className="input" value={fimAcao} onChange={(e) => setFimAcao(e.target.value)} required />
               </div>
             </div>
@@ -204,17 +204,17 @@ export default function RebaixaLoteModal({ itens, onClose, onEnviado }) {
 
             {/* Itens agrupados por loja */}
             {lojas.map((loja) => (
-              <div key={loja.clienteCodigo} className="rounded-2xl border border-slate-100 overflow-hidden">
-                <div className="flex items-center gap-2 bg-slate-50 px-3 py-2 border-b border-slate-100">
-                  <IcoStore className="w-4 h-4 text-slate-400 shrink-0" />
+              <div key={loja.clienteCodigo} className="rounded-2xl border border-neutral-100 overflow-hidden">
+                <div className="flex items-center gap-2 bg-neutral-50 px-3 py-2 border-b border-neutral-100">
+                  <IcoStore className="w-4 h-4 text-neutral-400 shrink-0" />
                   <div className="min-w-0">
-                    <div className="text-sm font-semibold text-slate-800 truncate">{loja.cliente}</div>
-                    {loja.redeSubrede && <div className="text-[10px] text-slate-400 truncate">{loja.redeSubrede}</div>}
+                    <div className="text-sm font-semibold text-neutral-800 truncate">{loja.cliente}</div>
+                    {loja.redeSubrede && <div className="text-[10px] text-neutral-400 truncate">{loja.redeSubrede}</div>}
                   </div>
-                  <span className="ml-auto text-xs text-slate-400 whitespace-nowrap">{loja.itens.length} {loja.itens.length === 1 ? "item" : "itens"}</span>
+                  <span className="ml-auto text-xs text-neutral-400 whitespace-nowrap">{loja.itens.length} {loja.itens.length === 1 ? "item" : "itens"}</span>
                 </div>
 
-                <div className="divide-y divide-slate-100">
+                <div className="divide-y divide-neutral-100">
                   {loja.itens.map((it) => {
                     const d = dadosItem(it);
                     const ucCarregando = loadingUC && ultimaCompra[it._id] === undefined;
@@ -223,46 +223,46 @@ export default function RebaixaLoteModal({ itens, onClose, onEnviado }) {
                         <div className="flex items-start justify-between gap-3">
                           <div className="min-w-0">
                             <div className="flex items-center gap-2 flex-wrap">
-                              <div className="text-sm font-medium text-slate-800 leading-snug">{it.produto}</div>
+                              <div className="text-sm font-medium text-neutral-800 leading-snug">{it.produto}</div>
                               <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full border whitespace-nowrap ${
                                 tipoDe(it) === "oferta_interna" ? "bg-blue-50 text-blue-700 border-blue-200" : "bg-red-50 text-red-700 border-red-200"
                               }`}>
                                 {tipoDe(it) === "oferta_interna" ? "Oferta" : "Rebaixa"}
                               </span>
                             </div>
-                            <div className="text-[11px] text-slate-400 mt-0.5">
+                            <div className="text-[11px] text-neutral-400 mt-0.5">
                               {it.quantidade} un · vence {fmtData(it.dataValidade)}
-                              <span className={`font-semibold ${it.diasParaVencer <= 15 ? "text-red-600" : "text-slate-500"}`}> ({it.diasParaVencer ?? "—"}d)</span>
+                              <span className={`font-semibold ${it.diasParaVencer <= 15 ? "text-red-600" : "text-neutral-500"}`}> ({it.diasParaVencer ?? "—"}d)</span>
                             </div>
                           </div>
                           <div className="shrink-0 text-right text-[11px]">
-                            <div className="text-slate-400 uppercase tracking-wide text-[9px] font-semibold">Últ. compra</div>
+                            <div className="text-neutral-400 uppercase tracking-wide text-[9px] font-semibold">Últ. compra</div>
                             {ucCarregando ? (
-                              <div className="text-slate-400">…</div>
+                              <div className="text-neutral-400">…</div>
                             ) : d.precoUC != null ? (
                               <>
                                 <div className="font-bold text-brand">{fmtBRL(d.precoUC)}</div>
-                                <div className="text-slate-400">{fmtData(d.dataUC)}</div>
+                                <div className="text-neutral-400">{fmtData(d.dataUC)}</div>
                               </>
                             ) : (
-                              <div className="text-slate-400">Sem histórico</div>
+                              <div className="text-neutral-400">Sem histórico</div>
                             )}
                           </div>
                         </div>
 
                         <div className="grid grid-cols-3 gap-2">
                           <div>
-                            <label className="block text-[9px] font-semibold text-slate-500 uppercase tracking-wide mb-0.5">PDV (R$) *</label>
+                            <label className="block text-[9px] font-semibold text-neutral-500 uppercase tracking-wide mb-0.5">PDV (R$) *</label>
                             <input type="number" step="0.01" min="0" inputMode="decimal" placeholder="0,00" className="input !px-2.5 !py-2 text-sm"
                               value={d.c.precoPDV || ""} onChange={(e) => setCampo(it._id, "precoPDV", e.target.value)} />
                           </div>
                           <div>
-                            <label className="block text-[9px] font-semibold text-slate-500 uppercase tracking-wide mb-0.5">Oferta (R$) *</label>
+                            <label className="block text-[9px] font-semibold text-neutral-500 uppercase tracking-wide mb-0.5">Oferta (R$) *</label>
                             <input type="number" step="0.01" min="0" inputMode="decimal" placeholder="0,00" className="input !px-2.5 !py-2 text-sm font-bold"
                               value={d.c.precoOferta || ""} onChange={(e) => setCampo(it._id, "precoOferta", e.target.value)} />
                           </div>
                           <div>
-                            <label className="block text-[9px] font-semibold text-slate-500 uppercase tracking-wide mb-0.5">Sellout (R$)</label>
+                            <label className="block text-[9px] font-semibold text-neutral-500 uppercase tracking-wide mb-0.5">Sellout (R$)</label>
                             <input type="number" step="0.01" min="0" inputMode="decimal" placeholder="0,00" className="input !px-2.5 !py-2 text-sm"
                               value={d.c.sellout || ""} onChange={(e) => setCampo(it._id, "sellout", e.target.value)} />
                           </div>
@@ -295,7 +295,7 @@ export default function RebaixaLoteModal({ itens, onClose, onEnviado }) {
         </div>
 
         {/* Footer fixo */}
-        <div className="shrink-0 px-4 py-3 border-t border-slate-100 bg-white sm:rounded-b-3xl">
+        <div className="shrink-0 px-4 py-3 border-t border-neutral-100 bg-white sm:rounded-b-3xl">
           <button type="submit" form="form-rebaixa-lote" className="btn-primary w-full py-3 text-base" disabled={enviando}>
             {enviando ? "Enviando..." : rotuloEnviar}
           </button>

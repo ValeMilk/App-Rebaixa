@@ -70,10 +70,10 @@ export default function AppLayout({ children }) {
 
   if (loading || !user) {
     return (
-      <div className="flex h-screen items-center justify-center bg-slate-50">
+      <div className="flex h-screen items-center justify-center bg-neutral-50">
         <div className="flex flex-col items-center gap-3">
-          <div className="w-10 h-10 rounded-full border-4 border-slate-200 border-t-brand animate-spin" />
-          <p className="text-slate-500 text-sm">Carregando...</p>
+          <div className="w-10 h-10 rounded-full border-4 border-neutral-200 border-t-brand animate-spin" />
+          <p className="text-neutral-500 text-sm">Carregando...</p>
         </div>
       </div>
     );
@@ -86,9 +86,9 @@ export default function AppLayout({ children }) {
   const initials = (user.nome || "?").split(" ").map(p => p[0]).slice(0, 2).join("").toUpperCase();
 
   return (
-    <div className="flex flex-col min-h-screen bg-slate-50 w-screen max-w-full overflow-x-clip">
+    <div className="flex flex-col min-h-screen bg-neutral-50 w-screen max-w-full overflow-x-clip">
       {/* Navbar horizontal no topo */}
-      <header className="sticky top-0 z-50 bg-white border-b border-slate-200 shadow-sm">
+      <header className="sticky top-0 z-50 bg-white border-b border-neutral-200 shadow-sm">
         <div className="max-w-[1920px] mx-auto px-4 lg:px-6">
           <div className="flex items-center justify-between min-h-16 py-2 gap-y-2">
             {/* Logo */}
@@ -97,8 +97,8 @@ export default function AppLayout({ children }) {
                 VM
               </div>
               <div className="hidden sm:block">
-                <div className="text-lg font-bold text-slate-900 leading-tight">InfoVale</div>
-                <div className="text-xs text-slate-500">Valemilk</div>
+                <div className="text-lg font-bold text-neutral-900 leading-tight">InfoVale</div>
+                <div className="text-xs text-neutral-500">Valemilk</div>
               </div>
             </div>
 
@@ -113,7 +113,7 @@ export default function AppLayout({ children }) {
                     className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition whitespace-nowrap ${
                       active
                         ? "bg-brand text-white shadow-sm"
-                        : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
+                        : "text-neutral-600 hover:bg-neutral-100 hover:text-neutral-900"
                     }`}
                   >
                     <Icon className="w-4 h-4" />
@@ -131,7 +131,7 @@ export default function AppLayout({ children }) {
                   className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition whitespace-nowrap ${
                     adminLinks.some((l) => pathname === l.href || pathname.startsWith(l.href + "/"))
                       ? "bg-brand text-white shadow-sm"
-                      : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
+                      : "text-neutral-600 hover:bg-neutral-100 hover:text-neutral-900"
                   }`}
                 >
                   <IcoUsers className="w-4 h-4" />
@@ -140,7 +140,7 @@ export default function AppLayout({ children }) {
                 </button>
 
                 {adminMenuOpen && (
-                  <div className="absolute right-0 top-full mt-1.5 w-56 bg-white rounded-xl border border-slate-200 shadow-lg py-1.5 z-50">
+                  <div className="absolute right-0 top-full mt-1.5 w-56 bg-white rounded-xl border border-neutral-200 shadow-lg py-1.5 z-50">
                     {adminLinks.map(({ href, label, Icon }) => {
                       const active = pathname === href || pathname.startsWith(href + "/");
                       return (
@@ -149,7 +149,7 @@ export default function AppLayout({ children }) {
                           href={href}
                           onClick={() => setAdminMenuOpen(false)}
                           className={`flex items-center gap-2.5 px-3.5 py-2 text-sm font-medium transition ${
-                            active ? "text-brand bg-brand/5" : "text-slate-600 hover:bg-slate-50"
+                            active ? "text-brand bg-brand/5" : "text-neutral-600 hover:bg-neutral-50"
                           }`}
                         >
                           <Icon className="w-4 h-4" />
@@ -164,18 +164,18 @@ export default function AppLayout({ children }) {
 
             {/* User menu — desktop */}
             <div className="hidden lg:flex items-center gap-3 shrink-0">
-              <div className="flex items-center gap-2.5 px-3 py-1.5 rounded-lg bg-slate-50 border border-slate-200 max-w-[200px]">
+              <div className="flex items-center gap-2.5 px-3 py-1.5 rounded-lg bg-neutral-50 border border-neutral-200 max-w-[200px]">
                 <div className="h-8 w-8 rounded-full bg-gradient-to-br from-brand to-brand-600 flex items-center justify-center text-xs font-bold text-white shrink-0">
                   {initials}
                 </div>
                 <div className="min-w-0 overflow-hidden">
-                  <div className="text-sm font-semibold text-slate-900 truncate">{user.nome}</div>
-                  <div className="text-xs text-slate-500 capitalize truncate">{user.role}</div>
+                  <div className="text-sm font-semibold text-neutral-900 truncate">{user.nome}</div>
+                  <div className="text-xs text-neutral-500 capitalize truncate">{user.role}</div>
                 </div>
               </div>
               <button
                 onClick={logout}
-                className="h-10 px-4 flex items-center gap-2 text-sm font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition shrink-0"
+                className="h-10 px-4 flex items-center gap-2 text-sm font-medium text-neutral-600 hover:text-neutral-900 hover:bg-neutral-100 rounded-lg transition shrink-0"
               >
                 <IcoLogout className="w-4 h-4" />
                 <span className="hidden xl:inline">Sair</span>
@@ -184,18 +184,18 @@ export default function AppLayout({ children }) {
 
             {/* Mobile user badge + logout */}
             <div className="lg:hidden flex items-center gap-2">
-              <div className="flex items-center gap-2 px-2 py-1 rounded-lg bg-slate-50">
+              <div className="flex items-center gap-2 px-2 py-1 rounded-lg bg-neutral-50">
                 <div className="h-8 w-8 rounded-full bg-gradient-to-br from-brand to-brand-600 flex items-center justify-center text-xs font-bold text-white">
                   {initials}
                 </div>
-                <div className="text-xs font-medium text-slate-700 capitalize">{user.role}</div>
+                <div className="text-xs font-medium text-neutral-700 capitalize">{user.role}</div>
               </div>
               <button
                 onClick={logout}
                 aria-label="Sair"
-                className="h-10 w-10 rounded-lg bg-slate-100 hover:bg-slate-200 active:scale-95 transition flex items-center justify-center"
+                className="h-10 w-10 rounded-lg bg-neutral-100 hover:bg-neutral-200 active:scale-95 transition flex items-center justify-center"
               >
-                <IcoLogout className="w-5 h-5 text-slate-600" />
+                <IcoLogout className="w-5 h-5 text-neutral-600" />
               </button>
             </div>
           </div>
@@ -208,7 +208,7 @@ export default function AppLayout({ children }) {
       </main>
 
       {/* Bottom nav — apenas mobile */}
-      <nav className="lg:hidden fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-md border-t border-slate-200 z-50 safe-area-pb shadow-[0_-4px_20px_-8px_rgba(0,0,0,0.08)]">
+      <nav className="lg:hidden fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-md border-t border-neutral-200 z-50 safe-area-pb shadow-[0_-4px_20px_-8px_rgba(0,0,0,0.08)]">
         <div className="flex items-stretch px-1 pt-1.5">
           {bottomLinks.map(({ href, label, Icon }) => {
             const active = pathname === href || pathname.startsWith(href + "/");
@@ -220,12 +220,12 @@ export default function AppLayout({ children }) {
               >
                 <span
                   className={`flex items-center justify-center w-12 h-7 rounded-full transition-colors ${
-                    active ? "bg-brand/10 text-brand" : "text-slate-400"
+                    active ? "bg-brand/10 text-brand" : "text-neutral-400"
                   }`}
                 >
                   <Icon className="w-[22px] h-[22px]" />
                 </span>
-                <span className={`text-[10px] mt-0.5 font-medium ${active ? "text-brand" : "text-slate-500"}`}>
+                <span className={`text-[10px] mt-0.5 font-medium ${active ? "text-brand" : "text-neutral-500"}`}>
                   {label}
                 </span>
               </Link>

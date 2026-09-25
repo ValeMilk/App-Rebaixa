@@ -13,11 +13,11 @@ const STATUS = {
   aprovado_supervisor: { label: "Ag. Dir.",   bg: "bg-blue-50",    text: "text-blue-700",   border: "border-blue-200",    dot: "bg-blue-500" },
   aprovado_final:      { label: "Aprovado",   bg: "bg-emerald-50", text: "text-emerald-700",border: "border-emerald-200", dot: "bg-emerald-500" },
   rejeitado:           { label: "Rejeitado",  bg: "bg-red-50",     text: "text-red-700",    border: "border-red-200",     dot: "bg-red-500" },
-  cancelado:           { label: "Cancelado",  bg: "bg-slate-100",  text: "text-slate-600",  border: "border-slate-200",   dot: "bg-slate-400" },
+  cancelado:           { label: "Cancelado",  bg: "bg-neutral-100",  text: "text-neutral-600",  border: "border-neutral-200",   dot: "bg-neutral-400" },
 };
 
 function StatusBadge({ s }) {
-  const st = STATUS[s] || { label: s, bg: "bg-slate-100", text: "text-slate-600", border: "border-slate-200", dot: "bg-slate-400" };
+  const st = STATUS[s] || { label: s, bg: "bg-neutral-100", text: "text-neutral-600", border: "border-neutral-200", dot: "bg-neutral-400" };
   return (
     <span className={`inline-flex items-center gap-1.5 text-[10px] font-semibold px-2 py-0.5 rounded-full border shrink-0 whitespace-nowrap ${st.bg} ${st.text} ${st.border}`}>
       <span className={`w-1.5 h-1.5 rounded-full ${st.dot}`} />
@@ -44,13 +44,13 @@ function TipoBadge({ tipo }) {
 function SolCard({ s, podeDecidir, decidindo, setDecidindo, motivoDecisao, setMotivoDecisao, onDecisao }) {
   const pode = podeDecidir(s);
   return (
-    <div className={`bg-white rounded-2xl border shadow-sm overflow-hidden transition ${pode ? "border-amber-200 ring-1 ring-amber-100" : "border-slate-200"}`}>
+    <div className={`bg-white rounded-2xl border shadow-sm overflow-hidden transition ${pode ? "border-amber-200 ring-1 ring-amber-100" : "border-neutral-200"}`}>
       <div className="px-4 pt-3.5 pb-3">
         <div className="flex items-start justify-between gap-2 mb-2">
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-1.5 mb-0.5"><TipoBadge tipo={s.tipo} /></div>
-            <div className="font-semibold text-slate-900 truncate">{s.cliente}</div>
-            <div className="text-xs text-slate-500 mt-1 flex flex-wrap items-center gap-x-3 gap-y-0.5">
+            <div className="font-semibold text-neutral-900 truncate">{s.cliente}</div>
+            <div className="text-xs text-neutral-500 mt-1 flex flex-wrap items-center gap-x-3 gap-y-0.5">
               <span className="inline-flex items-center gap-1"><IcoUser className="w-3 h-3" />{s.criadoPorNome || "—"}</span>
               <span className="inline-flex items-center gap-1"><IcoClock className="w-3 h-3" />{fmtDataHora(s.createdAt)}</span>
             </div>
@@ -60,7 +60,7 @@ function SolCard({ s, podeDecidir, decidindo, setDecidindo, motivoDecisao, setMo
         <div className="space-y-1.5 mt-2">
           {s.itens?.slice(0, 2).map((it, i) => (
             <div key={i} className="flex items-center justify-between text-sm gap-2">
-              <span className="text-slate-700 truncate flex-1">{it.produto}</span>
+              <span className="text-neutral-700 truncate flex-1">{it.produto}</span>
               <div className="flex gap-2 items-center shrink-0">
                 {it.precoOferta && <span className="text-brand font-bold text-xs">{fmtBRL(it.precoOferta)}</span>}
                 {it.margemOferta != null && (
@@ -71,11 +71,11 @@ function SolCard({ s, podeDecidir, decidindo, setDecidindo, motivoDecisao, setMo
               </div>
             </div>
           ))}
-          {s.itens?.length > 2 && <div className="text-xs text-slate-400">+{s.itens.length - 2} produto(s)…</div>}
+          {s.itens?.length > 2 && <div className="text-xs text-neutral-400">+{s.itens.length - 2} produto(s)…</div>}
         </div>
-        {s.motivo && <div className="mt-2.5 text-xs text-slate-500 italic bg-slate-50 rounded-lg px-2.5 py-1.5">"{s.motivo}"</div>}
+        {s.motivo && <div className="mt-2.5 text-xs text-neutral-500 italic bg-neutral-50 rounded-lg px-2.5 py-1.5">"{s.motivo}"</div>}
       </div>
-      <div className="border-t border-slate-100 px-4 py-2.5 flex items-center justify-between gap-2 bg-slate-50/50">
+      <div className="border-t border-neutral-100 px-4 py-2.5 flex items-center justify-between gap-2 bg-neutral-50/50">
         <Link href={`/solicitacoes/${s._id}`} className="inline-flex items-center gap-1 text-xs text-brand font-semibold active:scale-95 transition">
           Ver detalhes <IcoChevronRight className="w-3.5 h-3.5" />
         </Link>
@@ -85,7 +85,7 @@ function SolCard({ s, podeDecidir, decidindo, setDecidindo, motivoDecisao, setMo
               <input className="input text-xs py-1 px-2 w-28" placeholder="Motivo" value={motivoDecisao} onChange={(e) => setMotivoDecisao(e.target.value)} />
               <button onClick={() => onDecisao(s._id, "aprovado")} aria-label="Aprovar" className="h-8 w-8 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg flex items-center justify-center active:scale-95 transition"><IcoCheck className="w-4 h-4" /></button>
               <button onClick={() => onDecisao(s._id, "rejeitado")} aria-label="Rejeitar" className="h-8 w-8 bg-red-500 hover:bg-red-600 text-white rounded-lg flex items-center justify-center active:scale-95 transition"><IcoX className="w-4 h-4" /></button>
-              <button onClick={() => { setDecidindo(null); setMotivoDecisao(""); }} aria-label="Cancelar" className="h-8 w-8 text-slate-400 hover:bg-slate-100 rounded-lg flex items-center justify-center"><IcoX className="w-4 h-4" /></button>
+              <button onClick={() => { setDecidindo(null); setMotivoDecisao(""); }} aria-label="Cancelar" className="h-8 w-8 text-neutral-400 hover:bg-neutral-100 rounded-lg flex items-center justify-center"><IcoX className="w-4 h-4" /></button>
             </div>
           ) : (
             <button onClick={() => setDecidindo(s._id)} className="inline-flex items-center gap-1.5 text-xs bg-amber-500 hover:bg-amber-600 text-white px-3 py-1.5 rounded-lg font-semibold active:scale-95 transition shadow-sm">
@@ -115,15 +115,15 @@ function ProdutoGrupoCard({ prodGrupo, redeKey, podeDecidir, decidindo, setDecid
   const criadoEm = sols[0]?.createdAt;
 
   return (
-    <div className={`rounded-xl border overflow-hidden ${podeDecidirAlgum ? "border-amber-200 bg-amber-50/20" : "border-slate-200 bg-white"}`}>
+    <div className={`rounded-xl border overflow-hidden ${podeDecidirAlgum ? "border-amber-200 bg-amber-50/20" : "border-neutral-200 bg-white"}`}>
       <div className="px-3 pt-3 pb-2">
         <div className="flex items-start justify-between gap-2">
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-1.5 mb-0.5">
               <TipoBadge tipo={sols[0]?.tipo} />
             </div>
-            <div className="font-semibold text-slate-900 text-sm leading-snug">{produto}</div>
-            <div className="text-xs text-slate-500 mt-1 flex flex-wrap items-center gap-x-3 gap-y-0.5">
+            <div className="font-semibold text-neutral-900 text-sm leading-snug">{produto}</div>
+            <div className="text-xs text-neutral-500 mt-1 flex flex-wrap items-center gap-x-3 gap-y-0.5">
               <span className="inline-flex items-center gap-1"><IcoStore className="w-3 h-3" />{sols.length} loja{sols.length !== 1 ? "s" : ""} · {qtdTotal} un</span>
               <span className="inline-flex items-center gap-1"><IcoUser className="w-3 h-3" />{criadoPorNome || "—"}</span>
               <span className="inline-flex items-center gap-1"><IcoClock className="w-3 h-3" />{fmtDataHora(criadoEm)}</span>
@@ -143,26 +143,26 @@ function ProdutoGrupoCard({ prodGrupo, redeKey, podeDecidir, decidindo, setDecid
             )}
           </div>
         </div>
-        {motivo && <div className="mt-2 text-xs text-slate-500 italic bg-slate-50 rounded-lg px-2.5 py-1.5">"{motivo}"</div>}
+        {motivo && <div className="mt-2 text-xs text-neutral-500 italic bg-neutral-50 rounded-lg px-2.5 py-1.5">"{motivo}"</div>}
       </div>
 
       <button
         onClick={() => setExpanded((v) => !v)}
-        className="w-full border-t border-slate-100 px-3 py-2 flex items-center justify-between text-xs text-slate-500 hover:bg-slate-50 transition"
+        className="w-full border-t border-neutral-100 px-3 py-2 flex items-center justify-between text-xs text-neutral-500 hover:bg-neutral-50 transition"
       >
         <span className="font-semibold">{expanded ? "Ocultar lojas" : `Ver ${sols.length} lojas`}</span>
         <IcoChevronDown className={`w-3.5 h-3.5 transition-transform ${expanded ? "rotate-180" : ""}`} />
       </button>
 
       {expanded && (
-        <div className="border-t border-slate-100 px-2.5 pb-2.5 pt-1.5 space-y-1.5 bg-slate-50/50">
+        <div className="border-t border-neutral-100 px-2.5 pb-2.5 pt-1.5 space-y-1.5 bg-neutral-50/50">
           {sols.map((s) => {
             const pode = podeDecidir(s);
             return (
-              <div key={s._id} className={`bg-white rounded-xl border px-3 py-2.5 flex items-center justify-between gap-2 ${pode ? "border-amber-200" : "border-slate-200"}`}>
+              <div key={s._id} className={`bg-white rounded-xl border px-3 py-2.5 flex items-center justify-between gap-2 ${pode ? "border-amber-200" : "border-neutral-200"}`}>
                 <div className="flex-1 min-w-0">
-                  <div className="text-sm font-medium text-slate-800 truncate">{s.cliente}</div>
-                  <div className="text-[11px] text-slate-500 mt-0.5 flex gap-2 flex-wrap">
+                  <div className="text-sm font-medium text-neutral-800 truncate">{s.cliente}</div>
+                  <div className="text-[11px] text-neutral-500 mt-0.5 flex gap-2 flex-wrap">
                     <span>{s.itens?.[0]?.quantidade} un · {s.itens?.[0]?.diasParaVencer}d</span>
                     <StatusBadge s={s.status} />
                   </div>
@@ -175,7 +175,7 @@ function ProdutoGrupoCard({ prodGrupo, redeKey, podeDecidir, decidindo, setDecid
                         <input className="input text-xs py-0.5 px-1.5 w-20" placeholder="Motivo" value={motivoDecisao} onChange={(e) => setMotivoDecisao(e.target.value)} />
                         <button onClick={() => onDecisao(s._id, "aprovado")} className="h-7 w-7 bg-emerald-600 text-white rounded-lg flex items-center justify-center"><IcoCheck className="w-3.5 h-3.5" /></button>
                         <button onClick={() => onDecisao(s._id, "rejeitado")} className="h-7 w-7 bg-red-500 text-white rounded-lg flex items-center justify-center"><IcoX className="w-3.5 h-3.5" /></button>
-                        <button onClick={() => { setDecidindo(null); setMotivoDecisao(""); }} className="h-7 w-7 text-slate-400 rounded-lg flex items-center justify-center"><IcoX className="w-3.5 h-3.5" /></button>
+                        <button onClick={() => { setDecidindo(null); setMotivoDecisao(""); }} className="h-7 w-7 text-neutral-400 rounded-lg flex items-center justify-center"><IcoX className="w-3.5 h-3.5" /></button>
                       </>
                     ) : (
                       <button onClick={() => setDecidindo(s._id)} className="text-[10px] bg-amber-500 text-white px-2 py-1 rounded-lg font-semibold whitespace-nowrap">Decidir</button>
@@ -189,8 +189,8 @@ function ProdutoGrupoCard({ prodGrupo, redeKey, podeDecidir, decidindo, setDecid
       )}
 
       {podeDecidirAlgum && (
-        <div className="border-t border-slate-100 px-3 py-2.5 flex items-center justify-between gap-2 bg-slate-50/50">
-          <span className="text-xs text-slate-500 font-medium">{sols.filter(podeDecidir).length} aguardando decisão</span>
+        <div className="border-t border-neutral-100 px-3 py-2.5 flex items-center justify-between gap-2 bg-neutral-50/50">
+          <span className="text-xs text-neutral-500 font-medium">{sols.filter(podeDecidir).length} aguardando decisão</span>
           {decidindo === idGrupo ? (
             <div className="flex items-center gap-1.5">
               <input className="input text-xs py-1 px-2 w-28" placeholder="Motivo" value={motivoDecisao} onChange={(e) => setMotivoDecisao(e.target.value)} />
@@ -198,7 +198,7 @@ function ProdutoGrupoCard({ prodGrupo, redeKey, podeDecidir, decidindo, setDecid
                 <IcoCheck className="w-3.5 h-3.5" /> Aprovar todas
               </button>
               <button onClick={() => onDecisaoGrupo(sols.filter(podeDecidir).map((s) => s._id), "rejeitado")} className="h-8 w-8 bg-red-500 hover:bg-red-600 text-white rounded-lg flex items-center justify-center active:scale-95 transition"><IcoX className="w-4 h-4" /></button>
-              <button onClick={() => { setDecidindo(null); setMotivoDecisao(""); }} className="h-8 w-8 text-slate-400 hover:bg-slate-100 rounded-lg flex items-center justify-center"><IcoX className="w-4 h-4" /></button>
+              <button onClick={() => { setDecidindo(null); setMotivoDecisao(""); }} className="h-8 w-8 text-neutral-400 hover:bg-neutral-100 rounded-lg flex items-center justify-center"><IcoX className="w-4 h-4" /></button>
             </div>
           ) : (
             <button onClick={() => setDecidindo(idGrupo)} className="inline-flex items-center gap-1.5 text-xs bg-amber-500 hover:bg-amber-600 text-white px-3 py-1.5 rounded-lg font-semibold active:scale-95 transition shadow-sm">
@@ -221,7 +221,7 @@ function RedeCard({ redeGrupo, podeDecidir, decidindo, setDecidindo, motivoDecis
   const podeDecidirAlguma = totalPendentes > 0;
 
   return (
-    <div className={`bg-white rounded-2xl border shadow-sm overflow-hidden transition ${podeDecidirAlguma ? "border-amber-200 ring-1 ring-amber-100" : "border-slate-200"}`}>
+    <div className={`bg-white rounded-2xl border shadow-sm overflow-hidden transition ${podeDecidirAlguma ? "border-amber-200 ring-1 ring-amber-100" : "border-neutral-200"}`}>
       <button
         onClick={() => setExpanded((v) => !v)}
         className="w-full px-4 pt-3.5 pb-3 flex items-center justify-between gap-2 text-left"
@@ -231,7 +231,7 @@ function RedeCard({ redeGrupo, podeDecidir, decidindo, setDecidindo, motivoDecis
             <IcoUsers className="w-4 h-4 text-blue-500 shrink-0" />
             <span className="text-sm font-bold text-blue-600 truncate">{redeNome}</span>
           </div>
-          <div className="text-xs text-slate-500 flex flex-wrap items-center gap-x-3 gap-y-0.5">
+          <div className="text-xs text-neutral-500 flex flex-wrap items-center gap-x-3 gap-y-0.5">
             <span>{produtos.length} produto{produtos.length !== 1 ? "s" : ""}</span>
             <span>{totalLojas} loja{totalLojas !== 1 ? "s" : ""}</span>
             {podeDecidirAlguma && (
@@ -239,11 +239,11 @@ function RedeCard({ redeGrupo, podeDecidir, decidindo, setDecidindo, motivoDecis
             )}
           </div>
         </div>
-        <IcoChevronDown className={`w-4 h-4 text-slate-400 transition-transform shrink-0 ${expanded ? "rotate-180" : ""}`} />
+        <IcoChevronDown className={`w-4 h-4 text-neutral-400 transition-transform shrink-0 ${expanded ? "rotate-180" : ""}`} />
       </button>
 
       {expanded && (
-        <div className="border-t border-slate-100 px-3 pb-3 pt-2.5 space-y-2.5 bg-slate-50/30">
+        <div className="border-t border-neutral-100 px-3 pb-3 pt-2.5 space-y-2.5 bg-neutral-50/30">
           {produtos.map((pg, i) => (
             <ProdutoGrupoCard
               key={`${codigoRede}__${pg.produto}__${i}`}
@@ -392,8 +392,8 @@ export default function SolicitacoesPage() {
     <div className="space-y-4">
       <div className="flex items-end justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Pedidos</h1>
-          <p className="text-slate-500 text-sm mt-0.5">Rebaixas e ofertas</p>
+          <h1 className="text-2xl font-bold text-neutral-900 tracking-tight">Pedidos</h1>
+          <p className="text-neutral-500 text-sm mt-0.5">Rebaixas e ofertas</p>
         </div>
         <div className="flex items-center gap-2">
           {pendentesAprovacao > 0 && (
@@ -417,16 +417,16 @@ export default function SolicitacoesPage() {
 
       {loading ? (
         <div className="flex flex-col items-center justify-center py-16 gap-3">
-          <div className="w-9 h-9 rounded-full border-4 border-slate-200 border-t-brand animate-spin" />
-          <p className="text-sm text-slate-400">Carregando...</p>
+          <div className="w-9 h-9 rounded-full border-4 border-neutral-200 border-t-brand animate-spin" />
+          <p className="text-sm text-neutral-400">Carregando...</p>
         </div>
       ) : lista.length === 0 ? (
         <div className="text-center py-16 px-6">
-          <div className="w-14 h-14 mx-auto rounded-2xl bg-slate-100 text-slate-400 flex items-center justify-center mb-3">
+          <div className="w-14 h-14 mx-auto rounded-2xl bg-neutral-100 text-neutral-400 flex items-center justify-center mb-3">
             <IcoClipboard className="w-7 h-7" />
           </div>
-          <p className="text-slate-500 font-medium">Nenhuma solicitação</p>
-          <p className="text-slate-400 text-sm mt-1">As solicitações aparecerão aqui</p>
+          <p className="text-neutral-500 font-medium">Nenhuma solicitação</p>
+          <p className="text-neutral-400 text-sm mt-1">As solicitações aparecerão aqui</p>
         </div>
       ) : (
         <div className="space-y-3">

@@ -100,8 +100,8 @@ export default function ResponsabilidadesPage() {
 
   return (
     <div>
-      <h1 className="text-2xl font-bold text-slate-900 mb-1">Responsabilidades de Rede</h1>
-      <p className="text-slate-500 mb-6 max-w-3xl">
+      <h1 className="text-2xl font-bold text-neutral-900 mb-1">Responsabilidades de Rede</h1>
+      <p className="text-neutral-500 mb-6 max-w-3xl">
         Override opcional: define o <strong>supervisor responsável</strong> por uma rede.
         Quando cadastrado, este supervisor passa a ver TODAS as solicitações daquela rede e é o
         único que decide na etapa de supervisor. Demais supervisores com lojas dessa rede na
@@ -161,7 +161,7 @@ export default function ResponsabilidadesPage() {
 
       <div className="card overflow-x-auto">
         <table className="w-full text-sm">
-          <thead className="bg-slate-50 text-slate-600 text-left">
+          <thead className="bg-neutral-50 text-neutral-600 text-left">
             <tr>
               <th className="px-3 py-2">Rede</th>
               <th className="px-3 py-2">Código Rede</th>
@@ -172,17 +172,17 @@ export default function ResponsabilidadesPage() {
           </thead>
           <tbody>
             {loading && (
-              <tr><td className="px-3 py-4 text-slate-500" colSpan={5}>Carregando...</td></tr>
+              <tr><td className="px-3 py-4 text-neutral-500" colSpan={5}>Carregando...</td></tr>
             )}
             {!loading && itensFiltrados.length === 0 && (
-              <tr><td className="px-3 py-4 text-slate-500" colSpan={5}>Nenhuma responsabilidade cadastrada.</td></tr>
+              <tr><td className="px-3 py-4 text-neutral-500" colSpan={5}>Nenhuma responsabilidade cadastrada.</td></tr>
             )}
             {!loading && itensFiltrados.map((r) => (
-              <tr key={r._id} className="border-t border-slate-100">
-                <td className="px-3 py-2 font-semibold text-slate-800">{r.redeSubrede || "—"}</td>
-                <td className="px-3 py-2 text-slate-500">{r.codigoRede}</td>
-                <td className="px-3 py-2 text-slate-800">{r.supervisorNome}</td>
-                <td className="px-3 py-2 text-slate-500">{r.supervisorCodigo}</td>
+              <tr key={r._id} className="border-t border-neutral-100">
+                <td className="px-3 py-2 font-semibold text-neutral-800">{r.redeSubrede || "—"}</td>
+                <td className="px-3 py-2 text-neutral-500">{r.codigoRede}</td>
+                <td className="px-3 py-2 text-neutral-800">{r.supervisorNome}</td>
+                <td className="px-3 py-2 text-neutral-500">{r.supervisorCodigo}</td>
                 <td className="px-3 py-2 text-right">
                   <button onClick={() => editar(r)} className="text-brand font-medium hover:underline mr-3">Editar</button>
                   <button onClick={() => remover(r)} className="text-red-600 font-medium hover:underline">Remover</button>

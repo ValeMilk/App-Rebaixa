@@ -24,7 +24,7 @@ export default function Home() {
 
   return (
     <div className="flex h-screen items-center justify-center">
-      <p className="text-slate-500">Carregando...</p>
+      <p className="text-neutral-500">Carregando...</p>
     </div>
   );
 }

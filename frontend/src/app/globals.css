@@ -2,13 +2,6 @@
 @tailwind components;
 @tailwind utilities;
 
-:root {
-  --brand: #0056a6;
-  --brand-600: #00498f;
-  --brand-700: #003d78;
-  --brand-50: #e6eef7;
-}
-
 html {
   height: 100%;
   overflow-x: clip;
@@ -16,10 +9,8 @@ html {
 }
 
 body {
+  @apply bg-white text-neutral-900 font-sans;
   height: 100%;
-  background: #f5f7fb;
-  color: #0f172a;
-  font-family: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   -webkit-font-smoothing: antialiased;
   -webkit-tap-highlight-color: transparent;
   overscroll-behavior: none;
@@ -64,33 +55,45 @@ button, a, [role="button"] {
 .no-scrollbar::-webkit-scrollbar { display: none; }
 .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; }
+}
+
 @layer components {
+  /* Botoes: 40px de altura, raio 8px. .btn / .btn-primary = cor de acao (secondary). */
+  .btn,
   .btn-primary {
-    @apply inline-flex items-center justify-center gap-2 rounded-xl bg-brand px-5 py-2.5 text-white font-semibold text-sm shadow-sm hover:bg-brand-600 active:scale-[0.98] transition disabled:opacity-50 disabled:active:scale-100;
+    @apply inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-secondary px-4 text-sm font-medium text-white transition hover:bg-secondary-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-400/40 active:scale-[0.98] disabled:opacity-50 disabled:active:scale-100;
   }
   .btn-secondary {
-    @apply inline-flex items-center justify-center gap-2 rounded-xl bg-white px-5 py-2.5 text-brand border border-brand/30 font-semibold text-sm hover:bg-brand/5 active:scale-[0.98] transition;
+    @apply inline-flex h-10 items-center justify-center gap-2 rounded-lg border border-neutral-200 bg-white px-4 text-sm font-medium text-primary transition hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-400/40 active:scale-[0.98] disabled:opacity-50;
   }
   .btn-ghost {
-    @apply inline-flex items-center justify-center gap-2 rounded-lg px-3 py-1.5 text-slate-700 hover:bg-slate-100 transition;
+    @apply inline-flex h-8 items-center justify-center gap-2 rounded-lg px-3 text-sm font-medium text-neutral-700 transition hover:bg-accent hover:text-primary;
   }
+  /* Campos: 40px, raio 8px, foco na cor primaria */
   .input {
-    @apply w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm placeholder:text-slate-400 focus:border-brand focus:outline-none focus:ring-4 focus:ring-brand/10 transition;
+    @apply h-10 w-full rounded-lg border border-neutral-200 bg-white px-3 text-sm text-neutral-900 placeholder:text-neutral-400 transition hover:bg-neutral-50 focus:border-primary-400 focus:outline-none focus:ring-2 focus:ring-primary-400/30;
   }
+  .select {
+    @apply input appearance-none pr-9;
+  }
+  /* Superficie unica: "isto e um bloco de conteudo". Sem sombra decorativa. */
+  .surface,
   .card {
-    @apply rounded-2xl bg-white shadow-sm border border-slate-200;
+    @apply rounded-xl border border-neutral-200 bg-white;
   }
   .badge {
-    @apply inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold;
+    @apply inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium;
   }
   .chip {
-    @apply inline-flex items-center gap-1.5 shrink-0 text-xs px-3 py-2 rounded-full font-medium border bg-white text-slate-600 border-slate-200 transition active:scale-95;
+    @apply inline-flex h-8 shrink-0 items-center gap-1.5 rounded-full border border-neutral-200 bg-white px-3 text-xs font-medium text-neutral-600 transition active:scale-95;
   }
   .chip-active {
-    @apply bg-brand text-white border-brand;
+    @apply border-secondary bg-secondary text-white;
   }
   .stat-card {
-    @apply rounded-2xl p-3 text-center border min-w-0 overflow-hidden;
+    @apply min-w-0 overflow-hidden rounded-xl border p-3 text-center;
   }
 }
 
@@ -110,4 +113,3 @@ button, a, [role="button"] {
 .animate-fade-in {
   animation: fadeIn 0.2s ease-out;
 }
-

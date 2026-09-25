@@ -82,8 +82,8 @@ export default function UsuariosPage() {
 
   return (
     <div>
-      <h1 className="text-2xl font-bold text-slate-900 mb-1">Usuários</h1>
-      <p className="text-slate-500 mb-6">Gerencie usuários. A senha inicial é igual ao código.</p>
+      <h1 className="text-2xl font-bold text-neutral-900 mb-1">Usuários</h1>
+      <p className="text-neutral-500 mb-6">Gerencie usuários. A senha inicial é igual ao código.</p>
 
       <form onSubmit={salvar} className="card p-4 space-y-3 mb-6">
         <div className="grid grid-cols-1 md:grid-cols-5 gap-3">
@@ -102,8 +102,8 @@ export default function UsuariosPage() {
 
         {/* Perfis adicionais */}
         <div>
-          <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1.5">
-            Perfis adicionais <span className="text-slate-400 font-normal normal-case">(acesso combinado)</span>
+          <p className="text-xs font-semibold text-neutral-500 uppercase tracking-wide mb-1.5">
+            Perfis adicionais <span className="text-neutral-400 font-normal normal-case">(acesso combinado)</span>
           </p>
           <div className="flex flex-wrap gap-2">
             {rolesExtrasDisponiveis.map((r) => {
@@ -112,7 +112,7 @@ export default function UsuariosPage() {
                 <button
                   key={r} type="button"
                   onClick={() => toggleRoleExtra(r)}
-                  className={`px-3 py-1 rounded-full text-xs font-semibold border transition ${marcado ? "bg-brand text-white border-brand" : "bg-white text-slate-600 border-slate-200 hover:border-brand/50"}`}
+                  className={`px-3 py-1 rounded-full text-xs font-semibold border transition ${marcado ? "bg-brand text-white border-brand" : "bg-white text-neutral-600 border-neutral-200 hover:border-brand/50"}`}
                 >
                   {ROLE_LABEL[r]}
                 </button>
@@ -131,7 +131,7 @@ export default function UsuariosPage() {
 
       <div className="card overflow-x-auto">
         <table className="w-full text-sm">
-          <thead className="bg-slate-50 text-slate-600 text-left">
+          <thead className="bg-neutral-50 text-neutral-600 text-left">
             <tr>
               <th className="px-3 py-2">Nome</th>
               <th className="px-3 py-2">Email</th>
@@ -145,17 +145,17 @@ export default function UsuariosPage() {
           </thead>
           <tbody>
             {loading ? (
-              <tr><td colSpan={8} className="px-3 py-6 text-center text-slate-500">Carregando...</td></tr>
+              <tr><td colSpan={8} className="px-3 py-6 text-center text-neutral-500">Carregando...</td></tr>
             ) : users.map((u) => (
-              <tr key={u._id} className={`border-t border-slate-100 ${editId === u._id ? "bg-brand/5" : ""}`}>
+              <tr key={u._id} className={`border-t border-neutral-100 ${editId === u._id ? "bg-brand/5" : ""}`}>
                 <td className="px-3 py-2 font-medium">{u.nome}</td>
-                <td className="px-3 py-2 text-slate-500">{u.email}</td>
+                <td className="px-3 py-2 text-neutral-500">{u.email}</td>
                 <td className="px-3 py-2">{u.codigo}</td>
                 <td className="px-3 py-2">
                   <div className="flex flex-wrap gap-1">
-                    <span className="inline-block px-2 py-0.5 rounded-full text-xs font-semibold bg-slate-100 text-slate-600">Lacteus</span>
+                    <span className="inline-block px-2 py-0.5 rounded-full text-xs font-semibold bg-neutral-100 text-neutral-600">Lacteus</span>
                     {u.codigoEsigma && (
-                      <span className="inline-block px-2 py-0.5 rounded-full text-xs font-semibold bg-slate-100 text-slate-600">Esigma</span>
+                      <span className="inline-block px-2 py-0.5 rounded-full text-xs font-semibold bg-neutral-100 text-neutral-600">Esigma</span>
                     )}
                   </div>
                 </td>
@@ -167,14 +167,14 @@ export default function UsuariosPage() {
                 <td className="px-3 py-2">
                   <div className="flex flex-wrap gap-1">
                     {(u.roles || []).filter((r) => r !== u.role).map((r) => (
-                      <span key={r} className="inline-block px-2 py-0.5 rounded-full text-xs font-semibold bg-slate-100 text-slate-600 capitalize">
+                      <span key={r} className="inline-block px-2 py-0.5 rounded-full text-xs font-semibold bg-neutral-100 text-neutral-600 capitalize">
                         {ROLE_LABEL[r] || r}
                       </span>
                     ))}
                   </div>
                 </td>
                 <td className="px-3 py-2">
-                  <span className={`text-xs font-semibold ${u.ativo ? "text-emerald-600" : "text-slate-400"}`}>
+                  <span className={`text-xs font-semibold ${u.ativo ? "text-emerald-600" : "text-neutral-400"}`}>
                     {u.ativo ? "Sim" : "Não"}
                   </span>
                 </td>

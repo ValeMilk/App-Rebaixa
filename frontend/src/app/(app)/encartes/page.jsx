@@ -48,11 +48,11 @@ function SelecaoTipoModal({ onClose, onSelecionar }) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 animate-fade-in">
-      <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={onClose} />
+      <div className="absolute inset-0 bg-neutral-900/60 backdrop-blur-sm" onClick={onClose} />
       <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 animate-slide-up">
         <div className="flex items-center justify-between mb-4">
-          <h2 className="font-bold text-slate-900 text-lg">Selecione o tipo de ação</h2>
-          <button onClick={onClose} className="h-8 w-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-500 hover:bg-slate-200 transition">
+          <h2 className="font-bold text-neutral-900 text-lg">Selecione o tipo de ação</h2>
+          <button onClick={onClose} className="h-8 w-8 rounded-full bg-neutral-100 flex items-center justify-center text-neutral-500 hover:bg-neutral-200 transition">
             <IcoX className="w-4 h-4" />
           </button>
         </div>
@@ -62,29 +62,29 @@ function SelecaoTipoModal({ onClose, onSelecionar }) {
             className={`w-full p-4 rounded-xl border-2 text-left transition ${
               tipoSel === "oferta_interna"
                 ? "border-brand bg-brand/5"
-                : "border-slate-200 hover:border-slate-300"
+                : "border-neutral-200 hover:border-neutral-300"
             }`}
           >
-            <div className="font-semibold text-slate-900">Oferta Interna</div>
-            <div className="text-xs text-slate-500 mt-1">Ação promocional interna da rede</div>
+            <div className="font-semibold text-neutral-900">Oferta Interna</div>
+            <div className="text-xs text-neutral-500 mt-1">Ação promocional interna da rede</div>
           </button>
           <button
             onClick={() => setTipoSel("encarte")}
             className={`w-full p-4 rounded-xl border-2 text-left transition ${
               tipoSel === "encarte"
                 ? "border-brand bg-brand/5"
-                : "border-slate-200 hover:border-slate-300"
+                : "border-neutral-200 hover:border-neutral-300"
             }`}
           >
-            <div className="font-semibold text-slate-900">Encarte</div>
-            <div className="text-xs text-slate-500 mt-1">Encarte promocional tradicional</div>
+            <div className="font-semibold text-neutral-900">Encarte</div>
+            <div className="text-xs text-neutral-500 mt-1">Encarte promocional tradicional</div>
           </button>
         </div>
         <div className="flex gap-2 pt-4">
           <button
             type="button"
             onClick={onClose}
-            className="flex-1 py-2 rounded-xl border border-slate-200 text-sm text-slate-600 hover:bg-slate-50 transition"
+            className="flex-1 py-2 rounded-xl border border-neutral-200 text-sm text-neutral-600 hover:bg-neutral-50 transition"
           >
             Cancelar
           </button>
@@ -147,23 +147,23 @@ function NovoEncarteModal({ codigoRede, redeSubrede, subredesDaRede, subredePadr
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 animate-fade-in">
-      <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={onClose} />
+      <div className="absolute inset-0 bg-neutral-900/60 backdrop-blur-sm" onClick={onClose} />
       <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 animate-slide-up">
         <div className="flex items-center justify-between mb-4">
           <div>
             <div className="text-[10px] font-semibold text-brand uppercase tracking-wider">{titulo}</div>
-            <h2 className="font-bold text-slate-900 text-base">{redeSubrede || codigoRede}</h2>
+            <h2 className="font-bold text-neutral-900 text-base">{redeSubrede || codigoRede}</h2>
           </div>
-          <button onClick={onClose} className="h-8 w-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-500 hover:bg-slate-200 transition">
+          <button onClick={onClose} className="h-8 w-8 rounded-full bg-neutral-100 flex items-center justify-center text-neutral-500 hover:bg-neutral-200 transition">
             <IcoX className="w-4 h-4" />
           </button>
         </div>
         <form onSubmit={handleSubmit} className="space-y-3">
           <div>
-            <label className="block text-xs font-semibold text-slate-600 mb-1">{labelNome}</label>
+            <label className="block text-xs font-semibold text-neutral-600 mb-1">{labelNome}</label>
             <input
               autoFocus
-              className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand/40"
+              className="w-full border border-neutral-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand/40"
               placeholder={placeholderNome}
               value={nome}
               onChange={(e) => setNome(e.target.value)}
@@ -171,9 +171,9 @@ function NovoEncarteModal({ codigoRede, redeSubrede, subredesDaRede, subredePadr
           </div>
           {subredesDaRede?.length > 0 && (
             <div>
-              <label className="block text-xs font-semibold text-slate-600 mb-1">Aplicar para</label>
+              <label className="block text-xs font-semibold text-neutral-600 mb-1">Aplicar para</label>
               <select
-                className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-brand/40"
+                className="w-full border border-neutral-200 rounded-xl px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-brand/40"
                 value={subrede}
                 onChange={(e) => setSubrede(e.target.value)}
               >
@@ -186,20 +186,20 @@ function NovoEncarteModal({ codigoRede, redeSubrede, subredesDaRede, subredePadr
           )}
           <div className="grid grid-cols-2 gap-2">
             <div>
-              <label className="block text-xs font-semibold text-slate-600 mb-1">Inicio</label>
-              <input type="date" className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand/40"
+              <label className="block text-xs font-semibold text-neutral-600 mb-1">Inicio</label>
+              <input type="date" className="w-full border border-neutral-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand/40"
                 value={inicio} onChange={(e) => setInicio(e.target.value)} />
             </div>
             <div>
-              <label className="block text-xs font-semibold text-slate-600 mb-1">Fim</label>
-              <input type="date" className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand/40"
+              <label className="block text-xs font-semibold text-neutral-600 mb-1">Fim</label>
+              <input type="date" className="w-full border border-neutral-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand/40"
                 value={fim} onChange={(e) => setFim(e.target.value)} />
             </div>
           </div>
           {erro && <p className="text-red-600 text-xs">{erro}</p>}
           <div className="flex gap-2 pt-1">
             <button type="button" onClick={onClose}
-              className="flex-1 py-2 rounded-xl border border-slate-200 text-sm text-slate-600 hover:bg-slate-50 transition">
+              className="flex-1 py-2 rounded-xl border border-neutral-200 text-sm text-neutral-600 hover:bg-neutral-50 transition">
               Cancelar
             </button>
             <button type="submit" disabled={salvando}
@@ -226,25 +226,25 @@ function FiltroPeriodusPdfModal({ grupoSel, onGerar, onClose }) {
 
   return (
     <div className="space-y-4">
-      <p className="text-xs text-slate-500">Deixe em branco para incluir todas as ações ativas</p>
+      <p className="text-xs text-neutral-500">Deixe em branco para incluir todas as ações ativas</p>
       
       <div>
-        <label className="block text-xs font-semibold text-slate-600 mb-2">Data Inicial (opcional)</label>
+        <label className="block text-xs font-semibold text-neutral-600 mb-2">Data Inicial (opcional)</label>
         <input
           type="date"
           value={periodoInicio}
           onChange={(e) => setPeriodoInicio(e.target.value)}
-          className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand/40"
+          className="w-full border border-neutral-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand/40"
         />
       </div>
 
       <div>
-        <label className="block text-xs font-semibold text-slate-600 mb-2">Data Final (opcional)</label>
+        <label className="block text-xs font-semibold text-neutral-600 mb-2">Data Final (opcional)</label>
         <input
           type="date"
           value={periodoFim}
           onChange={(e) => setPeriodoFim(e.target.value)}
-          className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand/40"
+          className="w-full border border-neutral-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand/40"
         />
       </div>
 
@@ -252,7 +252,7 @@ function FiltroPeriodusPdfModal({ grupoSel, onGerar, onClose }) {
         <button
           type="button"
           onClick={onClose}
-          className="flex-1 py-2 rounded-xl border border-slate-200 text-sm text-slate-600 hover:bg-slate-50 transition"
+          className="flex-1 py-2 rounded-xl border border-neutral-200 text-sm text-neutral-600 hover:bg-neutral-50 transition"
         >
           Cancelar
         </button>
@@ -282,7 +282,7 @@ function CalendarioRede({ grupo, subredeInicial, onClickEncarte }) {
   const tooltipCache = useMemo(() => ({}), []);
 
   // Cor fixa para ofertas internas (preto)
-  const COR_OFERTA_INTERNA = { bg: "bg-slate-900", text: "text-white", light: "bg-slate-100", border: "border-slate-300" };
+  const COR_OFERTA_INTERNA = { bg: "bg-neutral-900", text: "text-white", light: "bg-neutral-100", border: "border-neutral-300" };
 
   // Subredes distintas presentes entre os encartes da rede (para o filtro)
   const subredesDosEncartes = useMemo(
@@ -398,11 +398,11 @@ function CalendarioRede({ grupo, subredeInicial, onClickEncarte }) {
       <div className="mb-4 flex flex-wrap items-center gap-3">
         {/* Filtro negociação */}
         <div className="flex items-center gap-2">
-          <label className="text-xs font-semibold text-slate-600">Negociação:</label>
+          <label className="text-xs font-semibold text-neutral-600">Negociação:</label>
           <select
             value={filtroNegociacao}
             onChange={(e) => setFiltroNegociacao(e.target.value)}
-            className="px-3 py-1.5 text-xs border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand/40 bg-white"
+            className="px-3 py-1.5 text-xs border border-neutral-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand/40 bg-white"
           >
             <option value="todos">Todos ({grupo.encartes.length})</option>
             <option value="negociados">Negociados ({grupo.encartes.filter(e => e.negociado).length})</option>
@@ -412,11 +412,11 @@ function CalendarioRede({ grupo, subredeInicial, onClickEncarte }) {
 
         {/* Filtro tipo */}
         <div className="flex items-center gap-2">
-          <label className="text-xs font-semibold text-slate-600">Tipo:</label>
+          <label className="text-xs font-semibold text-neutral-600">Tipo:</label>
           <select
             value={filtroTipo}
             onChange={(e) => setFiltroTipo(e.target.value)}
-            className="px-3 py-1.5 text-xs border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand/40 bg-white"
+            className="px-3 py-1.5 text-xs border border-neutral-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand/40 bg-white"
           >
             <option value="todos">Todos ({grupo.encartes.length})</option>
             <option value="encartes">Encartes ({grupo.encartes.filter(e => e.tipo === "encarte" || !e.tipo).length})</option>
@@ -427,11 +427,11 @@ function CalendarioRede({ grupo, subredeInicial, onClickEncarte }) {
         {/* Filtro subrede — só aparece se houver encartes com subrede específica */}
         {subredesDosEncartes.length > 0 && (
           <div className="flex items-center gap-2">
-            <label className="text-xs font-semibold text-slate-600">Subrede:</label>
+            <label className="text-xs font-semibold text-neutral-600">Subrede:</label>
             <select
               value={filtroSubrede}
               onChange={(e) => setFiltroSubrede(e.target.value)}
-              className="px-3 py-1.5 text-xs border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand/40 bg-white"
+              className="px-3 py-1.5 text-xs border border-neutral-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand/40 bg-white"
             >
               <option value="todos">Todas</option>
               <option value="__rede__">Toda a rede</option>
@@ -444,15 +444,15 @@ function CalendarioRede({ grupo, subredeInicial, onClickEncarte }) {
       </div>
 
       {/* Legenda de cores */}
-      <div className="mb-4 p-3 bg-gradient-to-r from-slate-50 to-slate-100 rounded-xl border border-slate-200">
+      <div className="mb-4 p-3 bg-gradient-to-r from-neutral-50 to-neutral-100 rounded-xl border border-neutral-200">
         <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
           <div className="flex items-center gap-2">
-            <div className="w-4 h-4 rounded bg-slate-900 shrink-0"></div>
-            <span className="text-xs text-slate-600 font-medium">Oferta Interna</span>
+            <div className="w-4 h-4 rounded bg-neutral-900 shrink-0"></div>
+            <span className="text-xs text-neutral-600 font-medium">Oferta Interna</span>
           </div>
           <div className="flex items-center gap-2">
             <span className="text-base shrink-0">✅</span>
-            <span className="text-xs text-slate-600 font-medium">Negociado</span>
+            <span className="text-xs text-neutral-600 font-medium">Negociado</span>
           </div>
         </div>
       </div>
@@ -460,12 +460,12 @@ function CalendarioRede({ grupo, subredeInicial, onClickEncarte }) {
       {/* Navegacao de mes */}
       <div className="flex items-center justify-between mb-4">
         <button onClick={prevMes}
-          className="h-9 w-9 rounded-xl bg-slate-100 flex items-center justify-center text-slate-600 hover:bg-slate-200 transition">
+          className="h-9 w-9 rounded-xl bg-neutral-100 flex items-center justify-center text-neutral-600 hover:bg-neutral-200 transition">
           <IcoChevronRight className="w-5 h-5 rotate-180" />
         </button>
-        <span className="font-bold text-slate-800 capitalize text-base">{nomeMes}</span>
+        <span className="font-bold text-neutral-800 capitalize text-base">{nomeMes}</span>
         <button onClick={nextMes}
-          className="h-9 w-9 rounded-xl bg-slate-100 flex items-center justify-center text-slate-600 hover:bg-slate-200 transition">
+          className="h-9 w-9 rounded-xl bg-neutral-100 flex items-center justify-center text-neutral-600 hover:bg-neutral-200 transition">
           <IcoChevronRight className="w-5 h-5" />
         </button>
       </div>
@@ -473,7 +473,7 @@ function CalendarioRede({ grupo, subredeInicial, onClickEncarte }) {
       {/* Cabecalho dias da semana */}
       <div className="grid grid-cols-7 mb-1">
         {DIAS_SEMANA.map((d) => (
-          <div key={d} className="text-center text-xs font-semibold text-slate-400 py-1">{d}</div>
+          <div key={d} className="text-center text-xs font-semibold text-neutral-400 py-1">{d}</div>
         ))}
       </div>
 
@@ -483,8 +483,8 @@ function CalendarioRede({ grupo, subredeInicial, onClickEncarte }) {
           if (!dia) return <div key={`v${i}`} />;
           const isHoje = dia.dataStr === hojeStr;
           return (
-            <div key={dia.d} className={`rounded-xl overflow-hidden min-h-[52px] ${dia.encartes.length > 0 ? "ring-1 ring-slate-200" : ""}`}>
-              <div className={`text-xs font-bold text-center py-1 leading-none ${isHoje ? "bg-brand text-white" : "text-slate-600"}`}>
+            <div key={dia.d} className={`rounded-xl overflow-hidden min-h-[52px] ${dia.encartes.length > 0 ? "ring-1 ring-neutral-200" : ""}`}>
+              <div className={`text-xs font-bold text-center py-1 leading-none ${isHoje ? "bg-brand text-white" : "text-neutral-600"}`}>
                 {dia.d}
               </div>
               <div className="space-y-[2px] pb-[3px] px-[3px]">
@@ -508,25 +508,25 @@ function CalendarioRede({ grupo, subredeInicial, onClickEncarte }) {
 
       {/* Mensagem quando nao ha encartes */}
       {encartesComCor.length === 0 && (
-        <p className="text-slate-400 text-sm text-center py-6">Nenhum encarte cadastrado ainda para esta rede</p>
+        <p className="text-neutral-400 text-sm text-center py-6">Nenhum encarte cadastrado ainda para esta rede</p>
       )}
 
       {/* Tooltip ao passar mouse */}
       {tooltip && (
         <div
           style={{ position: 'fixed', left: tooltip.x, top: tooltip.y - 8, transform: 'translate(-50%, -100%)', zIndex: 9999 }}
-          className="pointer-events-none bg-slate-900 text-white rounded-xl shadow-xl px-3 py-2.5 text-xs min-w-[220px] max-w-[300px]"
+          className="pointer-events-none bg-neutral-900 text-white rounded-xl shadow-xl px-3 py-2.5 text-xs min-w-[220px] max-w-[300px]"
         >
           {!tooltip.data ? (
-            <div className="text-slate-400 text-center py-1 text-[11px]">Carregando...</div>
+            <div className="text-neutral-400 text-center py-1 text-[11px]">Carregando...</div>
           ) : (
             <>
               <div className="font-bold text-sm mb-1">{tooltip.data.rede}</div>
               {tooltip.data.dataUltimaCompra && (
-                <div className="text-slate-400 text-[9px] mb-2">Última compra: {new Date(tooltip.data.dataUltimaCompra).toLocaleDateString('pt-BR')}</div>
+                <div className="text-neutral-400 text-[9px] mb-2">Última compra: {new Date(tooltip.data.dataUltimaCompra).toLocaleDateString('pt-BR')}</div>
               )}
               {/* Cabeçalho da tabela */}
-              <div className="grid grid-cols-4 gap-x-2 text-[9px] text-slate-400 uppercase tracking-wide border-b border-slate-700 pb-1 mb-1">
+              <div className="grid grid-cols-4 gap-x-2 text-[9px] text-neutral-400 uppercase tracking-wide border-b border-neutral-700 pb-1 mb-1">
                 <div className="col-span-1">Subcategoria</div>
                 <div className="text-right">Preço oferta</div>
                 <div className="text-right">Sellout</div>
@@ -534,16 +534,16 @@ function CalendarioRede({ grupo, subredeInicial, onClickEncarte }) {
               </div>
               {/* Linhas por subcategoria */}
               {tooltip.data.categorias.map(c => (
-                <div key={c.sub} className="grid grid-cols-4 gap-x-2 py-[3px] border-b border-slate-800 last:border-0">
-                  <div className="col-span-1 text-[10px] text-slate-200 leading-tight truncate">{c.sub}</div>
+                <div key={c.sub} className="grid grid-cols-4 gap-x-2 py-[3px] border-b border-neutral-800 last:border-0">
+                  <div className="col-span-1 text-[10px] text-neutral-200 leading-tight truncate">{c.sub}</div>
                   <div className="text-right text-[10px] font-semibold text-emerald-400">{c.ofertaMedia != null ? fmtBRL(c.ofertaMedia) : '—'}</div>
                   <div className="text-right text-[10px] font-semibold text-amber-400">{c.selloutMedio != null ? fmtBRL(c.selloutMedio) : '—'}</div>
-                  <div className={`text-right text-[10px] font-semibold ${c.margemMedia != null ? (c.margemMedia >= 20 ? 'text-emerald-300' : c.margemMedia >= 10 ? 'text-yellow-300' : 'text-red-300') : 'text-slate-400'}`}>
+                  <div className={`text-right text-[10px] font-semibold ${c.margemMedia != null ? (c.margemMedia >= 20 ? 'text-emerald-300' : c.margemMedia >= 10 ? 'text-yellow-300' : 'text-red-300') : 'text-neutral-400'}`}>
                     {c.margemMedia != null ? `${c.margemMedia.toFixed(1)}%` : '—'}
                   </div>
                 </div>
               ))}
-              <div className="text-[9px] text-slate-500 mt-1.5 text-right">{tooltip.data.totalItens} produto{tooltip.data.totalItens !== 1 ? 's' : ''}</div>
+              <div className="text-[9px] text-neutral-500 mt-1.5 text-right">{tooltip.data.totalItens} produto{tooltip.data.totalItens !== 1 ? 's' : ''}</div>
             </>
           )}
           <div style={{ position: 'absolute', bottom: -5, left: '50%', transform: 'translateX(-50%)', width: 0, height: 0, borderLeft: '5px solid transparent', borderRight: '5px solid transparent', borderTop: '5px solid #0f172a' }} />
@@ -670,18 +670,18 @@ export default function EncartesPage() {
   }
 
   return (
-    <div className="flex flex-col min-h-screen bg-slate-50">
+    <div className="flex flex-col min-h-screen bg-neutral-50">
       {/* Header com título + botão Novo Encarte */}
-      <div className="bg-white border-b border-slate-100 px-4 py-3 safe-area-pt">
+      <div className="bg-white border-b border-neutral-100 px-4 py-3 safe-area-pt">
         <div className="flex items-center justify-between gap-3">
           <div>
-            <h1 className="font-bold text-slate-900 text-lg leading-tight">Agenda de Encartes</h1>
-            <p className="text-slate-500 text-xs mt-0.5">Selecione uma rede para ver o calendário</p>
+            <h1 className="font-bold text-neutral-900 text-lg leading-tight">Agenda de Encartes</h1>
+            <p className="text-neutral-500 text-xs mt-0.5">Selecione uma rede para ver o calendário</p>
           </div>
           <div className="flex items-center gap-2">
             <Link
               href="/encartes/calendario"
-              className="shrink-0 h-9 px-3 rounded-xl bg-slate-100 text-slate-700 text-xs font-semibold flex items-center gap-1.5 hover:bg-slate-200 transition">
+              className="shrink-0 h-9 px-3 rounded-xl bg-neutral-100 text-neutral-700 text-xs font-semibold flex items-center gap-1.5 hover:bg-neutral-200 transition">
               <IcoCalendar className="w-4 h-4" />
               <span className="hidden sm:inline">Cal. Geral</span>
             </Link>
@@ -695,7 +695,7 @@ export default function EncartesPage() {
             {grupoSel && (
               <button
                 onClick={abrirModalFiltroPeriodusPdf}
-                className="shrink-0 h-9 px-4 rounded-xl bg-slate-700 text-white text-xs font-bold hover:bg-slate-800 active:scale-95 transition shadow-sm shadow-slate-700/20">
+                className="shrink-0 h-9 px-4 rounded-xl bg-neutral-700 text-white text-xs font-bold hover:bg-neutral-800 active:scale-95 transition shadow-sm shadow-neutral-700/20">
                 📥 PDF
               </button>
             )}
@@ -705,12 +705,12 @@ export default function EncartesPage() {
 
       <div className="flex-1 p-4 pb-24 space-y-4">
         <div>
-          <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1.5">Rede</label>
+          <label className="block text-xs font-semibold text-neutral-500 uppercase tracking-wide mb-1.5">Rede</label>
           {loading ? (
-            <div className="h-11 bg-slate-100 rounded-xl animate-pulse" />
+            <div className="h-11 bg-neutral-100 rounded-xl animate-pulse" />
           ) : (
             <select
-              className="w-full border border-slate-200 rounded-xl px-3 py-2.5 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-brand/40"
+              className="w-full border border-neutral-200 rounded-xl px-3 py-2.5 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-brand/40"
               value={redeSel}
               onChange={(e) => selecionarRede(e.target.value)}>
               <option value="">Selecione uma rede...</option>
@@ -738,13 +738,13 @@ export default function EncartesPage() {
 
         {!redeSel && !loading && (
           <div className="flex flex-col items-center justify-center py-16 text-center">
-            <IcoCalendar className="w-12 h-12 text-slate-200 mb-3" />
-            <p className="text-slate-400 text-sm">Selecione uma rede para ver o calendário de encartes</p>
+            <IcoCalendar className="w-12 h-12 text-neutral-200 mb-3" />
+            <p className="text-neutral-400 text-sm">Selecione uma rede para ver o calendário de encartes</p>
           </div>
         )}
 
         {grupoSel && (
-          <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-4">
+          <div className="bg-white rounded-2xl border border-neutral-100 shadow-sm p-4">
             <CalendarioRede
               key={redeSel}
               grupo={grupoSel}
@@ -776,18 +776,18 @@ export default function EncartesPage() {
 
       {modalFiltroPeriodusPdf && grupoSel && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 animate-fade-in">
-          <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={() => setModalFiltroPeriodusPdf(false)} />
+          <div className="absolute inset-0 bg-neutral-900/60 backdrop-blur-sm" onClick={() => setModalFiltroPeriodusPdf(false)} />
           <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 animate-slide-up">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-bold text-slate-900">Filtrar períodos do PDF</h3>
+              <h3 className="text-lg font-bold text-neutral-900">Filtrar períodos do PDF</h3>
               <button
                 onClick={() => setModalFiltroPeriodusPdf(false)}
-                className="h-8 w-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-500 hover:bg-slate-200 transition">
+                className="h-8 w-8 rounded-full bg-neutral-100 flex items-center justify-center text-neutral-500 hover:bg-neutral-200 transition">
                 <IcoX className="w-4 h-4" />
               </button>
             </div>
 
-            <p className="text-xs text-slate-500 mb-4">Deixe em branco para incluir todos os períodos</p>
+            <p className="text-xs text-neutral-500 mb-4">Deixe em branco para incluir todos os períodos</p>
 
             <FiltroPeriodusPdfModal
               grupoSel={grupoSel}
@@ -802,8 +802,8 @@ export default function EncartesPage() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-5xl h-[90vh] flex flex-col">
             {/* Header */}
-            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200">
-              <h3 className="text-lg font-bold text-slate-900">Pré-visualização do PDF</h3>
+            <div className="flex items-center justify-between px-6 py-4 border-b border-neutral-200">
+              <h3 className="text-lg font-bold text-neutral-900">Pré-visualização do PDF</h3>
               <div className="flex items-center gap-2">
                 <button
                   onClick={baixarPdfAtual}
@@ -812,7 +812,7 @@ export default function EncartesPage() {
                 </button>
                 <button
                   onClick={fecharPreviewPdf}
-                  className="h-9 w-9 rounded-xl bg-slate-100 text-slate-600 hover:bg-slate-200 active:scale-95 transition flex items-center justify-center">
+                  className="h-9 w-9 rounded-xl bg-neutral-100 text-neutral-600 hover:bg-neutral-200 active:scale-95 transition flex items-center justify-center">
                   <IcoX className="w-5 h-5" />
                 </button>
               </div>

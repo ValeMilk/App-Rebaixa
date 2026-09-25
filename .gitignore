@@ -21,3 +21,7 @@ Thumbs.db
 # Editor
 .vscode/
 *.swp
+
+# Service worker gerado pelo next-pwa a cada build
+frontend/public/sw.js
+frontend/public/workbox-*.js

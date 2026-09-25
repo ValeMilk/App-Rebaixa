@@ -44,7 +44,7 @@ function fmtBRL(v) {
 }
 
 function MargemBadge({ pct, onClick, editando, inputValue, onInputChange, onBlur, onKeyDown }) {
-  if (pct == null && !editando) return <span className="text-slate-300 text-base font-bold">—</span>;
+  if (pct == null && !editando) return <span className="text-neutral-300 text-base font-bold">—</span>;
   
   if (editando) {
     return (
@@ -365,13 +365,13 @@ function AdicionarProdutoModal({ encarteId, codigoRede, onClose, onAdicionado })
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 lg:p-8 animate-fade-in">
-      <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={salvando ? undefined : onClose} />
+      <div className="absolute inset-0 bg-neutral-900/60 backdrop-blur-sm" onClick={salvando ? undefined : onClose} />
       
       {/* Modal container — desktop wide, mobile full */}
       <div className="relative bg-white shadow-2xl flex flex-col w-full max-w-6xl rounded-2xl max-h-[92vh] lg:max-h-[85vh] animate-slide-up">
         
         {/* Header compacto */}
-        <div className="shrink-0 px-4 lg:px-6 py-3 border-b border-slate-200 bg-gradient-to-r from-slate-50 to-white rounded-t-2xl">
+        <div className="shrink-0 px-4 lg:px-6 py-3 border-b border-neutral-200 bg-gradient-to-r from-neutral-50 to-white rounded-t-2xl">
           <div className="flex items-center justify-between gap-4">
             <div className="flex items-center gap-3">
               <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-brand to-brand-600 flex items-center justify-center text-white font-bold text-sm">
@@ -381,7 +381,7 @@ function AdicionarProdutoModal({ encarteId, codigoRede, onClose, onAdicionado })
                 <div className="text-[10px] font-semibold text-brand uppercase tracking-wider">
                   Precificar para Encarte
                 </div>
-                <h2 className="font-bold text-slate-900 text-lg leading-tight">
+                <h2 className="font-bold text-neutral-900 text-lg leading-tight">
                   {subcategoriaSel || "Selecione uma subcategoria"}
                 </h2>
               </div>
@@ -389,69 +389,69 @@ function AdicionarProdutoModal({ encarteId, codigoRede, onClose, onAdicionado })
             
             {/* Estatísticas inline no header — apenas desktop */}
             {stats && (
-              <div className="hidden lg:flex items-center gap-4 bg-white rounded-xl border border-slate-200 px-4 py-2 shadow-sm">
-                <div className="text-center border-r border-slate-200 pr-4">
-                  <div className="text-[10px] text-slate-500 uppercase tracking-wide mb-0.5">Tabela(70)</div>
-                  <div className="font-bold text-slate-900">{fmtBRL(stats.mediaTabela)}</div>
+              <div className="hidden lg:flex items-center gap-4 bg-white rounded-xl border border-neutral-200 px-4 py-2 shadow-sm">
+                <div className="text-center border-r border-neutral-200 pr-4">
+                  <div className="text-[10px] text-neutral-500 uppercase tracking-wide mb-0.5">Tabela(70)</div>
+                  <div className="font-bold text-neutral-900">{fmtBRL(stats.mediaTabela)}</div>
                 </div>
-                <div className="text-center border-r border-slate-200 pr-4">
-                  <div className="text-[10px] text-slate-500 uppercase tracking-wide mb-0.5">Mínimo</div>
-                  <div className="font-bold text-slate-900">{fmtBRL(stats.mediaMinimo)}</div>
+                <div className="text-center border-r border-neutral-200 pr-4">
+                  <div className="text-[10px] text-neutral-500 uppercase tracking-wide mb-0.5">Mínimo</div>
+                  <div className="font-bold text-neutral-900">{fmtBRL(stats.mediaMinimo)}</div>
                 </div>
                 {stats.mediaPrecoPromo != null && (
-                  <div className="text-center border-r border-slate-200 pr-4">
-                    <div className="text-[10px] text-slate-500 uppercase tracking-wide mb-0.5">Promo</div>
+                  <div className="text-center border-r border-neutral-200 pr-4">
+                    <div className="text-[10px] text-neutral-500 uppercase tracking-wide mb-0.5">Promo</div>
                     <div className="font-bold text-violet-600">{fmtBRL(stats.mediaPrecoPromo)}</div>
                   </div>
                 )}
                 <div className="text-center">
-                  <div className="text-[10px] text-slate-500 uppercase tracking-wide mb-0.5">Últ. Compra</div>
+                  <div className="text-[10px] text-neutral-500 uppercase tracking-wide mb-0.5">Últ. Compra</div>
                   {stats.mediaUC != null
                     ? <>
                         <div className="font-bold text-brand">{fmtBRL(stats.mediaUC)}</div>
                         {stats.ucMaisRecente && (
-                          <div className="text-[9px] text-slate-400 mt-0.5">{new Date(stats.ucMaisRecente).toLocaleDateString('pt-BR')}</div>
+                          <div className="text-[9px] text-neutral-400 mt-0.5">{new Date(stats.ucMaisRecente).toLocaleDateString('pt-BR')}</div>
                         )}
                       </>
-                    : ucBuscado ? <div className="text-slate-300 text-xs">sem compra</div> : <div className="text-slate-300 text-xs">buscando...</div>
+                    : ucBuscado ? <div className="text-neutral-300 text-xs">sem compra</div> : <div className="text-neutral-300 text-xs">buscando...</div>
                   }
                 </div>
               </div>
             )}
             
             <button onClick={onClose} disabled={salvando} aria-label="Fechar"
-              className="shrink-0 h-10 w-10 rounded-xl bg-slate-100 hover:bg-slate-200 active:scale-95 transition flex items-center justify-center text-slate-600 disabled:opacity-50">
+              className="shrink-0 h-10 w-10 rounded-xl bg-neutral-100 hover:bg-neutral-200 active:scale-95 transition flex items-center justify-center text-neutral-600 disabled:opacity-50">
               <IcoX className="w-5 h-5" />
             </button>
           </div>
           
           {/* Estatísticas mobile — abaixo do header */}
           {stats && (
-            <div className="lg:hidden mt-3 bg-white rounded-lg border border-slate-200 px-3 py-2 space-y-1">
+            <div className="lg:hidden mt-3 bg-white rounded-lg border border-neutral-200 px-3 py-2 space-y-1">
               <div className="flex justify-between text-xs">
-                <span className="text-slate-500">Preço tabela(70)</span>
-                <span className="font-semibold text-slate-700">{fmtBRL(stats.mediaTabela)}</span>
+                <span className="text-neutral-500">Preço tabela(70)</span>
+                <span className="font-semibold text-neutral-700">{fmtBRL(stats.mediaTabela)}</span>
               </div>
               <div className="flex justify-between text-xs">
-                <span className="text-slate-500">Preço mínimo</span>
-                <span className="font-semibold text-slate-700">{fmtBRL(stats.mediaMinimo)}</span>
+                <span className="text-neutral-500">Preço mínimo</span>
+                <span className="font-semibold text-neutral-700">{fmtBRL(stats.mediaMinimo)}</span>
               </div>
               {stats.mediaPrecoPromo != null && (
                 <div className="flex justify-between text-xs">
-                  <span className="text-slate-500">Preço promo</span>
+                  <span className="text-neutral-500">Preço promo</span>
                   <span className="font-semibold text-violet-600">{fmtBRL(stats.mediaPrecoPromo)}</span>
                 </div>
               )}
-              <div className="border-t border-slate-200 pt-1 mt-1">
+              <div className="border-t border-neutral-200 pt-1 mt-1">
                 <div className="flex justify-between text-xs">
-                  <span className="text-slate-500">Última compra</span>
+                  <span className="text-neutral-500">Última compra</span>
                   {stats.mediaUC != null
                     ? <span className="font-bold text-brand">{fmtBRL(stats.mediaUC)}</span>
-                    : ucBuscado ? <span className="text-slate-300 text-xs">sem compra</span> : <span className="text-slate-300 text-xs">buscando...</span>
+                    : ucBuscado ? <span className="text-neutral-300 text-xs">sem compra</span> : <span className="text-neutral-300 text-xs">buscando...</span>
                   }
                 </div>
                 {stats.mediaUC != null && stats.ucMaisRecente && (
-                  <div className="text-[10px] text-slate-400 text-right mt-0.5">{new Date(stats.ucMaisRecente).toLocaleDateString('pt-BR')}</div>
+                  <div className="text-[10px] text-neutral-400 text-right mt-0.5">{new Date(stats.ucMaisRecente).toLocaleDateString('pt-BR')}</div>
                 )}
               </div>
             </div>
@@ -465,18 +465,18 @@ function AdicionarProdutoModal({ encarteId, codigoRede, onClose, onAdicionado })
           <div className="flex-1 flex flex-col min-h-0 overflow-hidden order-2 lg:order-1">
             
             {/* Categoria — apenas mobile (no desktop vai pro painel direito) */}
-            <div className="lg:hidden shrink-0 p-4 pb-3 border-b border-slate-200">
-              <label className="block text-xs font-semibold text-slate-600 uppercase tracking-wide mb-2">
+            <div className="lg:hidden shrink-0 p-4 pb-3 border-b border-neutral-200">
+              <label className="block text-xs font-semibold text-neutral-600 uppercase tracking-wide mb-2">
                 Categoria
               </label>
               {loadingCategorias ? (
-                <div className="flex items-center gap-2 py-3 text-slate-400 text-sm">
-                  <div className="w-4 h-4 rounded-full border-2 border-slate-200 border-t-brand animate-spin" />
+                <div className="flex items-center gap-2 py-3 text-neutral-400 text-sm">
+                  <div className="w-4 h-4 rounded-full border-2 border-neutral-200 border-t-brand animate-spin" />
                   Carregando...
                 </div>
               ) : (
                 <select
-                  className="w-full border-2 border-slate-200 rounded-xl px-3 py-3 text-sm bg-white focus:outline-none focus:border-brand focus:ring-2 focus:ring-brand/20 transition"
+                  className="w-full border-2 border-neutral-200 rounded-xl px-3 py-3 text-sm bg-white focus:outline-none focus:border-brand focus:ring-2 focus:ring-brand/20 transition"
                   value={categoriaSel}
                   onChange={(e) => setCategoriaSel(e.target.value)}>
                   <option value="">Todas as categorias</option>
@@ -488,19 +488,19 @@ function AdicionarProdutoModal({ encarteId, codigoRede, onClose, onAdicionado })
             </div>
             
             {/* Subcategoria — apenas mobile (no desktop vai pro painel direito) */}
-            <div className="lg:hidden shrink-0 p-4 pb-3 border-b border-slate-200">
-              <label className="block text-xs font-semibold text-slate-600 uppercase tracking-wide mb-2">
+            <div className="lg:hidden shrink-0 p-4 pb-3 border-b border-neutral-200">
+              <label className="block text-xs font-semibold text-neutral-600 uppercase tracking-wide mb-2">
                 Subcategoria
               </label>
               {loadingSubs ? (
-                <div className="flex items-center gap-2 py-3 text-slate-400 text-sm">
-                  <div className="w-4 h-4 rounded-full border-2 border-slate-200 border-t-brand animate-spin" />
+                <div className="flex items-center gap-2 py-3 text-neutral-400 text-sm">
+                  <div className="w-4 h-4 rounded-full border-2 border-neutral-200 border-t-brand animate-spin" />
                   Carregando...
                 </div>
               ) : (
                 <select
                   autoFocus
-                  className="w-full border-2 border-slate-200 rounded-xl px-3 py-3 text-sm bg-white focus:outline-none focus:border-brand focus:ring-2 focus:ring-brand/20 transition"
+                  className="w-full border-2 border-neutral-200 rounded-xl px-3 py-3 text-sm bg-white focus:outline-none focus:border-brand focus:ring-2 focus:ring-brand/20 transition"
                   value={subcategoriaSel}
                   onChange={(e) => { setSubcategoriaSel(e.target.value); setQ(""); setDesmarcados(new Set()); }}>
                   <option value="">Selecione uma subcategoria...</option>
@@ -513,11 +513,11 @@ function AdicionarProdutoModal({ encarteId, codigoRede, onClose, onAdicionado })
             
             {/* Filtro + Contador */}
             {subcategoriaSel && (
-              <div className="shrink-0 px-4 lg:px-6 pt-4 pb-3 border-b border-slate-200 space-y-3">
+              <div className="shrink-0 px-4 lg:px-6 pt-4 pb-3 border-b border-neutral-200 space-y-3">
                 <div className="relative">
-                  <IcoSearch className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+                  <IcoSearch className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-neutral-400" />
                   <input
-                    className="w-full pl-10 pr-4 py-3 rounded-xl border-2 border-slate-200 text-sm font-medium focus:outline-none focus:border-brand focus:ring-2 focus:ring-brand/20"
+                    className="w-full pl-10 pr-4 py-3 rounded-xl border-2 border-neutral-200 text-sm font-medium focus:outline-none focus:border-brand focus:ring-2 focus:ring-brand/20"
                     placeholder="Filtrar por nome ou código..."
                     value={q}
                     onChange={(e) => setQ(e.target.value)}
@@ -526,9 +526,9 @@ function AdicionarProdutoModal({ encarteId, codigoRede, onClose, onAdicionado })
                 
                 {produtos.length > 0 && (
                   <div className="flex items-center justify-between text-sm">
-                    <span className="text-slate-600">
+                    <span className="text-neutral-600">
                       <span className="font-bold text-brand text-lg">{produtosSelecionados.length}</span>
-                      <span className="text-slate-400"> / {produtos.length} selecionados</span>
+                      <span className="text-neutral-400"> / {produtos.length} selecionados</span>
                     </span>
                     <button type="button" onClick={toggleTodos} className="text-brand font-semibold hover:underline">
                       {todosMarcados ? "Desmarcar todos" : "Marcar todos"}
@@ -545,16 +545,16 @@ function AdicionarProdutoModal({ encarteId, codigoRede, onClose, onAdicionado })
 
                 {loadingProdutos && (
                   <div className="flex justify-center py-12">
-                    <div className="w-8 h-8 rounded-full border-4 border-slate-200 border-t-brand animate-spin" />
+                    <div className="w-8 h-8 rounded-full border-4 border-neutral-200 border-t-brand animate-spin" />
                   </div>
                 )}
 
                 {!loadingProdutos && subcategoriaSel && produtos.length === 0 && (
-                  <p className="text-center text-slate-400 text-sm py-12">Nenhum produto encontrado</p>
+                  <p className="text-center text-neutral-400 text-sm py-12">Nenhum produto encontrado</p>
                 )}
 
                 {!subcategoriaSel && (
-                  <p className="text-center text-slate-400 text-sm py-12">Selecione uma subcategoria para ver os produtos</p>
+                  <p className="text-center text-neutral-400 text-sm py-12">Selecione uma subcategoria para ver os produtos</p>
                 )}
 
                 {/* Cards de produtos */}
@@ -570,12 +570,12 @@ function AdicionarProdutoModal({ encarteId, codigoRede, onClose, onAdicionado })
                       className={`relative w-full text-left transition rounded-xl border-2 p-3 hover:shadow-md ${
                         marcado 
                           ? "border-brand/40 bg-brand/5 ring-2 ring-brand/20" 
-                          : "border-slate-200 bg-white opacity-60 hover:opacity-100"
+                          : "border-neutral-200 bg-white opacity-60 hover:opacity-100"
                       }`}
                     >
                       {/* Checkbox */}
                       <div className={`absolute top-3 right-3 h-6 w-6 rounded-lg border-2 flex items-center justify-center shrink-0 transition ${
-                        marcado ? "bg-brand border-brand" : "bg-white border-slate-300"
+                        marcado ? "bg-brand border-brand" : "bg-white border-neutral-300"
                       }`}>
                         {marcado && (
                           <svg viewBox="0 0 24 24" className="w-4 h-4 text-white" fill="none" stroke="currentColor" strokeWidth={3} strokeLinecap="round" strokeLinejoin="round">
@@ -585,29 +585,29 @@ function AdicionarProdutoModal({ encarteId, codigoRede, onClose, onAdicionado })
                       </div>
                       
                       <div className="pr-8">
-                        <div className="font-bold text-slate-800 text-sm mb-0.5 line-clamp-2 leading-tight">{p.descricao}</div>
-                        <div className="text-xs text-slate-400 mb-2.5">Cód {cod}</div>
+                        <div className="font-bold text-neutral-800 text-sm mb-0.5 line-clamp-2 leading-tight">{p.descricao}</div>
+                        <div className="text-xs text-neutral-400 mb-2.5">Cód {cod}</div>
                         
                         <div className="space-y-1.5 text-xs">
                           <div className="flex justify-between">
-                            <span className="text-slate-500">Tabela</span>
-                            <span className="font-semibold text-slate-700">{fmtBRL(p.precoTabela)}</span>
+                            <span className="text-neutral-500">Tabela</span>
+                            <span className="font-semibold text-neutral-700">{fmtBRL(p.precoTabela)}</span>
                           </div>
                           <div className="flex justify-between">
-                            <span className="text-slate-500">Mínimo</span>
-                            <span className="font-semibold text-slate-700">{fmtBRL(p.precoMinimo)}</span>
+                            <span className="text-neutral-500">Mínimo</span>
+                            <span className="font-semibold text-neutral-700">{fmtBRL(p.precoMinimo)}</span>
                           </div>
                           {p.precoPromo > 0 && (
                             <div className="flex justify-between">
-                              <span className="text-slate-500">Promo</span>
+                              <span className="text-neutral-500">Promo</span>
                               <span className="font-semibold text-violet-600">{fmtBRL(p.precoPromo)}</span>
                             </div>
                           )}
-                          <div className="flex justify-between pt-1 border-t border-slate-200">
-                            <span className="text-slate-500 font-medium">Últ. Compra</span>
+                          <div className="flex justify-between pt-1 border-t border-neutral-200">
+                            <span className="text-neutral-500 font-medium">Últ. Compra</span>
                             {uc
                               ? <span className="font-bold text-brand">{fmtBRL(uc.preco)}</span>
-                              : ucBuscado ? <span className="text-slate-300 text-[10px]">sem compra</span> : <span className="text-slate-300 text-[10px]">buscando...</span>
+                              : ucBuscado ? <span className="text-neutral-300 text-[10px]">sem compra</span> : <span className="text-neutral-300 text-[10px]">buscando...</span>
                             }
                           </div>
                         </div>
@@ -620,21 +620,21 @@ function AdicionarProdutoModal({ encarteId, codigoRede, onClose, onAdicionado })
           </div>
 
           {/* Painel DIREITO (desktop): Subcategoria + Precificação (MARGENS EM DESTAQUE) */}
-          <div className="lg:w-[520px] xl:w-[600px] shrink-0 border-b lg:border-b-0 lg:border-l border-slate-200 overflow-y-auto p-4 lg:p-5 space-y-4 order-1 lg:order-2 bg-gradient-to-b from-slate-50/50 to-white">
+          <div className="lg:w-[520px] xl:w-[600px] shrink-0 border-b lg:border-b-0 lg:border-l border-neutral-200 overflow-y-auto p-4 lg:p-5 space-y-4 order-1 lg:order-2 bg-gradient-to-b from-neutral-50/50 to-white">
             
             {/* Categoria — apenas desktop */}
             <div className="hidden lg:block">
-              <label className="block text-xs font-semibold text-slate-600 uppercase tracking-wide mb-2">
+              <label className="block text-xs font-semibold text-neutral-600 uppercase tracking-wide mb-2">
                 Categoria
               </label>
               {loadingCategorias ? (
-                <div className="flex items-center gap-2 py-3 text-slate-400 text-sm">
-                  <div className="w-4 h-4 rounded-full border-2 border-slate-200 border-t-brand animate-spin" />
+                <div className="flex items-center gap-2 py-3 text-neutral-400 text-sm">
+                  <div className="w-4 h-4 rounded-full border-2 border-neutral-200 border-t-brand animate-spin" />
                   Carregando...
                 </div>
               ) : (
                 <select
-                  className="w-full border-2 border-slate-200 rounded-xl px-3 py-3 text-sm bg-white focus:outline-none focus:border-brand focus:ring-2 focus:ring-brand/20 transition"
+                  className="w-full border-2 border-neutral-200 rounded-xl px-3 py-3 text-sm bg-white focus:outline-none focus:border-brand focus:ring-2 focus:ring-brand/20 transition"
                   value={categoriaSel}
                   onChange={(e) => setCategoriaSel(e.target.value)}>
                   <option value="">Todas as categorias</option>
@@ -647,17 +647,17 @@ function AdicionarProdutoModal({ encarteId, codigoRede, onClose, onAdicionado })
 
             {/* Subcategoria — apenas desktop */}
             <div className="hidden lg:block">
-              <label className="block text-xs font-semibold text-slate-600 uppercase tracking-wide mb-2">
+              <label className="block text-xs font-semibold text-neutral-600 uppercase tracking-wide mb-2">
                 Subcategoria
               </label>
               {loadingSubs ? (
-                <div className="flex items-center gap-2 py-3 text-slate-400 text-sm">
-                  <div className="w-4 h-4 rounded-full border-2 border-slate-200 border-t-brand animate-spin" />
+                <div className="flex items-center gap-2 py-3 text-neutral-400 text-sm">
+                  <div className="w-4 h-4 rounded-full border-2 border-neutral-200 border-t-brand animate-spin" />
                   Carregando...
                 </div>
               ) : (
                 <select
-                  className="w-full border-2 border-slate-200 rounded-xl px-3 py-3 text-sm bg-white focus:outline-none focus:border-brand focus:ring-2 focus:ring-brand/20 transition"
+                  className="w-full border-2 border-neutral-200 rounded-xl px-3 py-3 text-sm bg-white focus:outline-none focus:border-brand focus:ring-2 focus:ring-brand/20 transition"
                   value={subcategoriaSel}
                   onChange={(e) => { setSubcategoriaSel(e.target.value); setQ(""); setDesmarcados(new Set()); }}>
                   <option value="">Selecione uma subcategoria...</option>
@@ -673,9 +673,9 @@ function AdicionarProdutoModal({ encarteId, codigoRede, onClose, onAdicionado })
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 lg:gap-4">
                 
                 {/* Margem PDV */}
-                <div className="bg-gradient-to-br from-blue-50 to-slate-50 rounded-xl border-2 border-blue-100 p-3 lg:p-4 shadow-sm">
+                <div className="bg-gradient-to-br from-blue-50 to-neutral-50 rounded-xl border-2 border-blue-100 p-3 lg:p-4 shadow-sm">
                   <div className="flex items-center justify-between mb-2">
-                    <span className="text-xs font-bold text-slate-700 uppercase tracking-wide">Margem PDV</span>
+                    <span className="text-xs font-bold text-neutral-700 uppercase tracking-wide">Margem PDV</span>
                     <MargemBadge 
                       pct={margemPDVPreview}
                       onClick={handleMargemPDVClick}
@@ -686,22 +686,22 @@ function AdicionarProdutoModal({ encarteId, codigoRede, onClose, onAdicionado })
                       onKeyDown={(e) => { if (e.key === 'Enter') aplicarMargemPDV(); if (e.key === 'Escape') setEditandoMargemPDV(false); }}
                     />
                   </div>
-                  <div className="text-[10px] text-slate-500 mb-3">
+                  <div className="text-[10px] text-neutral-500 mb-3">
                     {editandoMargemPDV 
                       ? "✏️ Defina a margem desejada e o preço será calculado automaticamente" 
                       : "(PDV - Última Compra) / PDV · Clique na % para editar"
                     }
                   </div>
-                  <label className="block text-xs font-medium text-slate-600 mb-1.5">Preço PDV (R$)</label>
+                  <label className="block text-xs font-medium text-neutral-600 mb-1.5">Preço PDV (R$)</label>
                   <input type="number" inputMode="decimal" step="0.01"
-                    className="w-full border-2 border-slate-200 rounded-lg px-3 py-2.5 text-sm font-medium focus:outline-none focus:border-brand focus:ring-2 focus:ring-brand/20"
+                    className="w-full border-2 border-neutral-200 rounded-lg px-3 py-2.5 text-sm font-medium focus:outline-none focus:border-brand focus:ring-2 focus:ring-brand/20"
                     placeholder="0,00" value={precoPDV} onChange={(e) => setPrecoPDV(e.target.value)} />
                 </div>
 
                 {/* Margem Oferta */}
-                <div className="bg-gradient-to-br from-emerald-50 to-slate-50 rounded-xl border-2 border-emerald-100 p-3 lg:p-4 shadow-sm">
+                <div className="bg-gradient-to-br from-emerald-50 to-neutral-50 rounded-xl border-2 border-emerald-100 p-3 lg:p-4 shadow-sm">
                   <div className="flex items-center justify-between mb-2">
-                    <span className="text-xs font-bold text-slate-700 uppercase tracking-wide">Margem Oferta</span>
+                    <span className="text-xs font-bold text-neutral-700 uppercase tracking-wide">Margem Oferta</span>
                     <MargemBadge 
                       pct={margemOfertaPreview}
                       onClick={handleMargemOfertaClick}
@@ -712,15 +712,15 @@ function AdicionarProdutoModal({ encarteId, codigoRede, onClose, onAdicionado })
                       onKeyDown={(e) => { if (e.key === 'Enter') aplicarMargemOferta(); if (e.key === 'Escape') setEditandoMargemOferta(false); }}
                     />
                   </div>
-                  <div className="text-[10px] text-slate-500 mb-3">
+                  <div className="text-[10px] text-neutral-500 mb-3">
                     {editandoMargemOferta
                       ? "✏️ Defina a margem desejada e o preço será calculado automaticamente"
                       : "(Oferta - Custo Promo) / Oferta · Clique na % para editar"
                     }
                   </div>
-                  <label className="block text-xs font-medium text-slate-600 mb-1.5">Preço oferta (encarte)</label>
+                  <label className="block text-xs font-medium text-neutral-600 mb-1.5">Preço oferta (encarte)</label>
                   <input type="number" inputMode="decimal" step="0.01"
-                    className="w-full border-2 border-slate-200 rounded-lg px-3 py-2.5 text-sm font-medium focus:outline-none focus:border-brand focus:ring-2 focus:ring-brand/20"
+                    className="w-full border-2 border-neutral-200 rounded-lg px-3 py-2.5 text-sm font-medium focus:outline-none focus:border-brand focus:ring-2 focus:ring-brand/20"
                     placeholder="0,00" value={precoOferta} onChange={(e) => setPrecoOferta(e.target.value)} />
                 </div>
               </div>
@@ -731,7 +731,7 @@ function AdicionarProdutoModal({ encarteId, codigoRede, onClose, onAdicionado })
               <div className="space-y-3">
                 <div>
                   <div className="flex items-center justify-between mb-1.5">
-                    <label className="text-xs font-semibold text-slate-600 uppercase tracking-wide">Sellout</label>
+                    <label className="text-xs font-semibold text-neutral-600 uppercase tracking-wide">Sellout</label>
                     {(() => {
                       const uc = stats?.mediaUC;
                       const pdv = pdvNum;
@@ -750,18 +750,18 @@ function AdicionarProdutoModal({ encarteId, codigoRede, onClose, onAdicionado })
                     })()}
                   </div>
                   <input type="number" inputMode="decimal" step="0.01"
-                    className="w-full border-2 border-slate-200 rounded-lg px-3 py-2.5 text-sm font-medium focus:outline-none focus:border-brand focus:ring-2 focus:ring-brand/20"
+                    className="w-full border-2 border-neutral-200 rounded-lg px-3 py-2.5 text-sm font-medium focus:outline-none focus:border-brand focus:ring-2 focus:ring-brand/20"
                     placeholder="0,00" value={sellout} onChange={(e) => setSellout(e.target.value)} />
                 </div>
                 
                 <div className="flex items-center justify-between bg-gradient-to-r from-emerald-50 to-blue-50 rounded-xl px-4 py-3 border-2 border-emerald-200 shadow-sm">
                   <div>
-                    <div className="text-sm font-bold text-slate-700">💰 Custo Promo</div>
-                    <div className="text-[10px] text-slate-500 mt-0.5">Últ. Compra - Sellout</div>
+                    <div className="text-sm font-bold text-neutral-700">💰 Custo Promo</div>
+                    <div className="text-[10px] text-neutral-500 mt-0.5">Últ. Compra - Sellout</div>
                   </div>
                   {custoPromoPreview != null
                     ? <span className="text-2xl font-bold text-emerald-600">{fmtBRL(custoPromoPreview)}</span>
-                    : <span className="text-2xl font-bold text-slate-300">—</span>
+                    : <span className="text-2xl font-bold text-neutral-300">—</span>
                   }
                 </div>
               </div>
@@ -777,13 +777,13 @@ function AdicionarProdutoModal({ encarteId, codigoRede, onClose, onAdicionado })
 
         {/* Footer com botão de salvar */}
         {subcategoriaSel && produtos.length > 0 && (
-          <div className="shrink-0 px-4 lg:px-6 pb-4 lg:pb-5 pt-3 border-t border-slate-200 bg-gradient-to-t from-slate-50 to-white rounded-b-2xl">
+          <div className="shrink-0 px-4 lg:px-6 pb-4 lg:pb-5 pt-3 border-t border-neutral-200 bg-gradient-to-t from-neutral-50 to-white rounded-b-2xl">
             {salvando && progresso.total > 0 && (
               <div className="mb-3">
-                <div className="h-2 w-full bg-slate-200 rounded-full overflow-hidden">
+                <div className="h-2 w-full bg-neutral-200 rounded-full overflow-hidden">
                   <div className="h-full bg-gradient-to-r from-brand to-brand-600 transition-all duration-300" style={{ width: `${(progresso.feitos / progresso.total) * 100}%` }} />
                 </div>
-                <div className="text-xs text-slate-600 text-center mt-1.5 font-medium">
+                <div className="text-xs text-neutral-600 text-center mt-1.5 font-medium">
                   Adicionando {progresso.feitos} de {progresso.total} produtos...
                 </div>
               </div>
@@ -853,11 +853,11 @@ function EditarInfoModal({ encarte, encarteId, onClose, onAtualizado }) {
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 animate-slide-up">
         <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-bold text-slate-900">Editar Ação</h3>
+          <h3 className="text-lg font-bold text-neutral-900">Editar Ação</h3>
           <button
             onClick={onClose}
             disabled={salvando}
-            className="h-8 w-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-500 hover:bg-slate-200 transition disabled:opacity-40">
+            className="h-8 w-8 rounded-full bg-neutral-100 flex items-center justify-center text-neutral-500 hover:bg-neutral-200 transition disabled:opacity-40">
             <IcoX className="w-4 h-4" />
           </button>
         </div>
@@ -871,13 +871,13 @@ function EditarInfoModal({ encarte, encarteId, onClose, onAtualizado }) {
         <div className="space-y-4">
           {/* Nome */}
           <div>
-            <label className="block text-xs font-semibold text-slate-600 uppercase tracking-wide mb-2">Nome da Ação</label>
+            <label className="block text-xs font-semibold text-neutral-600 uppercase tracking-wide mb-2">Nome da Ação</label>
             <input
               type="text"
               value={nome}
               onChange={(e) => setNome(e.target.value)}
               disabled={salvando}
-              className="w-full border-2 border-slate-200 rounded-lg px-3 py-2.5 text-sm font-medium focus:outline-none focus:border-brand focus:ring-2 focus:ring-brand/20 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full border-2 border-neutral-200 rounded-lg px-3 py-2.5 text-sm font-medium focus:outline-none focus:border-brand focus:ring-2 focus:ring-brand/20 disabled:opacity-50 disabled:cursor-not-allowed"
               placeholder="Ex: QUARTA MALUCA"
             />
           </div>
@@ -885,12 +885,12 @@ function EditarInfoModal({ encarte, encarteId, onClose, onAtualizado }) {
           {/* Subrede */}
           {subredesDaRede.length > 0 && (
             <div>
-              <label className="block text-xs font-semibold text-slate-600 uppercase tracking-wide mb-2">Aplicar para</label>
+              <label className="block text-xs font-semibold text-neutral-600 uppercase tracking-wide mb-2">Aplicar para</label>
               <select
                 value={subrede}
                 onChange={(e) => setSubrede(e.target.value)}
                 disabled={salvando}
-                className="w-full border-2 border-slate-200 rounded-lg px-3 py-2.5 text-sm font-medium focus:outline-none focus:border-brand focus:ring-2 focus:ring-brand/20 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full border-2 border-neutral-200 rounded-lg px-3 py-2.5 text-sm font-medium focus:outline-none focus:border-brand focus:ring-2 focus:ring-brand/20 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <option value="">Toda a rede</option>
                 {subredesDaRede.map((s) => (
@@ -902,25 +902,25 @@ function EditarInfoModal({ encarte, encarteId, onClose, onAtualizado }) {
 
           {/* Data Início */}
           <div>
-            <label className="block text-xs font-semibold text-slate-600 uppercase tracking-wide mb-2">Data Inicial</label>
+            <label className="block text-xs font-semibold text-neutral-600 uppercase tracking-wide mb-2">Data Inicial</label>
             <input
               type="date"
               value={periodoInicio}
               onChange={(e) => setPeriodoInicio(e.target.value)}
               disabled={salvando}
-              className="w-full border-2 border-slate-200 rounded-lg px-3 py-2.5 text-sm font-medium focus:outline-none focus:border-brand focus:ring-2 focus:ring-brand/20 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full border-2 border-neutral-200 rounded-lg px-3 py-2.5 text-sm font-medium focus:outline-none focus:border-brand focus:ring-2 focus:ring-brand/20 disabled:opacity-50 disabled:cursor-not-allowed"
             />
           </div>
 
           {/* Data Fim */}
           <div>
-            <label className="block text-xs font-semibold text-slate-600 uppercase tracking-wide mb-2">Data Final</label>
+            <label className="block text-xs font-semibold text-neutral-600 uppercase tracking-wide mb-2">Data Final</label>
             <input
               type="date"
               value={periodoFim}
               onChange={(e) => setPeriodoFim(e.target.value)}
               disabled={salvando}
-              className="w-full border-2 border-slate-200 rounded-lg px-3 py-2.5 text-sm font-medium focus:outline-none focus:border-brand focus:ring-2 focus:ring-brand/20 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full border-2 border-neutral-200 rounded-lg px-3 py-2.5 text-sm font-medium focus:outline-none focus:border-brand focus:ring-2 focus:ring-brand/20 disabled:opacity-50 disabled:cursor-not-allowed"
             />
           </div>
 
@@ -929,7 +929,7 @@ function EditarInfoModal({ encarte, encarteId, onClose, onAtualizado }) {
             <button
               onClick={onClose}
               disabled={salvando}
-              className="flex-1 py-2.5 rounded-lg bg-slate-100 text-slate-700 font-semibold hover:bg-slate-200 transition disabled:opacity-50">
+              className="flex-1 py-2.5 rounded-lg bg-neutral-100 text-neutral-700 font-semibold hover:bg-neutral-200 transition disabled:opacity-50">
               Cancelar
             </button>
             <button
@@ -1040,9 +1040,9 @@ function EditarPrecificacaoModal({ item, encarteId, onClose, onAtualizado }) {
     <div className="fixed inset-0 bg-black/50 z-50 flex items-end lg:items-center lg:justify-center overflow-y-auto safe-area-pt">
       <div className="bg-white rounded-t-3xl lg:rounded-2xl w-full lg:w-[90%] lg:max-w-2xl max-h-[95vh] lg:max-h-[90vh] flex flex-col shadow-2xl">
         {/* Header */}
-        <div className="shrink-0 flex items-center justify-between px-4 lg:px-6 py-4 border-b border-slate-200">
-          <h2 className="font-bold text-lg text-slate-900">Editar Precificação</h2>
-          <button onClick={onClose} disabled={salvando} className="h-8 w-8 rounded-lg bg-slate-100 hover:bg-slate-200 flex items-center justify-center text-slate-600 transition disabled:opacity-50">
+        <div className="shrink-0 flex items-center justify-between px-4 lg:px-6 py-4 border-b border-neutral-200">
+          <h2 className="font-bold text-lg text-neutral-900">Editar Precificação</h2>
+          <button onClick={onClose} disabled={salvando} className="h-8 w-8 rounded-lg bg-neutral-100 hover:bg-neutral-200 flex items-center justify-center text-neutral-600 transition disabled:opacity-50">
             <IcoX className="w-5 h-5" />
           </button>
         </div>
@@ -1050,10 +1050,10 @@ function EditarPrecificacaoModal({ item, encarteId, onClose, onAtualizado }) {
         {/* Conteúdo */}
         <div className="flex-1 overflow-y-auto px-4 lg:px-6 py-4 space-y-4">
           {/* Produto info */}
-          <div className="bg-slate-50 rounded-xl p-3 border border-slate-200">
-            <div className="text-xs text-slate-500 font-medium uppercase tracking-wide mb-1">Produto</div>
-            <div className="font-semibold text-slate-900">{item.produto}</div>
-            <div className="text-xs text-slate-400 mt-1">#{item.produtoCodigo}</div>
+          <div className="bg-neutral-50 rounded-xl p-3 border border-neutral-200">
+            <div className="text-xs text-neutral-500 font-medium uppercase tracking-wide mb-1">Produto</div>
+            <div className="font-semibold text-neutral-900">{item.produto}</div>
+            <div className="text-xs text-neutral-400 mt-1">#{item.produtoCodigo}</div>
           </div>
 
           {/* Última compra */}
@@ -1065,7 +1065,7 @@ function EditarPrecificacaoModal({ item, encarteId, onClose, onAtualizado }) {
           {/* Preço PDV */}
           <div className="space-y-2">
             <div className="flex items-center justify-between">
-              <label className="text-xs font-semibold text-slate-600 uppercase tracking-wide">Preço PDV</label>
+              <label className="text-xs font-semibold text-neutral-600 uppercase tracking-wide">Preço PDV</label>
               <MargemBadge 
                 pct={margemPDV}
                 onClick={handleMargemPDVClick}
@@ -1078,7 +1078,7 @@ function EditarPrecificacaoModal({ item, encarteId, onClose, onAtualizado }) {
             </div>
             <input
               type="number" inputMode="decimal" step="0.01"
-              className="w-full border-2 border-slate-200 rounded-lg px-3 py-2.5 text-sm font-medium focus:outline-none focus:border-brand focus:ring-2 focus:ring-brand/20"
+              className="w-full border-2 border-neutral-200 rounded-lg px-3 py-2.5 text-sm font-medium focus:outline-none focus:border-brand focus:ring-2 focus:ring-brand/20"
               placeholder="0,00" value={precoPDV} onChange={(e) => setPrecoPDV(e.target.value)}
             />
           </div>
@@ -1086,7 +1086,7 @@ function EditarPrecificacaoModal({ item, encarteId, onClose, onAtualizado }) {
           {/* Preço Oferta */}
           <div className="space-y-2">
             <div className="flex items-center justify-between">
-              <label className="text-xs font-semibold text-slate-600 uppercase tracking-wide">Preço Oferta</label>
+              <label className="text-xs font-semibold text-neutral-600 uppercase tracking-wide">Preço Oferta</label>
               <MargemBadge 
                 pct={margemOferta}
                 onClick={handleMargemOfertaClick}
@@ -1099,17 +1099,17 @@ function EditarPrecificacaoModal({ item, encarteId, onClose, onAtualizado }) {
             </div>
             <input
               type="number" inputMode="decimal" step="0.01"
-              className="w-full border-2 border-slate-200 rounded-lg px-3 py-2.5 text-sm font-medium focus:outline-none focus:border-brand focus:ring-2 focus:ring-brand/20"
+              className="w-full border-2 border-neutral-200 rounded-lg px-3 py-2.5 text-sm font-medium focus:outline-none focus:border-brand focus:ring-2 focus:ring-brand/20"
               placeholder="0,00" value={precoOferta} onChange={(e) => setPrecoOferta(e.target.value)}
             />
           </div>
 
           {/* Sellout */}
           <div className="space-y-2">
-            <label className="text-xs font-semibold text-slate-600 uppercase tracking-wide">Sellout</label>
+            <label className="text-xs font-semibold text-neutral-600 uppercase tracking-wide">Sellout</label>
             <input
               type="number" inputMode="decimal" step="0.01"
-              className="w-full border-2 border-slate-200 rounded-lg px-3 py-2.5 text-sm font-medium focus:outline-none focus:border-brand focus:ring-2 focus:ring-brand/20"
+              className="w-full border-2 border-neutral-200 rounded-lg px-3 py-2.5 text-sm font-medium focus:outline-none focus:border-brand focus:ring-2 focus:ring-brand/20"
               placeholder="0,00" value={sellout} onChange={(e) => setSellout(e.target.value)}
             />
           </div>
@@ -1130,11 +1130,11 @@ function EditarPrecificacaoModal({ item, encarteId, onClose, onAtualizado }) {
         </div>
 
         {/* Footer */}
-        <div className="shrink-0 px-4 lg:px-6 pb-4 lg:pb-4 pt-3 border-t border-slate-200 bg-gradient-to-t from-slate-50 to-white rounded-b-2xl flex gap-2">
+        <div className="shrink-0 px-4 lg:px-6 pb-4 lg:pb-4 pt-3 border-t border-neutral-200 bg-gradient-to-t from-neutral-50 to-white rounded-b-2xl flex gap-2">
           <button
             onClick={onClose}
             disabled={salvando}
-            className="flex-1 py-3 rounded-lg border-2 border-slate-200 text-slate-700 font-semibold hover:bg-slate-50 active:scale-[0.98] transition disabled:opacity-50">
+            className="flex-1 py-3 rounded-lg border-2 border-neutral-200 text-neutral-700 font-semibold hover:bg-neutral-50 active:scale-[0.98] transition disabled:opacity-50">
             Cancelar
           </button>
           <button
@@ -1208,17 +1208,17 @@ export default function EncarteDetalhe() {
 
   if (loading) {
     return (
-      <div className="flex h-screen items-center justify-center bg-slate-50">
-        <div className="w-8 h-8 rounded-full border-4 border-slate-200 border-t-brand animate-spin" />
+      <div className="flex h-screen items-center justify-center bg-neutral-50">
+        <div className="w-8 h-8 rounded-full border-4 border-neutral-200 border-t-brand animate-spin" />
       </div>
     );
   }
 
   if (erro || !encarte) {
     return (
-      <div className="flex h-screen items-center justify-center bg-slate-50">
+      <div className="flex h-screen items-center justify-center bg-neutral-50">
         <div className="text-center">
-          <p className="text-slate-600 font-semibold">{erro || "Encarte não encontrado"}</p>
+          <p className="text-neutral-600 font-semibold">{erro || "Encarte não encontrado"}</p>
           <button onClick={() => router.back()} className="mt-3 text-brand text-sm underline">Voltar</button>
         </div>
       </div>
@@ -1269,27 +1269,27 @@ export default function EncarteDetalhe() {
   };
 
   return (
-    <div className="flex flex-col min-h-screen bg-slate-50">
+    <div className="flex flex-col min-h-screen bg-neutral-50">
       {/* Header */}
-      <div className="bg-white border-b border-slate-200 px-4 py-3 safe-area-pt">
+      <div className="bg-white border-b border-neutral-200 px-4 py-3 safe-area-pt">
         <div className="flex items-center gap-3">
           <button onClick={() => router.back()}
-            className="h-8 w-8 rounded-lg bg-slate-100 hover:bg-slate-200 flex items-center justify-center text-slate-600 transition shrink-0">
+            className="h-8 w-8 rounded-lg bg-neutral-100 hover:bg-neutral-200 flex items-center justify-center text-neutral-600 transition shrink-0">
             <IcoChevronRight className="w-4 h-4 rotate-180" />
           </button>
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 mb-0.5">
-              <div className="text-[10px] text-slate-500 truncate">
+              <div className="text-[10px] text-neutral-500 truncate">
                 {encarte.redeSubrede || encarte.codigoRede}
                 {encarte.subrede ? ` — ${encarte.subrede}` : " (toda a rede)"}
               </div>
               {encarte.tipo === "oferta_interna" && (
-                <span className="text-[9px] bg-slate-900 text-white font-bold px-2 py-0.5 rounded-md uppercase tracking-wide">
+                <span className="text-[9px] bg-neutral-900 text-white font-bold px-2 py-0.5 rounded-md uppercase tracking-wide">
                   Oferta Interna
                 </span>
               )}
             </div>
-            <h1 className="font-semibold text-slate-900 text-base leading-tight truncate">{encarte.nome}</h1>
+            <h1 className="font-semibold text-neutral-900 text-base leading-tight truncate">{encarte.nome}</h1>
           </div>
           {encarte.podeEditar ? (
             <div className="flex gap-1.5 shrink-0">
@@ -1302,26 +1302,26 @@ export default function EncarteDetalhe() {
               <button
                 onClick={excluirEncarte}
                 disabled={excluindo}
-                className="shrink-0 h-8 w-8 rounded-lg bg-slate-100 hover:bg-red-50 flex items-center justify-center text-slate-500 hover:text-red-500 transition disabled:opacity-40">
+                className="shrink-0 h-8 w-8 rounded-lg bg-neutral-100 hover:bg-red-50 flex items-center justify-center text-neutral-500 hover:text-red-500 transition disabled:opacity-40">
                 <TrashIcon className="w-4 h-4" />
               </button>
             </div>
           ) : (
-            <span className="text-[9px] bg-slate-100 text-slate-500 font-semibold px-2 py-1 rounded-md shrink-0">
+            <span className="text-[9px] bg-neutral-100 text-neutral-500 font-semibold px-2 py-1 rounded-md shrink-0">
               VISUALIZAÇÃO
             </span>
           )}
         </div>
 
         {/* Período + Contagem */}
-        <div className="flex items-center gap-4 mt-2.5 text-[11px] text-slate-500">
+        <div className="flex items-center gap-4 mt-2.5 text-[11px] text-neutral-500">
           <div className="flex items-center gap-1.5">
             <IcoCalendar className="w-3.5 h-3.5 shrink-0" />
             <span>{fmtData(encarteComMargens.periodoInicio)} → {fmtData(encarteComMargens.periodoFim)}</span>
           </div>
           <div className="flex items-center gap-1.5">
             <IcoTag className="w-3.5 h-3.5 shrink-0" />
-            <span className="font-semibold text-slate-700">{encarteComMargens.itens.length}</span>
+            <span className="font-semibold text-neutral-700">{encarteComMargens.itens.length}</span>
             <span>produto{encarteComMargens.itens.length !== 1 ? 's' : ''}</span>
           </div>
         </div>
@@ -1331,11 +1331,11 @@ export default function EncarteDetalhe() {
       <div className="flex-1 p-4 pb-24 space-y-2">
         {encarteComMargens.itens.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20 text-center">
-            <div className="w-12 h-12 rounded-xl bg-slate-100 flex items-center justify-center mb-2">
-              <IcoPackage className="w-6 h-6 text-slate-400" />
+            <div className="w-12 h-12 rounded-xl bg-neutral-100 flex items-center justify-center mb-2">
+              <IcoPackage className="w-6 h-6 text-neutral-400" />
             </div>
-            <p className="text-sm text-slate-600 font-medium">Nenhum produto adicionado</p>
-            <p className="text-xs text-slate-400 mt-1 max-w-[200px]">
+            <p className="text-sm text-neutral-600 font-medium">Nenhum produto adicionado</p>
+            <p className="text-xs text-neutral-400 mt-1 max-w-[200px]">
               {encarteComMargens.podeEditar ? 'Adicione produtos para montar o encarte' : 'Aguardando produtos'}
             </p>
           </div>
@@ -1349,21 +1349,21 @@ export default function EncarteDetalhe() {
           return Object.entries(grupos).map(([sub, itens]) => {
             const aberto = gruposAbertos[sub] !== false; // aberto por padrão
             return (
-              <div key={sub} className="bg-white rounded-xl border border-slate-200 overflow-hidden">
+              <div key={sub} className="bg-white rounded-xl border border-neutral-200 overflow-hidden">
                 {/* Cabeçalho clicável */}
                 <button
                   type="button"
                   onClick={() => setGruposAbertos(prev => ({ ...prev, [sub]: !aberto }))}
-                  className="w-full flex items-center justify-between px-4 py-2.5 text-left hover:bg-slate-50/70 transition"
+                  className="w-full flex items-center justify-between px-4 py-2.5 text-left hover:bg-neutral-50/70 transition"
                 >
                   <div className="flex items-center gap-2.5">
-                    <span className="text-xs font-bold text-slate-700 tracking-wide">{sub}</span>
-                    <span className="text-[10px] text-slate-500 font-medium bg-slate-100 rounded-md px-1.5 py-0.5">
+                    <span className="text-xs font-bold text-neutral-700 tracking-wide">{sub}</span>
+                    <span className="text-[10px] text-neutral-500 font-medium bg-neutral-100 rounded-md px-1.5 py-0.5">
                       {itens.length}
                     </span>
                   </div>
                   <svg
-                    className={`w-4 h-4 text-slate-400 transition-transform ${aberto ? 'rotate-180' : ''}`}
+                    className={`w-4 h-4 text-neutral-400 transition-transform ${aberto ? 'rotate-180' : ''}`}
                     fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}
                   >
                     <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
@@ -1374,12 +1374,12 @@ export default function EncarteDetalhe() {
                 {aberto && (
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 p-3">
                     {itens.map((it) => (
-                      <div key={it._id} className="border border-slate-200 rounded-lg px-4 py-3 hover:bg-slate-50/50 hover:border-slate-300 transition">
+                      <div key={it._id} className="border border-neutral-200 rounded-lg px-4 py-3 hover:bg-neutral-50/50 hover:border-neutral-300 transition">
                         {/* Nome + Botões editar e remover */}
                         <div className="flex items-start justify-between gap-3 mb-3">
                           <div className="flex-1 min-w-0">
-                            <div className="font-semibold text-slate-900 text-sm leading-snug">{it.produto}</div>
-                            <div className="text-xs text-slate-400 mt-0.5">#{it.produtoCodigo || '—'}</div>
+                            <div className="font-semibold text-neutral-900 text-sm leading-snug">{it.produto}</div>
+                            <div className="text-xs text-neutral-400 mt-0.5">#{it.produtoCodigo || '—'}</div>
                           </div>
                           {encarte.podeEditar && (
                             <div className="flex gap-1.5 shrink-0">
@@ -1395,7 +1395,7 @@ export default function EncarteDetalhe() {
                               <button
                                 onClick={() => removerItem(String(it._id))}
                                 disabled={removendoId === String(it._id)}
-                                className="h-7 w-7 rounded-lg bg-slate-100 hover:bg-red-50 flex items-center justify-center text-slate-400 hover:text-red-500 transition disabled:opacity-40 shrink-0">
+                                className="h-7 w-7 rounded-lg bg-neutral-100 hover:bg-red-50 flex items-center justify-center text-neutral-400 hover:text-red-500 transition disabled:opacity-40 shrink-0">
                                 <TrashIcon className="w-3.5 h-3.5" />
                               </button>
                             </div>
@@ -1406,20 +1406,20 @@ export default function EncarteDetalhe() {
                         <div className="space-y-2">
                           {/* Última compra */}
                           <div className="flex items-center justify-between text-xs gap-3">
-                            <span className="text-slate-500 flex-shrink-0">Última compra</span>
+                            <span className="text-neutral-500 flex-shrink-0">Última compra</span>
                             <div className="text-right flex-shrink-0">
-                              <div className="font-semibold text-slate-700 tabular-nums">{fmtBRL(it.precoUltimaCompra)}</div>
+                              <div className="font-semibold text-neutral-700 tabular-nums">{fmtBRL(it.precoUltimaCompra)}</div>
                               {it.dataUltimaCompra && (
-                                <div className="text-[10px] text-slate-400 tabular-nums">{fmtData(it.dataUltimaCompra)}</div>
+                                <div className="text-[10px] text-neutral-400 tabular-nums">{fmtData(it.dataUltimaCompra)}</div>
                               )}
                             </div>
                           </div>
 
                           {/* PDV */}
                           <div className="flex items-center justify-between text-xs bg-blue-50/50 rounded-lg px-2.5 py-1.5 gap-3">
-                            <span className="text-slate-600 font-medium flex-shrink-0">PDV</span>
+                            <span className="text-neutral-600 font-medium flex-shrink-0">PDV</span>
                             <div className="flex items-center gap-2 flex-shrink-0">
-                              <span className="font-bold text-slate-900 tabular-nums min-w-[4.5rem] text-right">{fmtBRL(it.precoPDV)}</span>
+                              <span className="font-bold text-neutral-900 tabular-nums min-w-[4.5rem] text-right">{fmtBRL(it.precoPDV)}</span>
                               {it.margemPDV != null && (
                                 <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded ${
                                   it.margemPDV >= 20 ? 'bg-emerald-100 text-emerald-700' : 
@@ -1434,9 +1434,9 @@ export default function EncarteDetalhe() {
 
                           {/* Oferta */}
                           <div className="flex items-center justify-between text-xs bg-emerald-50/50 rounded-lg px-2.5 py-1.5 gap-3">
-                            <span className="text-slate-600 font-medium flex-shrink-0">Oferta</span>
+                            <span className="text-neutral-600 font-medium flex-shrink-0">Oferta</span>
                             <div className="flex items-center gap-2 flex-shrink-0">
-                              <span className="font-bold text-slate-900 tabular-nums min-w-[4.5rem] text-right">{fmtBRL(it.precoOferta)}</span>
+                              <span className="font-bold text-neutral-900 tabular-nums min-w-[4.5rem] text-right">{fmtBRL(it.precoOferta)}</span>
                               {it.margemOferta != null && (
                                 <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded ${
                                   it.margemOferta >= 20 ? 'bg-emerald-100 text-emerald-700' : 
@@ -1452,14 +1452,14 @@ export default function EncarteDetalhe() {
                           {/* Sellout + Custo Promo em linha */}
                           <div className="flex items-center gap-2 text-xs pt-1">
                             <div className="flex-1 flex items-center justify-between gap-2">
-                              <span className="text-slate-500 flex-shrink-0">Sellout</span>
-                              <span className="font-semibold text-slate-700 tabular-nums text-right">{fmtBRL(it.sellout || null)}</span>
+                              <span className="text-neutral-500 flex-shrink-0">Sellout</span>
+                              <span className="font-semibold text-neutral-700 tabular-nums text-right">{fmtBRL(it.sellout || null)}</span>
                             </div>
                             {it.custoPromo != null && (
                               <>
-                                <div className="h-3 w-px bg-slate-200 flex-shrink-0" />
+                                <div className="h-3 w-px bg-neutral-200 flex-shrink-0" />
                                 <div className="flex-1 flex items-center justify-between gap-2">
-                                  <span className="text-slate-500 flex-shrink-0">Custo Promo</span>
+                                  <span className="text-neutral-500 flex-shrink-0">Custo Promo</span>
                                   <span className="font-bold text-emerald-600 tabular-nums text-right">{fmtBRL(it.custoPromo)}</span>
                                 </div>
                               </>

@@ -57,9 +57,9 @@ function StatTile({ label, faixa, itens, unidades, hex, alerta }) {
         {alerta && <span className="h-2 w-2 rounded-full animate-pulse shrink-0" style={{ backgroundColor: hex }} />}
       </div>
       <div className="mt-2 text-3xl sm:text-4xl font-black tabular-nums leading-none" style={{ color: hex }}>{fmtNum(itens)}</div>
-      <div className="mt-1.5 flex items-baseline justify-between gap-2 text-xs text-slate-400">
+      <div className="mt-1.5 flex items-baseline justify-between gap-2 text-xs text-neutral-400">
         <span className="truncate">{faixa}</span>
-        <span className="font-semibold text-slate-600 tabular-nums whitespace-nowrap">{fmtNum(unidades)} un</span>
+        <span className="font-semibold text-neutral-600 tabular-nums whitespace-nowrap">{fmtNum(unidades)} un</span>
       </div>
     </div>
   );
@@ -71,7 +71,7 @@ function BarraComposicao({ resumo }) {
   const segs = STATUS_SHELF.filter((s) => resumo.por[s.key].itens > 0);
   const pct = (s) => (resumo.por[s.key].itens / total) * 100;
   return (
-    <div className="bg-white rounded-2xl border border-slate-100 px-5 py-4 mb-5">
+    <div className="bg-white rounded-2xl border border-neutral-100 px-5 py-4 mb-5">
       <div className="flex h-2.5 w-full overflow-hidden rounded-full gap-0.5">
         {segs.map((s) => (pct(s) < 0.5 ? null : (
           <div
@@ -84,10 +84,10 @@ function BarraComposicao({ resumo }) {
       </div>
       <div className="mt-2.5 flex flex-wrap gap-x-4 gap-y-1">
         {segs.map((s) => (
-          <div key={s.key} className="flex items-center gap-1.5 text-xs text-slate-500">
+          <div key={s.key} className="flex items-center gap-1.5 text-xs text-neutral-500">
             <span className="h-2 w-2 rounded-full" style={{ backgroundColor: s.hex }} />
             {s.label}
-            <span className="font-semibold text-slate-700 tabular-nums">{pct(s).toFixed(0)}%</span>
+            <span className="font-semibold text-neutral-700 tabular-nums">{pct(s).toFixed(0)}%</span>
           </div>
         ))}
       </div>
@@ -100,7 +100,7 @@ function Spinner({ texto }) {
     <div className="flex items-center justify-center h-64">
       <div className="flex flex-col items-center gap-3">
         <div className="h-7 w-7 rounded-full border-2 border-brand border-t-transparent animate-spin" />
-        <p className="text-sm text-slate-400">{texto}</p>
+        <p className="text-sm text-neutral-400">{texto}</p>
       </div>
     </div>
   );
@@ -383,17 +383,17 @@ export default function DashboardPage() {
       <div className="flex items-start justify-between gap-3 mb-5 flex-wrap">
         <div>
           <p className="text-xs font-semibold uppercase tracking-widest text-brand mb-1">Valemilk · Controle Comercial</p>
-          <h1 className="text-xl sm:text-2xl font-black text-slate-900">Painel de Vencimentos</h1>
-          <p className="text-xs text-slate-400 mt-0.5">Estoque em giro/rebaixa · fonte: relatório BI (Ativmob)</p>
+          <h1 className="text-xl sm:text-2xl font-black text-neutral-900">Painel de Vencimentos</h1>
+          <p className="text-xs text-neutral-400 mt-0.5">Estoque em giro/rebaixa · fonte: relatório BI (Ativmob)</p>
         </div>
         <div className="flex items-center gap-2 flex-wrap">
           <ChipsHorizonte value={horizonte} onChange={setHorizonte} />
-          {atualizado && <span className="hidden sm:block text-xs text-slate-400">{fmtDataHora(atualizado)}</span>}
+          {atualizado && <span className="hidden sm:block text-xs text-neutral-400">{fmtDataHora(atualizado)}</span>}
           <button
             type="button"
             onClick={carregar}
             disabled={pageLoading}
-            className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-medium text-slate-600 hover:bg-slate-50 transition disabled:opacity-40 flex items-center gap-1.5"
+            className="rounded-xl border border-neutral-200 bg-white px-3 py-2 text-xs font-medium text-neutral-600 hover:bg-neutral-50 transition disabled:opacity-40 flex items-center gap-1.5"
           >
             <svg className={`h-3.5 w-3.5 ${pageLoading ? "animate-spin" : ""}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
               <path d="M4 4v5h5M20 20v-5h-5M4 9a9 9 0 0 1 15-4.2M20 15a9 9 0 0 1-15 4.2" strokeLinecap="round" />
@@ -453,7 +453,7 @@ export default function DashboardPage() {
                 <select
                   value={ordemLojas}
                   onChange={(e) => setOrdemLojas(e.target.value)}
-                  className="shrink-0 text-xs border border-slate-200 rounded-lg px-2 py-1.5 bg-white text-slate-600 focus:outline-none focus:ring-2 focus:ring-brand/20"
+                  className="shrink-0 text-xs border border-neutral-200 rounded-lg px-2 py-1.5 bg-white text-neutral-600 focus:outline-none focus:ring-2 focus:ring-brand/20"
                 >
                   <option value="unidades">Unidades</option>
                   <option value="criticidade">Criticidade</option>
@@ -504,11 +504,11 @@ export default function DashboardPage() {
       )}
 
       {itensSelecionados.length > 0 && !loteAberto && (
-        <div className="fixed bottom-20 lg:bottom-6 left-1/2 -translate-x-1/2 z-40 flex items-center gap-3 rounded-2xl bg-slate-900 text-white shadow-2xl px-4 py-2.5 animate-slide-up max-w-[calc(100vw-2rem)]">
+        <div className="fixed bottom-20 lg:bottom-6 left-1/2 -translate-x-1/2 z-40 flex items-center gap-3 rounded-2xl bg-neutral-900 text-white shadow-2xl px-4 py-2.5 animate-slide-up max-w-[calc(100vw-2rem)]">
           <span className="text-sm whitespace-nowrap">
             <b>{itensSelecionados.length}</b> {itensSelecionados.length === 1 ? "item" : "itens"} · <b>{lojasSelecionadas}</b> {lojasSelecionadas === 1 ? "loja" : "lojas"}
           </span>
-          <button type="button" onClick={limparSelecao} className="text-xs text-slate-300 hover:text-white underline whitespace-nowrap">
+          <button type="button" onClick={limparSelecao} className="text-xs text-neutral-300 hover:text-white underline whitespace-nowrap">
             Limpar
           </button>
           <button

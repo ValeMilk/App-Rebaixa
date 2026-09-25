@@ -8,7 +8,7 @@ import { IcoSearch, IcoX, IcoPackage } from "@/components/Icons";
 const fmtNum = (n) => Number(n || 0).toLocaleString("pt-BR");
 
 const SELECT_CLS =
-  "w-full sm:w-auto px-3 py-2.5 text-sm border border-slate-200 rounded-xl bg-white text-slate-700 focus:outline-none focus:ring-4 focus:ring-brand/10 focus:border-brand transition";
+  "w-full sm:w-auto px-3 py-2.5 text-sm border border-neutral-200 rounded-xl bg-white text-neutral-700 focus:outline-none focus:ring-4 focus:ring-brand/10 focus:border-brand transition";
 
 const COLUNAS = [
   { campo: "cliente",    label: "Loja",     align: "left" },
@@ -34,9 +34,9 @@ function Th({ col, ordem, onOrdenar }) {
   return (
     <th
       onClick={() => onOrdenar(col.campo)}
-      className={`py-2.5 px-3 font-medium cursor-pointer select-none whitespace-nowrap hover:text-slate-700 ${
+      className={`py-2.5 px-3 font-medium cursor-pointer select-none whitespace-nowrap hover:text-neutral-700 ${
         col.align === "right" ? "text-right" : "text-left"
-      } ${ativa ? "text-slate-800" : ""}`}
+      } ${ativa ? "text-neutral-800" : ""}`}
     >
       {col.label}{" "}
       <span className={ativa ? "" : "opacity-30"}>{ativa ? (ordem.dir === 1 ? "↑" : "↓") : "↕"}</span>
@@ -68,10 +68,10 @@ export default function TabelaVencimentos({
   const todosVisiveis = linhas.length > 0 && visiveisMarcados === linhas.length;
 
   return (
-    <section className="bg-white rounded-2xl border border-slate-100 p-5">
+    <section className="bg-white rounded-2xl border border-neutral-100 p-5">
       <div className="flex items-center justify-between gap-3 mb-3">
-        <h2 className="text-xs font-semibold uppercase tracking-widest text-slate-400">Detalhe por loja</h2>
-        <span className="text-xs text-slate-400 whitespace-nowrap">
+        <h2 className="text-xs font-semibold uppercase tracking-widest text-neutral-400">Detalhe por loja</h2>
+        <span className="text-xs text-neutral-400 whitespace-nowrap">
           {fmtNum(totalLinhas)} {totalLinhas === 1 ? "item" : "itens"}
         </span>
       </div>
@@ -79,7 +79,7 @@ export default function TabelaVencimentos({
       {/* Toolbar */}
       <div className="flex flex-col sm:flex-row sm:items-center gap-2 mb-3">
         <div className="relative flex-1 min-w-0">
-          <IcoSearch className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+          <IcoSearch className="w-4 h-4 text-neutral-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
           <input
             className="input pl-10 pr-9"
             placeholder="Buscar loja ou produto"
@@ -91,7 +91,7 @@ export default function TabelaVencimentos({
               type="button"
               onClick={() => setFiltros((f) => ({ ...f, busca: "" }))}
               aria-label="Limpar busca"
-              className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-slate-400 hover:text-slate-600"
+              className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-neutral-400 hover:text-neutral-600"
             >
               <IcoX className="w-4 h-4" />
             </button>
@@ -121,12 +121,12 @@ export default function TabelaVencimentos({
           ))}
         </select>
 
-        <label className="flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-500 whitespace-nowrap focus-within:border-brand focus-within:ring-4 focus-within:ring-brand/10 transition">
+        <label className="flex items-center gap-2 rounded-xl border border-neutral-200 bg-white px-3 py-2 text-sm text-neutral-500 whitespace-nowrap focus-within:border-brand focus-within:ring-4 focus-within:ring-brand/10 transition">
           Vence até
           <input
             type="date"
             aria-label="Vence até"
-            className="bg-transparent text-slate-700 focus:outline-none min-w-0"
+            className="bg-transparent text-neutral-700 focus:outline-none min-w-0"
             value={filtros.venceAte}
             onChange={(e) => setFiltros((f) => ({ ...f, venceAte: e.target.value }))}
           />
@@ -157,10 +157,10 @@ export default function TabelaVencimentos({
 
       {linhas.length === 0 ? (
         <div className="py-10 text-center">
-          <div className="mx-auto mb-3 h-11 w-11 rounded-2xl bg-slate-100 flex items-center justify-center text-slate-400">
+          <div className="mx-auto mb-3 h-11 w-11 rounded-2xl bg-neutral-100 flex items-center justify-center text-neutral-400">
             <IcoPackage className="w-5 h-5" />
           </div>
-          <p className="text-sm font-medium text-slate-600">Nenhum item com esses filtros</p>
+          <p className="text-sm font-medium text-neutral-600">Nenhum item com esses filtros</p>
           {temFiltro && (
             <button type="button" onClick={onLimpar} className="mt-2 text-xs font-semibold text-brand hover:underline">
               Limpar filtros
@@ -172,12 +172,12 @@ export default function TabelaVencimentos({
           <div className="overflow-x-auto -mx-5 px-5">
             <table className="w-full text-sm min-w-[780px]">
               <thead>
-                <tr className="border-b border-slate-100 text-xs text-slate-400 uppercase tracking-wider">
+                <tr className="border-b border-neutral-100 text-xs text-neutral-400 uppercase tracking-wider">
                   <th className="py-2.5 px-3 w-8">
                     <input
                       type="checkbox"
                       aria-label="Selecionar todos os visíveis"
-                      className="h-4 w-4 rounded border-slate-300 accent-brand cursor-pointer align-middle"
+                      className="h-4 w-4 rounded border-neutral-300 accent-brand cursor-pointer align-middle"
                       checked={todosVisiveis}
                       ref={(el) => { if (el) el.indeterminate = visiveisMarcados > 0 && !todosVisiveis; }}
                       onChange={(e) => onToggleVisiveis(linhas.map((l) => l._id), e.target.checked)}
@@ -189,7 +189,7 @@ export default function TabelaVencimentos({
                   <th className="py-2.5 px-3" />
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-50">
+              <tbody className="divide-y divide-neutral-50">
                 {linhas.map((l) => {
                   const seg = STATUS_SHELF_MAP[l.status] || STATUS_SHELF_MAP.sem_shelf;
                   const acao = seg.acao === "oferta_interna" ? "oferta" : "rebaixa";
@@ -197,23 +197,23 @@ export default function TabelaVencimentos({
                   const rede = formatarRede({ redeSubrede: l.redeSubrede, subrede: l.subrede, codigoRede: l.codigoRede });
                   const marcado = selecionados.has(l._id);
                   return (
-                    <tr key={l._id} className={`transition-colors ${marcado ? "bg-brand/5" : "hover:bg-slate-50"}`}>
+                    <tr key={l._id} className={`transition-colors ${marcado ? "bg-brand/5" : "hover:bg-neutral-50"}`}>
                       <td className="py-2 px-3">
                         <input
                           type="checkbox"
                           aria-label={`Selecionar ${l.produto} em ${l.cliente}`}
-                          className="h-4 w-4 rounded border-slate-300 accent-brand cursor-pointer align-middle"
+                          className="h-4 w-4 rounded border-neutral-300 accent-brand cursor-pointer align-middle"
                           checked={marcado}
                           onChange={() => onToggleItem(l._id)}
                         />
                       </td>
                       <td className="py-2 px-3 max-w-[220px]">
-                        <div className="font-medium text-slate-800 truncate">{l.cliente}</div>
-                        {rede && <div className="text-[10px] text-slate-400 truncate">{rede}</div>}
+                        <div className="font-medium text-neutral-800 truncate">{l.cliente}</div>
+                        {rede && <div className="text-[10px] text-neutral-400 truncate">{rede}</div>}
                       </td>
-                      <td className="py-2 px-3 max-w-[260px] text-slate-700 truncate">{l.produto}</td>
-                      <td className="py-2 px-3 text-right font-mono tabular-nums text-slate-800">{fmtNum(l.quantidade)}</td>
-                      <td className="py-2 px-3 text-right font-mono text-slate-500 whitespace-nowrap">{fmtData(l.dataValidade)}</td>
+                      <td className="py-2 px-3 max-w-[260px] text-neutral-700 truncate">{l.produto}</td>
+                      <td className="py-2 px-3 text-right font-mono tabular-nums text-neutral-800">{fmtNum(l.quantidade)}</td>
+                      <td className="py-2 px-3 text-right font-mono text-neutral-500 whitespace-nowrap">{fmtData(l.dataValidade)}</td>
                       <td className="py-2 px-3 text-right">
                         <span
                           className="inline-block rounded-full px-2 py-0.5 text-xs font-bold tabular-nums"
@@ -221,7 +221,7 @@ export default function TabelaVencimentos({
                         >
                           {l.diasParaVencer ?? "—"}d
                         </span>
-                        <div className="text-[10px] text-slate-400 whitespace-nowrap mt-0.5">
+                        <div className="text-[10px] text-neutral-400 whitespace-nowrap mt-0.5">
                           {l.pct != null ? `${Math.round(l.pct * 100)}% do shelf` : "sem shelf"}
                         </div>
                       </td>
@@ -251,7 +251,7 @@ export default function TabelaVencimentos({
             <button
               type="button"
               onClick={onMais}
-              className="mt-3 w-full rounded-xl border border-slate-200 py-2.5 text-sm font-semibold text-brand hover:bg-slate-50 active:scale-[0.99] transition"
+              className="mt-3 w-full rounded-xl border border-neutral-200 py-2.5 text-sm font-semibold text-brand hover:bg-neutral-50 active:scale-[0.99] transition"
             >
               Mostrar mais ({fmtNum(totalLinhas - linhas.length)} restantes)
             </button>

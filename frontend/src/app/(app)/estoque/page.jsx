@@ -15,7 +15,7 @@ const CLS = {
   alerta:   { label: "Alerta",   bg: "bg-orange-50",  text: "text-orange-700", border: "border-orange-200", dot: "bg-orange-500", ring: "ring-orange-100" },
   atencao:  { label: "Atenção",  bg: "bg-amber-50",   text: "text-amber-700",  border: "border-amber-200",  dot: "bg-amber-500",  ring: "ring-amber-100" },
   ok:       { label: "Regular",  bg: "bg-emerald-50", text: "text-emerald-700",border: "border-emerald-200",dot: "bg-emerald-500",ring: "ring-emerald-100" },
-  vencido:  { label: "Vencido",  bg: "bg-slate-50",   text: "text-slate-600",  border: "border-slate-200",  dot: "bg-slate-400",  ring: "ring-slate-100" },
+  vencido:  { label: "Vencido",  bg: "bg-neutral-50",   text: "text-neutral-600",  border: "border-neutral-200",  dot: "bg-neutral-400",  ring: "ring-neutral-100" },
 };
 
 function Badge({ cls }) {
@@ -134,29 +134,29 @@ function RedeRebaixaModal({ redeSubrede, codigoRede, produto, onClose, onEnviado
 
   return (
     <div className="fixed inset-0 z-50 flex flex-col sm:items-center sm:justify-center sm:p-6 animate-fade-in">
-      <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={onClose} />
+      <div className="absolute inset-0 bg-neutral-900/60 backdrop-blur-sm" onClick={onClose} />
       <div className="relative bg-white shadow-2xl flex flex-col w-full sm:max-w-md sm:rounded-3xl sm:max-h-[90dvh] animate-slide-up safe-area-pb"
         style={{ height: "100dvh", maxHeight: "100dvh" }}>
 
-        <div className="shrink-0 px-4 pt-3 pb-2.5 border-b border-slate-100 bg-white sm:rounded-t-3xl safe-area-pt">
+        <div className="shrink-0 px-4 pt-3 pb-2.5 border-b border-neutral-100 bg-white sm:rounded-t-3xl safe-area-pt">
           <div className="flex items-center justify-between gap-3">
             <div className="min-w-0 flex-1">
               <div className="text-[10px] font-semibold text-blue-600 uppercase tracking-wider mb-0.5">Ação por Rede</div>
-              <h2 className="font-bold text-slate-900 text-base leading-snug line-clamp-2">{produto.produto}</h2>
+              <h2 className="font-bold text-neutral-900 text-base leading-snug line-clamp-2">{produto.produto}</h2>
             </div>
             <button onClick={onClose} aria-label="Fechar"
-              className="shrink-0 h-9 w-9 rounded-full bg-slate-100 active:bg-slate-200 active:scale-95 transition flex items-center justify-center text-slate-600">
+              className="shrink-0 h-9 w-9 rounded-full bg-neutral-100 active:bg-neutral-200 active:scale-95 transition flex items-center justify-center text-neutral-600">
               <IcoX className="w-5 h-5" />
             </button>
           </div>
           {/* Toggle Rebaixa / Oferta */}
-          <div className="mt-2.5 flex gap-1.5 p-1 bg-slate-100 rounded-xl">
+          <div className="mt-2.5 flex gap-1.5 p-1 bg-neutral-100 rounded-xl">
             <button type="button" onClick={() => setTipoAcao("rebaixa")}
-              className={`flex-1 text-xs font-bold py-1.5 rounded-lg transition ${tipoAcao === "rebaixa" ? "bg-white text-brand shadow-sm" : "text-slate-500"}`}>
+              className={`flex-1 text-xs font-bold py-1.5 rounded-lg transition ${tipoAcao === "rebaixa" ? "bg-white text-brand shadow-sm" : "text-neutral-500"}`}>
               Rebaixa
             </button>
             <button type="button" onClick={() => setTipoAcao("oferta_interna")}
-              className={`flex-1 text-xs font-bold py-1.5 rounded-lg transition ${tipoAcao === "oferta_interna" ? "bg-white text-blue-600 shadow-sm" : "text-slate-500"}`}>
+              className={`flex-1 text-xs font-bold py-1.5 rounded-lg transition ${tipoAcao === "oferta_interna" ? "bg-white text-blue-600 shadow-sm" : "text-neutral-500"}`}>
               Oferta
             </button>
           </div>
@@ -170,34 +170,34 @@ function RedeRebaixaModal({ redeSubrede, codigoRede, produto, onClose, onEnviado
               <IcoUsers className="w-3.5 h-3.5" />
               {redeSubrede}
             </div>
-            <div className="text-xs text-slate-600">
+            <div className="text-xs text-neutral-600">
               <span className="font-semibold">{produto.lojas.length}</span> loja{produto.lojas.length !== 1 ? "s" : ""}
             </div>
           </div>
 
-          <div className="flex items-stretch rounded-xl border border-slate-100 overflow-hidden mb-3">
+          <div className="flex items-stretch rounded-xl border border-neutral-100 overflow-hidden mb-3">
             <div className="flex-1 bg-white px-2 py-2 text-center">
-              <div className="text-[9px] text-slate-500 font-semibold uppercase tracking-wide">Qtd Total</div>
-              <div className="font-bold text-slate-800 text-lg leading-tight">{qtdTotal}</div>
+              <div className="text-[9px] text-neutral-500 font-semibold uppercase tracking-wide">Qtd Total</div>
+              <div className="font-bold text-neutral-800 text-lg leading-tight">{qtdTotal}</div>
             </div>
-            <div className="flex-1 bg-white px-2 py-2 text-center border-x border-slate-100">
-              <div className="text-[9px] text-slate-500 font-semibold uppercase tracking-wide">Min. Vence</div>
-              <div className={`font-bold text-lg leading-tight ${produto.menorDiasParaVencer <= 15 ? "text-red-600" : "text-slate-800"}`}>
+            <div className="flex-1 bg-white px-2 py-2 text-center border-x border-neutral-100">
+              <div className="text-[9px] text-neutral-500 font-semibold uppercase tracking-wide">Min. Vence</div>
+              <div className={`font-bold text-lg leading-tight ${produto.menorDiasParaVencer <= 15 ? "text-red-600" : "text-neutral-800"}`}>
                 {produto.menorDiasParaVencer ?? "—"}d
               </div>
-              <div className="text-[9px] text-slate-400">{fmtData(produto.menorDataValidade)}</div>
+              <div className="text-[9px] text-neutral-400">{fmtData(produto.menorDataValidade)}</div>
             </div>
             <div className="flex-1 bg-brand/5 px-2 py-2 text-center">
               <div className="text-[9px] text-brand/70 font-semibold uppercase tracking-wide">Últ. Compra</div>
               {loadingUC ? (
-                <div className="text-slate-400 text-xs mt-1">…</div>
+                <div className="text-neutral-400 text-xs mt-1">…</div>
               ) : precoUC != null ? (
                 <>
                   <div className="font-bold text-brand text-sm leading-tight mt-0.5">{fmtBRL(precoUC)}</div>
-                  <div className="text-[9px] text-slate-400">{fmtData(dataUC)}</div>
+                  <div className="text-[9px] text-neutral-400">{fmtData(dataUC)}</div>
                 </>
               ) : (
-                <div className="text-slate-400 text-xs mt-1">Sem histórico</div>
+                <div className="text-neutral-400 text-xs mt-1">Sem histórico</div>
               )}
             </div>
           </div>
@@ -211,7 +211,7 @@ function RedeRebaixaModal({ redeSubrede, codigoRede, produto, onClose, onEnviado
 
           <form id="form-rede-rebaixa" onSubmit={handleSubmit} className="space-y-2.5">
             <div>
-              <label className="block text-[10px] font-semibold text-slate-500 uppercase tracking-wide mb-1">Preço PDV (R$) *</label>
+              <label className="block text-[10px] font-semibold text-neutral-500 uppercase tracking-wide mb-1">Preço PDV (R$) *</label>
               <input
                 type="number" step="0.01" min="0"
                 className="input"
@@ -223,16 +223,16 @@ function RedeRebaixaModal({ redeSubrede, codigoRede, produto, onClose, onEnviado
               />
             </div>
 
-            <div className="flex items-center justify-between bg-slate-50 rounded-xl px-3 py-2 border border-slate-100">
+            <div className="flex items-center justify-between bg-neutral-50 rounded-xl px-3 py-2 border border-neutral-100">
               <div>
-                <div className="text-xs font-semibold text-slate-700">Margem PDV</div>
-                <div className="text-[10px] text-slate-400">(PDV − Últ. Compra) / PDV</div>
+                <div className="text-xs font-semibold text-neutral-700">Margem PDV</div>
+                <div className="text-[10px] text-neutral-400">(PDV − Últ. Compra) / PDV</div>
               </div>
               <MargemBadge pct={margemPDV} />
             </div>
 
             <div>
-              <label className="block text-[10px] font-semibold text-slate-500 uppercase tracking-wide mb-1">Preço da Oferta (R$) *</label>
+              <label className="block text-[10px] font-semibold text-neutral-500 uppercase tracking-wide mb-1">Preço da Oferta (R$) *</label>
               <input
                 type="number" step="0.01" min="0"
                 className="input text-2xl font-bold py-2"
@@ -245,7 +245,7 @@ function RedeRebaixaModal({ redeSubrede, codigoRede, produto, onClose, onEnviado
             </div>
 
             <div>
-              <label className="block text-[10px] font-semibold text-slate-500 uppercase tracking-wide mb-1">Sellout (R$ desconto sobre últ. compra)</label>
+              <label className="block text-[10px] font-semibold text-neutral-500 uppercase tracking-wide mb-1">Sellout (R$ desconto sobre últ. compra)</label>
               <input
                 type="number" step="0.01" min="0"
                 className="input"
@@ -266,16 +266,16 @@ function RedeRebaixaModal({ redeSubrede, codigoRede, produto, onClose, onEnviado
               )}
             </div>
 
-            <div className="flex items-center justify-between bg-slate-50 rounded-xl px-3 py-2 border border-slate-100">
+            <div className="flex items-center justify-between bg-neutral-50 rounded-xl px-3 py-2 border border-neutral-100">
               <div>
-                <div className="text-xs font-semibold text-slate-700">Margem Oferta</div>
-                <div className="text-[10px] text-slate-400">(Oferta − (Últ. Compra − Sellout)) / Oferta</div>
+                <div className="text-xs font-semibold text-neutral-700">Margem Oferta</div>
+                <div className="text-[10px] text-neutral-400">(Oferta − (Últ. Compra − Sellout)) / Oferta</div>
               </div>
               <MargemBadge pct={margemOferta} />
             </div>
 
             <div>
-              <label className="block text-[10px] font-semibold text-slate-500 uppercase tracking-wide mb-1">Motivo</label>
+              <label className="block text-[10px] font-semibold text-neutral-500 uppercase tracking-wide mb-1">Motivo</label>
               <input
                 className="input"
                 value={motivo}
@@ -287,11 +287,11 @@ function RedeRebaixaModal({ redeSubrede, codigoRede, produto, onClose, onEnviado
             {/* Período da ação */}
             <div className="grid grid-cols-2 gap-2">
               <div>
-                <label className="block text-[10px] font-semibold text-slate-500 uppercase tracking-wide mb-1">Início *</label>
+                <label className="block text-[10px] font-semibold text-neutral-500 uppercase tracking-wide mb-1">Início *</label>
                 <input type="date" className="input" value={inicioAcao} onChange={(e) => setInicioAcao(e.target.value)} required />
               </div>
               <div>
-                <label className="block text-[10px] font-semibold text-slate-500 uppercase tracking-wide mb-1">Fim *</label>
+                <label className="block text-[10px] font-semibold text-neutral-500 uppercase tracking-wide mb-1">Fim *</label>
                 <input type="date" className="input" value={fimAcao} onChange={(e) => setFimAcao(e.target.value)} required />
               </div>
             </div>
@@ -301,13 +301,13 @@ function RedeRebaixaModal({ redeSubrede, codigoRede, produto, onClose, onEnviado
               <span>Será criada <strong>1 solicitação por loja</strong> ({produto.lojas.length} no total) com os mesmos preços e margens.</span>
             </div>
 
-            <details className="rounded-xl bg-slate-50 border border-slate-100 px-3 py-2 text-xs">
-              <summary className="cursor-pointer font-semibold text-slate-700">Ver lojas ({produto.lojas.length})</summary>
-              <div className="mt-2 space-y-1 pt-2 border-t border-slate-200">
+            <details className="rounded-xl bg-neutral-50 border border-neutral-100 px-3 py-2 text-xs">
+              <summary className="cursor-pointer font-semibold text-neutral-700">Ver lojas ({produto.lojas.length})</summary>
+              <div className="mt-2 space-y-1 pt-2 border-t border-neutral-200">
                 {produto.lojas.map((l) => (
-                  <div key={l.clienteCodigo} className="flex justify-between gap-2 text-[11px] text-slate-600">
+                  <div key={l.clienteCodigo} className="flex justify-between gap-2 text-[11px] text-neutral-600">
                     <span className="truncate">{l.clienteNome}</span>
-                    <span className="shrink-0 text-slate-400">{l.quantidade}un · {l.diasParaVencer}d</span>
+                    <span className="shrink-0 text-neutral-400">{l.quantidade}un · {l.diasParaVencer}d</span>
                   </div>
                 ))}
               </div>
@@ -322,7 +322,7 @@ function RedeRebaixaModal({ redeSubrede, codigoRede, produto, onClose, onEnviado
           </form>
         </div>
 
-        <div className="shrink-0 px-4 py-3 border-t border-slate-100 bg-white sm:rounded-b-3xl">
+        <div className="shrink-0 px-4 py-3 border-t border-neutral-100 bg-white sm:rounded-b-3xl">
           <button type="submit" form="form-rede-rebaixa"
             className="w-full py-3 text-base font-semibold text-white bg-blue-600 rounded-2xl hover:bg-blue-700 active:scale-[0.98] transition disabled:opacity-60"
             disabled={enviando}>
@@ -341,8 +341,8 @@ function ProdutoCard({ item, onRebaixar, acaoAtiva }) {
       <div className="flex items-start gap-2 mb-2.5">
         <span className={`w-2 h-2 rounded-full shrink-0 mt-1.5 ${c.dot}`} />
         <div className="flex-1 min-w-0">
-          <div className="font-semibold text-slate-800 text-sm leading-snug">{item.produto}</div>
-          <div className="text-xs text-slate-500 mt-1 flex gap-x-2 gap-y-1 flex-wrap items-center">
+          <div className="font-semibold text-neutral-800 text-sm leading-snug">{item.produto}</div>
+          <div className="text-xs text-neutral-500 mt-1 flex gap-x-2 gap-y-1 flex-wrap items-center">
             <Badge cls={item.classificacao} />
             {acaoAtiva && <AcaoAtivaBadge ativa={acaoAtiva} />}
             <span className="inline-flex items-center gap-1 whitespace-nowrap"><IcoPackage className="w-3 h-3" />{item.quantidade} un</span>
@@ -353,7 +353,7 @@ function ProdutoCard({ item, onRebaixar, acaoAtiva }) {
       </div>
       <button
         onClick={() => onRebaixar(item)}
-        className={`w-full py-2 text-sm font-semibold rounded-xl active:scale-[0.98] transition ${acaoAtiva ? "text-slate-500 border border-slate-200 bg-slate-50 hover:bg-slate-100" : "text-brand border border-brand/30 bg-white hover:bg-brand/5"}`}
+        className={`w-full py-2 text-sm font-semibold rounded-xl active:scale-[0.98] transition ${acaoAtiva ? "text-neutral-500 border border-neutral-200 bg-neutral-50 hover:bg-neutral-100" : "text-brand border border-brand/30 bg-white hover:bg-brand/5"}`}
       >
         {acaoAtiva ? "Nova rebaixa (já existe ação)" : "Solicitar Rebaixa"}
       </button>
@@ -364,7 +364,7 @@ function ProdutoCard({ item, onRebaixar, acaoAtiva }) {
 function LojaCard({ clienteCodigo, clienteNome, redeSubrede, subrede, itens, expanded, onToggle, onRebaixar, getAcaoAtiva }) {
   const criticos = itens.filter((i) => i.classificacao === "critico").length;
   const alertas  = itens.filter((i) => i.classificacao === "alerta").length;
-  const borda = criticos > 0 ? "border-red-200" : alertas > 0 ? "border-orange-200" : "border-slate-200";
+  const borda = criticos > 0 ? "border-red-200" : alertas > 0 ? "border-orange-200" : "border-neutral-200";
   const iconBg = criticos > 0 ? "bg-red-50 text-red-600" : alertas > 0 ? "bg-orange-50 text-orange-600" : "bg-brand/10 text-brand";
 
   // Esconde rede quando duplica o nome do cliente (ex.: cliente "COMPREMAX - X" e rede "COMPREMAX")
@@ -373,13 +373,13 @@ function LojaCard({ clienteCodigo, clienteNome, redeSubrede, subrede, itens, exp
 
   return (
     <div className={`bg-white rounded-2xl border shadow-sm overflow-hidden ${borda}`}>
-      <button className="w-full flex items-center gap-3 px-3 py-3 text-left active:bg-slate-50 transition-colors" onClick={onToggle}>
+      <button className="w-full flex items-center gap-3 px-3 py-3 text-left active:bg-neutral-50 transition-colors" onClick={onToggle}>
         <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${iconBg}`}>
           <IcoStore className="w-5 h-5" />
         </div>
         <div className="flex-1 min-w-0">
-          <div className="font-semibold text-slate-900 truncate text-sm">{clienteNome}</div>
-          <div className="text-[11px] text-slate-500 mt-1 flex items-center gap-1.5 flex-wrap">
+          <div className="font-semibold text-neutral-900 truncate text-sm">{clienteNome}</div>
+          <div className="text-[11px] text-neutral-500 mt-1 flex items-center gap-1.5 flex-wrap">
             <span className="whitespace-nowrap">{itens.length} prod.</span>
             {criticos > 0 && (
               <span className="inline-flex items-center gap-0.5 bg-red-100 text-red-700 px-1.5 py-0.5 rounded-full font-bold whitespace-nowrap">
@@ -398,10 +398,10 @@ function LojaCard({ clienteCodigo, clienteNome, redeSubrede, subrede, itens, exp
             )}
           </div>
         </div>
-        <IcoChevronDown className={`w-5 h-5 text-slate-400 shrink-0 transition-transform duration-200 ${expanded ? "rotate-180" : ""}`} />
+        <IcoChevronDown className={`w-5 h-5 text-neutral-400 shrink-0 transition-transform duration-200 ${expanded ? "rotate-180" : ""}`} />
       </button>
       {expanded && (
-        <div className="px-3 pb-3 space-y-2 border-t border-slate-100 pt-2 animate-fade-in">
+        <div className="px-3 pb-3 space-y-2 border-t border-neutral-100 pt-2 animate-fade-in">
           {itens.map((item) => (
             <ProdutoCard key={item._id} item={item} onRebaixar={onRebaixar} acaoAtiva={getAcaoAtiva && getAcaoAtiva(item)} />
           ))}
@@ -420,13 +420,13 @@ function RedeCard({ codigoRede, redeSubrede, lojas, produtos, expandedRede, onTo
 
   return (
     <div className={`bg-white rounded-2xl border shadow-sm overflow-hidden ${borda}`}>
-      <button className="w-full flex items-center gap-3 px-3 py-3 text-left active:bg-slate-50 transition-colors" onClick={onToggleRede}>
+      <button className="w-full flex items-center gap-3 px-3 py-3 text-left active:bg-neutral-50 transition-colors" onClick={onToggleRede}>
         <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${iconBg}`}>
           <IcoUsers className="w-5 h-5" />
         </div>
         <div className="flex-1 min-w-0">
-          <div className="font-bold text-slate-900 truncate text-sm">{redeSubrede}</div>
-          <div className="text-[11px] text-slate-500 mt-1 flex items-center gap-1.5 flex-wrap">
+          <div className="font-bold text-neutral-900 truncate text-sm">{redeSubrede}</div>
+          <div className="text-[11px] text-neutral-500 mt-1 flex items-center gap-1.5 flex-wrap">
             <span className="whitespace-nowrap">{lojas.length} lojas · {produtos.length} prod.</span>
             {totalCriticos > 0 && (
               <span className="inline-flex items-center gap-0.5 bg-red-100 text-red-700 px-1.5 py-0.5 rounded-full font-bold whitespace-nowrap">
@@ -440,11 +440,11 @@ function RedeCard({ codigoRede, redeSubrede, lojas, produtos, expandedRede, onTo
             )}
           </div>
         </div>
-        <IcoChevronDown className={`w-5 h-5 text-slate-400 shrink-0 transition-transform duration-200 ${expandedRede ? "rotate-180" : ""}`} />
+        <IcoChevronDown className={`w-5 h-5 text-neutral-400 shrink-0 transition-transform duration-200 ${expandedRede ? "rotate-180" : ""}`} />
       </button>
 
       {expandedRede && (
-        <div className="border-t border-slate-100 animate-fade-in px-3 pb-3 pt-2 space-y-2">
+        <div className="border-t border-neutral-100 animate-fade-in px-3 pb-3 pt-2 space-y-2">
           {produtos.map((prod) => (
             <ProdutoRedeCard
               key={prod.produtoCodigo || prod.produto}
@@ -466,8 +466,8 @@ function ProdutoRedeCard({ produto, onRebaixar, acaoAtiva }) {
       <div className="flex items-start gap-2 mb-2.5">
         <span className={`w-2 h-2 rounded-full shrink-0 mt-1.5 ${c.dot}`} />
         <div className="flex-1 min-w-0">
-          <div className="font-semibold text-slate-800 text-sm leading-snug">{produto.produto}</div>
-          <div className="text-xs text-slate-500 mt-1 flex gap-x-2 gap-y-1 flex-wrap items-center">
+          <div className="font-semibold text-neutral-800 text-sm leading-snug">{produto.produto}</div>
+          <div className="text-xs text-neutral-500 mt-1 flex gap-x-2 gap-y-1 flex-wrap items-center">
             <Badge cls={produto.piorClassificacao} />
             {acaoAtiva && <AcaoAtivaBadge ativa={acaoAtiva} />}
             <span className="inline-flex items-center gap-1 whitespace-nowrap"><IcoStore className="w-3 h-3" />{produto.lojas.length} loja{produto.lojas.length !== 1 ? "s" : ""}</span>
@@ -478,7 +478,7 @@ function ProdutoRedeCard({ produto, onRebaixar, acaoAtiva }) {
       </div>
       <button
         onClick={onRebaixar}
-        className={`w-full py-2 text-sm font-semibold rounded-xl active:scale-[0.98] transition ${acaoAtiva ? "text-slate-500 border border-slate-200 bg-slate-50 hover:bg-slate-100" : "text-blue-700 border border-blue-200 bg-white hover:bg-blue-50"}`}
+        className={`w-full py-2 text-sm font-semibold rounded-xl active:scale-[0.98] transition ${acaoAtiva ? "text-neutral-500 border border-neutral-200 bg-neutral-50 hover:bg-neutral-100" : "text-blue-700 border border-blue-200 bg-white hover:bg-blue-50"}`}
       >
         {acaoAtiva ? `Nova ação (já existe ${acaoAtiva.tipo === "oferta_interna" ? "oferta" : "rebaixa"})` : `Solicitar Ação (${produto.lojas.length} loja${produto.lojas.length !== 1 ? "s" : ""})`}
       </button>
@@ -684,8 +684,8 @@ export default function EstoquePage() {
     <div className="space-y-4">
       <div className="flex items-end justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Lojas</h1>
-          <p className="text-slate-500 text-sm mt-0.5">Produtos próximos ao vencimento</p>
+          <h1 className="text-2xl font-bold text-neutral-900 tracking-tight">Lojas</h1>
+          <p className="text-neutral-500 text-sm mt-0.5">Produtos próximos ao vencimento</p>
         </div>
         <div className="w-10 h-10 rounded-2xl bg-brand/10 text-brand flex items-center justify-center">
           <IcoStore className="w-5 h-5" />
@@ -719,7 +719,7 @@ export default function EstoquePage() {
 
       {/* Busca com ícone */}
       <div className="relative">
-        <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none">
+        <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-neutral-400 pointer-events-none">
           <IcoSearch className="w-5 h-5" />
         </span>
         <input
@@ -730,7 +730,7 @@ export default function EstoquePage() {
           onKeyDown={(e) => e.key === "Enter" && carregar()}
         />
         {q && (
-          <button onClick={() => { setQ(""); carregar(""); }} aria-label="Limpar" className="absolute right-2.5 top-1/2 -translate-y-1/2 h-7 w-7 rounded-full hover:bg-slate-100 text-slate-400 flex items-center justify-center">
+          <button onClick={() => { setQ(""); carregar(""); }} aria-label="Limpar" className="absolute right-2.5 top-1/2 -translate-y-1/2 h-7 w-7 rounded-full hover:bg-neutral-100 text-neutral-400 flex items-center justify-center">
             <IcoX className="w-4 h-4" />
           </button>
         )}
@@ -739,16 +739,16 @@ export default function EstoquePage() {
       {/* Lista */}
       {loading ? (
         <div className="flex flex-col items-center justify-center py-16 gap-3">
-          <div className="w-9 h-9 rounded-full border-4 border-slate-200 border-t-brand animate-spin" />
-          <p className="text-sm text-slate-400">Carregando...</p>
+          <div className="w-9 h-9 rounded-full border-4 border-neutral-200 border-t-brand animate-spin" />
+          <p className="text-sm text-neutral-400">Carregando...</p>
         </div>
       ) : redeGrupos.length === 0 ? (
         <div className="text-center py-16 px-6">
-          <div className="w-14 h-14 mx-auto rounded-2xl bg-slate-100 text-slate-400 flex items-center justify-center mb-3">
+          <div className="w-14 h-14 mx-auto rounded-2xl bg-neutral-100 text-neutral-400 flex items-center justify-center mb-3">
             <IcoStore className="w-7 h-7" />
           </div>
-          <p className="text-slate-500 font-medium">Nenhum produto encontrado</p>
-          <p className="text-slate-400 text-sm mt-1">Tente ajustar a busca</p>
+          <p className="text-neutral-500 font-medium">Nenhum produto encontrado</p>
+          <p className="text-neutral-400 text-sm mt-1">Tente ajustar a busca</p>
         </div>
       ) : (
         <div className="space-y-2">

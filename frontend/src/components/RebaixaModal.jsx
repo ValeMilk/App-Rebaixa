@@ -6,7 +6,7 @@ import { fmtData, fmtBRL } from "@/lib/utils";
 import { IcoX, IcoUsers, IcoAlert } from "@/components/Icons";
 
 export function MargemBadge({ pct }) {
-  if (pct == null) return <span className="text-slate-300 text-base font-bold">—</span>;
+  if (pct == null) return <span className="text-neutral-300 text-base font-bold">—</span>;
   const cor = pct >= 20
     ? "text-emerald-700 bg-emerald-50 border-emerald-200"
     : pct >= 10
@@ -122,20 +122,20 @@ export default function RebaixaModal({ item, onClose, onEnviado, tipo = "rebaixa
 
   return (
     <div className="fixed inset-0 z-50 flex flex-col sm:items-center sm:justify-center sm:p-6 animate-fade-in">
-      <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={onClose} />
+      <div className="absolute inset-0 bg-neutral-900/60 backdrop-blur-sm" onClick={onClose} />
 
       <div className="relative bg-white shadow-2xl flex flex-col w-full sm:max-w-md sm:rounded-3xl sm:max-h-[90dvh] animate-slide-up safe-area-pb"
         style={{ height: "100dvh", maxHeight: "100dvh" }}>
 
         {/* Header fixo */}
-        <div className="shrink-0 px-4 pt-3 pb-2.5 border-b border-slate-100 bg-white sm:rounded-t-3xl safe-area-pt">
+        <div className="shrink-0 px-4 pt-3 pb-2.5 border-b border-neutral-100 bg-white sm:rounded-t-3xl safe-area-pt">
           <div className="flex items-center justify-between gap-3">
             <div className="min-w-0 flex-1">
               <div className="text-[10px] font-semibold text-brand uppercase tracking-wider mb-0.5">{isOferta ? "Nova Oferta Interna" : "Nova Rebaixa"}</div>
-              <h2 className="font-bold text-slate-900 text-base leading-snug line-clamp-2">{item.produto}</h2>
+              <h2 className="font-bold text-neutral-900 text-base leading-snug line-clamp-2">{item.produto}</h2>
             </div>
             <button onClick={onClose} aria-label="Fechar"
-              className="shrink-0 h-9 w-9 rounded-full bg-slate-100 active:bg-slate-200 active:scale-95 transition flex items-center justify-center text-slate-600">
+              className="shrink-0 h-9 w-9 rounded-full bg-neutral-100 active:bg-neutral-200 active:scale-95 transition flex items-center justify-center text-neutral-600">
               <IcoX className="w-5 h-5" />
             </button>
           </div>
@@ -146,9 +146,9 @@ export default function RebaixaModal({ item, onClose, onEnviado, tipo = "rebaixa
           style={{ WebkitOverflowScrolling: "touch", overscrollBehavior: "contain" }}>
 
           {/* Cliente + Rede */}
-          <div className="mb-3 bg-slate-50 rounded-xl border border-slate-100 px-3 py-2">
-            <div className="text-[10px] font-semibold text-slate-500 uppercase tracking-wide">Cliente</div>
-            <div className="text-sm font-semibold text-slate-800 truncate">{item.cliente}</div>
+          <div className="mb-3 bg-neutral-50 rounded-xl border border-neutral-100 px-3 py-2">
+            <div className="text-[10px] font-semibold text-neutral-500 uppercase tracking-wide">Cliente</div>
+            <div className="text-sm font-semibold text-neutral-800 truncate">{item.cliente}</div>
             {item.redeSubrede && (
               <div className="mt-1.5 flex items-center gap-1.5 text-[11px] text-blue-700 font-semibold">
                 <IcoUsers className="w-3 h-3" />
@@ -158,29 +158,29 @@ export default function RebaixaModal({ item, onClose, onEnviado, tipo = "rebaixa
           </div>
 
           {/* Info strip horizontal: Qtd · Vence · Última Compra */}
-          <div className="flex items-stretch rounded-xl border border-slate-100 overflow-hidden mb-3">
+          <div className="flex items-stretch rounded-xl border border-neutral-100 overflow-hidden mb-3">
             <div className="flex-1 bg-white px-2 py-2 text-center">
-              <div className="text-[9px] text-slate-500 font-semibold uppercase tracking-wide">Qtd</div>
-              <div className="font-bold text-slate-800 text-lg leading-tight">{item.quantidade}</div>
+              <div className="text-[9px] text-neutral-500 font-semibold uppercase tracking-wide">Qtd</div>
+              <div className="font-bold text-neutral-800 text-lg leading-tight">{item.quantidade}</div>
             </div>
-            <div className="flex-1 bg-white px-2 py-2 text-center border-x border-slate-100">
-              <div className="text-[9px] text-slate-500 font-semibold uppercase tracking-wide">Vence</div>
-              <div className={`font-bold text-lg leading-tight ${item.diasParaVencer <= 15 ? "text-red-600" : "text-slate-800"}`}>
+            <div className="flex-1 bg-white px-2 py-2 text-center border-x border-neutral-100">
+              <div className="text-[9px] text-neutral-500 font-semibold uppercase tracking-wide">Vence</div>
+              <div className={`font-bold text-lg leading-tight ${item.diasParaVencer <= 15 ? "text-red-600" : "text-neutral-800"}`}>
                 {item.diasParaVencer ?? "—"}d
               </div>
-              <div className="text-[9px] text-slate-400">{fmtData(item.dataValidade)}</div>
+              <div className="text-[9px] text-neutral-400">{fmtData(item.dataValidade)}</div>
             </div>
             <div className="flex-1 bg-brand/5 px-2 py-2 text-center">
               <div className="text-[9px] text-brand/70 font-semibold uppercase tracking-wide">Últ. Compra</div>
               {loadingUC ? (
-                <div className="text-slate-400 text-xs mt-1">…</div>
+                <div className="text-neutral-400 text-xs mt-1">…</div>
               ) : precoUC != null ? (
                 <>
                   <div className="font-bold text-brand text-sm leading-tight mt-0.5">{fmtBRL(precoUC)}</div>
-                  <div className="text-[9px] text-slate-400">{fmtData(dataUC)}</div>
+                  <div className="text-[9px] text-neutral-400">{fmtData(dataUC)}</div>
                 </>
               ) : (
-                <div className="text-slate-400 text-xs mt-1">Sem histórico</div>
+                <div className="text-neutral-400 text-xs mt-1">Sem histórico</div>
               )}
             </div>
           </div>
@@ -195,7 +195,7 @@ export default function RebaixaModal({ item, onClose, onEnviado, tipo = "rebaixa
           <form id="form-rebaixa" onSubmit={handleSubmit} className="space-y-2.5">
             {/* Preço PDV */}
             <div>
-              <label className="block text-[10px] font-semibold text-slate-500 uppercase tracking-wide mb-1">Preço PDV (R$) *</label>
+              <label className="block text-[10px] font-semibold text-neutral-500 uppercase tracking-wide mb-1">Preço PDV (R$) *</label>
               <input
                 type="number" step="0.01" min="0"
                 className="input"
@@ -208,17 +208,17 @@ export default function RebaixaModal({ item, onClose, onEnviado, tipo = "rebaixa
             </div>
 
             {/* Margem PDV */}
-            <div className="flex items-center justify-between bg-slate-50 rounded-xl px-3 py-2 border border-slate-100">
+            <div className="flex items-center justify-between bg-neutral-50 rounded-xl px-3 py-2 border border-neutral-100">
               <div>
-                <div className="text-xs font-semibold text-slate-700">Margem PDV</div>
-                <div className="text-[10px] text-slate-400">(PDV − Últ. Compra) / PDV</div>
+                <div className="text-xs font-semibold text-neutral-700">Margem PDV</div>
+                <div className="text-[10px] text-neutral-400">(PDV − Últ. Compra) / PDV</div>
               </div>
               <MargemBadge pct={margemPDV} />
             </div>
 
             {/* Preço Oferta */}
             <div>
-              <label className="block text-[10px] font-semibold text-slate-500 uppercase tracking-wide mb-1">Preço da Oferta (R$) *</label>
+              <label className="block text-[10px] font-semibold text-neutral-500 uppercase tracking-wide mb-1">Preço da Oferta (R$) *</label>
               <input
                 type="number" step="0.01" min="0"
                 className="input text-2xl font-bold py-2"
@@ -232,7 +232,7 @@ export default function RebaixaModal({ item, onClose, onEnviado, tipo = "rebaixa
 
             {/* Sellout */}
             <div>
-              <label className="block text-[10px] font-semibold text-slate-500 uppercase tracking-wide mb-1">Sellout (R$ desconto sobre últ. compra)</label>
+              <label className="block text-[10px] font-semibold text-neutral-500 uppercase tracking-wide mb-1">Sellout (R$ desconto sobre últ. compra)</label>
               <input
                 type="number" step="0.01" min="0"
                 className="input"
@@ -254,17 +254,17 @@ export default function RebaixaModal({ item, onClose, onEnviado, tipo = "rebaixa
             </div>
 
             {/* Margem Oferta */}
-            <div className="flex items-center justify-between bg-slate-50 rounded-xl px-3 py-2 border border-slate-100">
+            <div className="flex items-center justify-between bg-neutral-50 rounded-xl px-3 py-2 border border-neutral-100">
               <div>
-                <div className="text-xs font-semibold text-slate-700">Margem Oferta</div>
-                <div className="text-[10px] text-slate-400">(Oferta − (Últ. Compra − Sellout)) / Oferta</div>
+                <div className="text-xs font-semibold text-neutral-700">Margem Oferta</div>
+                <div className="text-[10px] text-neutral-400">(Oferta − (Últ. Compra − Sellout)) / Oferta</div>
               </div>
               <MargemBadge pct={margemOferta} />
             </div>
 
             {/* Motivo */}
             <div>
-              <label className="block text-[10px] font-semibold text-slate-500 uppercase tracking-wide mb-1">Motivo</label>
+              <label className="block text-[10px] font-semibold text-neutral-500 uppercase tracking-wide mb-1">Motivo</label>
               <input
                 className="input"
                 value={motivo}
@@ -276,11 +276,11 @@ export default function RebaixaModal({ item, onClose, onEnviado, tipo = "rebaixa
             {/* Período da ação */}
             <div className="grid grid-cols-2 gap-2">
               <div>
-                <label className="block text-[10px] font-semibold text-slate-500 uppercase tracking-wide mb-1">Início *</label>
+                <label className="block text-[10px] font-semibold text-neutral-500 uppercase tracking-wide mb-1">Início *</label>
                 <input type="date" className="input" value={inicioAcao} onChange={(e) => setInicioAcao(e.target.value)} required />
               </div>
               <div>
-                <label className="block text-[10px] font-semibold text-slate-500 uppercase tracking-wide mb-1">Fim *</label>
+                <label className="block text-[10px] font-semibold text-neutral-500 uppercase tracking-wide mb-1">Fim *</label>
                 <input type="date" className="input" value={fimAcao} onChange={(e) => setFimAcao(e.target.value)} required />
               </div>
             </div>
@@ -295,7 +295,7 @@ export default function RebaixaModal({ item, onClose, onEnviado, tipo = "rebaixa
         </div>
 
         {/* Footer fixo com botão */}
-        <div className="shrink-0 px-4 py-3 border-t border-slate-100 bg-white sm:rounded-b-3xl">
+        <div className="shrink-0 px-4 py-3 border-t border-neutral-100 bg-white sm:rounded-b-3xl">
           <button type="submit" form="form-rebaixa" className="btn-primary w-full py-3 text-base" disabled={enviando}>
             {enviando ? "Enviando..." : isOferta ? "Solicitar Oferta" : "Solicitar Rebaixa"}
           </button>
