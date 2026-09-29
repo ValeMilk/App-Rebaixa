@@ -294,7 +294,8 @@ WHERE rn = 1;
   // Transforma array em objeto { produtoCodigo: { preco, data } }
   const map = {};
   result.recordset.forEach(r => {
-    map[r.produtoCodigo] = {
+    // E02_LIVRE e CHAR de tamanho fixo: apara os espacos para casar com o codigoLivre (ja aparado) do cadastro
+    map[String(r.produtoCodigo).trim()] = {
       preco: Number(r.precoUltimaCompra) || 0,
       data: r.dataUltimaCompra
     };
