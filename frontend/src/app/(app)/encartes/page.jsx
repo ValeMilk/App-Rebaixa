@@ -668,36 +668,47 @@ export default function EncartesPage() {
       </div>
 
       <div className="flex-1 space-y-4">
-        <div>
-          <label className="block text-xs font-semibold text-neutral-500 uppercase tracking-wide mb-1.5">Rede</label>
-          {loading ? (
-            <div className="h-11 bg-neutral-100 rounded-xl animate-pulse" />
-          ) : (
-            <select
-              className="w-full border border-neutral-200 rounded-xl px-3 py-2.5 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-secondary/40"
-              value={redeSel}
-              onChange={(e) => selecionarRede(e.target.value)}>
-              <option value="">Selecione uma rede...</option>
-              {grupos.map((g) => {
-                const nome = g.redeSubrede || g.codigoRede;
-                if (g.subredes && g.subredes.length > 0) {
-                  return (
-                    <optgroup key={g.codigoRede} label={nome}>
-                      <option value={g.codigoRede}>Todas as subredes</option>
-                      {g.subredes.map((s) => (
-                        <option key={s} value={`${g.codigoRede}::${s}`}>{s}</option>
-                      ))}
-                    </optgroup>
-                  );
-                }
-                return (
+        {/* Rede e Subrede em campos separados: a subrede so lista as da rede escolhida */}
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+          <div>
+            <label htmlFor="sel-rede" className="block text-xs font-semibold text-neutral-500 uppercase tracking-wide mb-1.5">Rede</label>
+            {loading ? (
+              <div className="h-10 bg-neutral-100 rounded-lg animate-pulse" />
+            ) : (
+              <select
+                id="sel-rede"
+                className="input"
+                value={codigoRedeAtivo}
+                onChange={(e) => selecionarRede(e.target.value)}>
+                <option value="">Selecione uma rede...</option>
+                {grupos.map((g) => (
                   <option key={g.codigoRede} value={g.codigoRede}>
-                    {nome}
+                    {(g.redeSubrede || g.codigoRede).trim()}
                   </option>
-                );
-              })}
-            </select>
-          )}
+                ))}
+              </select>
+            )}
+          </div>
+          <div>
+            <label htmlFor="sel-subrede" className="block text-xs font-semibold text-neutral-500 uppercase tracking-wide mb-1.5">Subrede</label>
+            {loading ? (
+              <div className="h-10 bg-neutral-100 rounded-lg animate-pulse" />
+            ) : (
+              <select
+                id="sel-subrede"
+                className="input disabled:bg-neutral-50 disabled:text-neutral-400"
+                value={subredeAtiva || ""}
+                disabled={!grupoSel || !(grupoSel.subredes?.length > 0)}
+                onChange={(e) => selecionarRede(e.target.value ? codigoRedeAtivo + "::" + e.target.value : codigoRedeAtivo)}>
+                <option value="">
+                  {!grupoSel ? "Selecione a rede primeiro" : grupoSel.subredes?.length > 0 ? "Todas as subredes" : "Rede sem subredes"}
+                </option>
+                {(grupoSel?.subredes || []).map((s) => (
+                  <option key={s} value={s}>{s}</option>
+                ))}
+              </select>
+            )}
+          </div>
         </div>
 
         {!redeSel && !loading && (
