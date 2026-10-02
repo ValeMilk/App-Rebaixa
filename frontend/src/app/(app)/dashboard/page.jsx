@@ -161,13 +161,17 @@ export default function DashboardPage() {
   }, [itens]);
 
   // ── Derivações ─────────────────────────────────────────────────────────────
+  // Itens que ja venceram (0 dia ou menos) nao entram no painel: nao ha mais acao
+  // de giro/rebaixa possivel. Itens sem data de validade continuam aparecendo.
   const itensBase = useMemo(
-    () => itens.map((it) => {
-      const dias = it.diasParaVencer ?? null;
-      const status = STATUS_SHELF_MAP[it.statusShelf] ? it.statusShelf : "sem_shelf";
-      const pct = it.pctShelf ?? null;
-      return { ...it, diasParaVencer: dias, quantidade: Number(it.quantidade) || 0, status, pct };
-    }),
+    () => itens
+      .filter((it) => it.diasParaVencer == null || it.diasParaVencer > 0)
+      .map((it) => {
+        const dias = it.diasParaVencer ?? null;
+        const status = STATUS_SHELF_MAP[it.statusShelf] ? it.statusShelf : "sem_shelf";
+        const pct = it.pctShelf ?? null;
+        return { ...it, diasParaVencer: dias, quantidade: Number(it.quantidade) || 0, status, pct };
+      }),
     [itens]
   );
 
