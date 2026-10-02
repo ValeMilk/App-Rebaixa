@@ -3,47 +3,83 @@ const { query, pgConfigurado } = require("./estoquePgDbService");
 const { classificarPorValidade } = require("./classificadorService");
 
 /**
- * Fonte: view public.vw_ativmob_estoque_critico no Postgres de BI (VPS) —
- * ja aplica a definicao de negocio de "critico" (ultima visita nos ultimos
- * 15 dias, limite de quantidade variavel por produto, nao vencido). O app
- * nao re-filtra por cima, confia integralmente no que a view devolve.
- * Uma linha por cliente+produto: cada lote (validade) e classificado pelo
- * shelf; quantidade = soma so dos lotes em giro/rebaixa (lotes ok ficam de
- * fora), data_validade = a mais proxima entre esses lotes, status = o pior.
- * Item sem nenhum lote em giro/rebaixa nao entra (exceto sem shelf).
+ * Fonte: tabela de contagens public.ativmob_estoque no Postgres de BI (VPS), mais public.shelf.
  *
- * Alem do agregado, cada linha traz `lotes` (todos os lotes do item, inclusive
- * os "ok" que nao entram na soma) com quem contou e quando. A view nao expoe o
- * agente; ele vem da tabela de origem (ativmob_estoque), pela mesma linha que a
- * view escolhe por lote: ultima visita e, em empate, a contagem mais recente.
+ * Regra de quais lotes valem (decidida em 02/10/2026; antes vinha da view
+ * vw_ativmob_estoque_critico, que so considerava a ULTIMA VISITA do produto e por isso perdia
+ * os lotes que a promotora nao recontava):
+ *  - cada lote (loja + produto + validade) vale pela SUA ultima contagem nos ultimos 15 dias;
+ *  - o lote sai quando vence, quando e recontado com zero, ou quando uma visita posterior
+ *    registra que nao ha o produto na loja (quantidade zero sem lote);
+ *  - o produto so entra se o estoque somado na loja passar do minimo (5 un; 2 para 4 codigos).
+ * Demais criterios iguais aos da view.
+ *
+ * Uma linha por cliente+produto: cada lote e classificado pelo shelf; quantidade = soma so dos
+ * lotes em giro/rebaixa (lotes ok ficam de fora), data_validade = a mais proxima entre esses
+ * lotes, status = o pior. Item sem nenhum lote em giro/rebaixa nao entra (exceto sem shelf).
+ * Cada linha traz `lotes` (todos os lotes do item, inclusive os "ok") com quem contou e quando.
  */
+const JANELA_DIAS = 15;
+const CODIGOS_LIMITE_2 = ["121035", "121135", "121235", "121835"];
+
 const SQL_ESTOQUE = `
-WITH contagens AS (
-  SELECT DISTINCT ON (codigo_destino, produto_codigo, data_validade, COALESCE(quantidade, 0))
-    codigo_destino, produto_codigo, data_validade, COALESCE(quantidade, 0) AS quantidade,
-    agent_name, agent_code,
+WITH base AS (
+  -- Contagens dos ultimos ${JANELA_DIAS} dias, de lojas identificadas
+  SELECT
+    e.id, e.codigo_destino, e.nome_fantasia_dest, e.produto_codigo, e.produto_nome,
+    COALESCE(e.quantidade, 0) AS quantidade, e.data_validade,
+    e.agent_name, e.agent_code, e.event_dth, e.event_dth::date AS data_visita
+  FROM public.ativmob_estoque e
+  WHERE NULLIF(TRIM(e.codigo_destino), '') IS NOT NULL
+    AND e.event_dth::date BETWEEN CURRENT_DATE - ${JANELA_DIAS} AND CURRENT_DATE
+),
+sem_estoque AS (
+  -- Ultima visita em que a promotora registrou que NAO havia o produto: quantidade zero sem lote
+  -- (validade vazia ou nao futura). Cancela os lotes contados antes dela.
+  SELECT codigo_destino, produto_codigo, MAX(data_visita) AS data_zero
+  FROM base
+  WHERE quantidade = 0 AND (data_validade IS NULL OR data_validade <= data_visita)
+  GROUP BY codigo_destino, produto_codigo
+),
+ultima_do_lote AS (
+  -- A ULTIMA CONTAGEM DE CADA LOTE (loja + produto + validade), e nao a ultima visita do produto:
+  -- contar um lote novo nao apaga um lote antigo que nao foi recontado. No mesmo dia, vale a menor
+  -- quantidade e, em empate, a contagem mais recente (mesmo criterio do relatorio da Ativmob).
+  SELECT DISTINCT ON (codigo_destino, produto_codigo, data_validade)
+    codigo_destino, nome_fantasia_dest, produto_codigo, produto_nome, quantidade, data_validade,
+    agent_name, agent_code, data_visita,
     -- texto, sem fuso: e a hora de relogio em que a contagem foi feita
     to_char(event_dth, 'YYYY-MM-DD"T"HH24:MI') AS contado_em
-  FROM public.ativmob_estoque
-  WHERE event_dth >= CURRENT_DATE - 15
-  ORDER BY codigo_destino, produto_codigo, data_validade, COALESCE(quantidade, 0), event_dth DESC, id
+  FROM base
+  WHERE data_validade IS NOT NULL
+  ORDER BY codigo_destino, produto_codigo, data_validade, data_visita DESC, quantidade, event_dth DESC, id
+),
+vigentes AS (
+  -- O lote sai quando: venceu, foi recontado com zero, ou houve visita posterior sem o produto
+  SELECT u.*,
+    SUM(u.quantidade) OVER (PARTITION BY u.codigo_destino, u.produto_codigo) AS estoque_total,
+    MAX(u.data_visita) OVER (PARTITION BY u.codigo_destino, u.produto_codigo) AS ultima_visita
+  FROM ultima_do_lote u
+  LEFT JOIN sem_estoque z ON z.codigo_destino = u.codigo_destino AND z.produto_codigo = u.produto_codigo
+  WHERE u.data_validade > CURRENT_DATE
+    AND u.quantidade > 0
+    AND (z.data_zero IS NULL OR u.data_visita >= z.data_zero)
 ),
 lotes AS (
   SELECT
     v.codigo_destino, v.nome_fantasia_dest, v.produto_codigo, v.produto_nome,
-    COALESCE(v.quantidade, 0) AS quantidade, v.data_validade, v.shelf_dias AS shelf,
+    v.quantidade, v.data_validade, s.shelf_dias AS shelf,
     -- Regra por lote: >= 73% do shelf consumido = rebaixa (3); >= 45% = giro (2); ok (1); sem shelf (0)
-    CASE WHEN COALESCE(v.shelf_dias, 0) <= 0 THEN 0
-         WHEN v.shelf_dias - (v.data_validade - CURRENT_DATE) >= ROUND(v.shelf_dias * 0.73) THEN 3
-         WHEN v.shelf_dias - (v.data_validade - CURRENT_DATE) >= ROUND(v.shelf_dias * 0.45) THEN 2
+    CASE WHEN COALESCE(s.shelf_dias, 0) <= 0 THEN 0
+         WHEN s.shelf_dias - (v.data_validade - CURRENT_DATE) >= ROUND(s.shelf_dias * 0.73) THEN 3
+         WHEN s.shelf_dias - (v.data_validade - CURRENT_DATE) >= ROUND(s.shelf_dias * 0.45) THEN 2
          ELSE 1 END AS peso,
-    c.agent_name, c.agent_code, c.contado_em
-  FROM public.vw_ativmob_estoque_critico v
-  LEFT JOIN contagens c
-    ON c.codigo_destino = v.codigo_destino
-   AND c.produto_codigo = v.produto_codigo
-   AND c.data_validade = v.data_validade
-   AND c.quantidade = COALESCE(v.quantidade, 0)
+    v.agent_name, v.agent_code, v.contado_em,
+    (v.data_visita = v.ultima_visita) AS na_ultima_visita
+  FROM vigentes v
+  LEFT JOIN public.shelf s ON TRIM(s.produto_codigo) = TRIM(v.produto_codigo::text)
+  -- So produtos com estoque relevante na loja: mais de 5 unidades (2 para os itens de caixa)
+  WHERE v.estoque_total > CASE WHEN v.produto_codigo::text IN (${CODIGOS_LIMITE_2.map((c) => `'${c}'`).join(", ")}) THEN 2 ELSE 5 END
 ),
 agg AS (
   SELECT
@@ -60,7 +96,8 @@ agg AS (
       'peso', peso,
       'agente', agent_name,
       'agenteCodigo', agent_code,
-      'contadoEm', contado_em
+      'contadoEm', contado_em,
+      'naUltimaVisita', na_ultima_visita
     ) ORDER BY data_validade) AS lotes
   FROM lotes
   GROUP BY codigo_destino, produto_codigo
@@ -107,6 +144,8 @@ function montarLotes(lotesBrutos, pesoMax) {
       agente: l.agente ? String(l.agente).trim() : null,
       agenteCodigo: l.agenteCodigo != null ? String(l.agenteCodigo).trim() : null,
       contadoEm: l.contadoEm || null, // "AAAA-MM-DDTHH:MM", hora de relogio da contagem
+      // false = o lote veio de uma visita anterior e nao foi recontado na ultima visita do produto
+      naUltimaVisita: l.naUltimaVisita !== false,
     };
   });
 }

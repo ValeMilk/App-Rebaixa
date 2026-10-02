@@ -20,6 +20,7 @@ const loteSchema = new mongoose.Schema(
     agente: { type: String, default: null },
     agenteCodigo: { type: String, default: null },
     contadoEm: { type: String, default: null }, // "AAAA-MM-DDTHH:MM": hora de relogio da contagem
+    naUltimaVisita: { type: Boolean, default: true }, // false: lote de visita anterior, nao recontado
   },
   { _id: false }
 );

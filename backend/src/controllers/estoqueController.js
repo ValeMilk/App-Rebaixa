@@ -84,15 +84,17 @@ async function listar(req, res) {
   res.json({ total: itensEnriquecidos.length, itens: itensEnriquecidos });
 }
 
-// Historico de contagens do item nos ultimos 15 dias, direto da tabela de origem (somente leitura)
+// Historico de contagens do produto na loja (60 dias), direto da tabela de origem (somente leitura).
+// A tela agrupa por lote (data de validade) para acompanhar a evolucao de cada um.
+const DIAS_HISTORICO = 60;
 const SQL_HISTORICO = `
 SELECT to_char(event_dth, 'YYYY-MM-DD"T"HH24:MI') AS contado_em,
        agent_name, agent_code, COALESCE(quantidade, 0) AS quantidade,
        to_char(data_validade, 'YYYY-MM-DD') AS data_validade
 FROM public.ativmob_estoque
-WHERE codigo_destino = $1 AND produto_codigo = $2 AND event_dth >= CURRENT_DATE - 15
+WHERE codigo_destino = $1 AND produto_codigo = $2 AND event_dth >= CURRENT_DATE - ${DIAS_HISTORICO}
 ORDER BY event_dth DESC, data_validade
-LIMIT 100;
+LIMIT 300;
 `;
 
 /** O usuario pode ver este cliente? Mesmo escopo de carteira da listagem. */
@@ -104,7 +106,7 @@ async function clienteNoEscopo(user, clienteCodigo) {
 
 /**
  * Detalhe de um item do estoque: de onde veio a quantidade (lotes por validade, quem contou e
- * quando) e o historico de contagens dos ultimos 15 dias. O historico e melhor esforco: se o
+ * quando) e o historico de contagens do produto na loja. O historico e melhor esforco: se o
  * Postgres de BI nao responder, volta `historico: null` e o resto intacto.
  */
 async function detalhes(req, res) {
@@ -140,6 +142,7 @@ async function detalhes(req, res) {
     },
     sincronizadoEm: item.updatedAt,
     historico,
+    diasHistorico: DIAS_HISTORICO,
   });
 }
 

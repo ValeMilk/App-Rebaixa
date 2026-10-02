@@ -79,9 +79,37 @@ test("o documento nao carrega mais o campo raw", () => {
   assert.equal("raw" in montarDoc(linha()), false);
 });
 
-test("o SQL mantem a regra do shelf (45% giro, 73% rebaixa) e le o agente da tabela de origem", () => {
-  assert.match(SQL_ESTOQUE, /ROUND\(v\.shelf_dias \* 0\.73\)/);
-  assert.match(SQL_ESTOQUE, /ROUND\(v\.shelf_dias \* 0\.45\)/);
-  assert.match(SQL_ESTOQUE, /FROM public\.ativmob_estoque/);
+test("lote de visita anterior (nao recontado) entra normalmente na soma e fica identificado", () => {
+  const d = montarDoc(linha({
+    quantidade: 730,
+    lotes: [
+      { dataValidade: "2099-10-10", quantidade: 720, peso: 3, agente: "Ana", agenteCodigo: "1", contadoEm: "2099-09-24T11:45", naUltimaVisita: false },
+      { dataValidade: "2099-10-20", quantidade: 10, peso: 2, agente: "Ana", agenteCodigo: "1", contadoEm: "2099-10-02T11:23", naUltimaVisita: true },
+      { dataValidade: "2099-11-21", quantidade: 104, peso: 1, agente: "Ana", agenteCodigo: "1", contadoEm: "2099-10-02T11:23", naUltimaVisita: true },
+    ],
+  }));
+  assert.deepEqual(d.lotes.map((l) => l.naUltimaVisita), [false, true, true]);
+  assert.deepEqual(d.lotes.map((l) => l.entraNaSoma), [true, true, false]);
+  assert.equal(d.lotesNaSoma, 2);
+  assert.equal(d.contadoEm, "2099-10-02T11:23"); // a contagem mais recente entre os lotes usados
+  // consulta antiga (sem o campo) continua valendo como "na ultima visita"
+  assert.equal(montarDoc(linha()).lotes.every((l) => l.naUltimaVisita === true), true);
+});
+
+test("o SQL mantem a regra do shelf (45% giro, 73% rebaixa) e a regra de quais lotes valem", () => {
+  assert.match(SQL_ESTOQUE, /ROUND\(s\.shelf_dias \* 0\.73\)/);
+  assert.match(SQL_ESTOQUE, /ROUND\(s\.shelf_dias \* 0\.45\)/);
   assert.match(SQL_ESTOQUE, /WHERE peso_max >= 2 OR peso_max = 0/);
+  // fonte: tabela de contagens, janela de 15 dias, ultima contagem DE CADA LOTE
+  assert.match(SQL_ESTOQUE, /FROM public\.ativmob_estoque/);
+  assert.doesNotMatch(SQL_ESTOQUE, /vw_ativmob_estoque_critico/);
+  assert.match(SQL_ESTOQUE, /BETWEEN CURRENT_DATE - 15 AND CURRENT_DATE/);
+  assert.match(SQL_ESTOQUE, /DISTINCT ON \(codigo_destino, produto_codigo, data_validade\)/);
+  // saida do lote: vencido, zerado, ou visita posterior sem o produto
+  assert.match(SQL_ESTOQUE, /u\.data_validade > CURRENT_DATE/);
+  assert.match(SQL_ESTOQUE, /u\.quantidade > 0/);
+  assert.match(SQL_ESTOQUE, /u\.data_visita >= z\.data_zero/);
+  // minimo de unidades na loja: 2 para os quatro codigos, 5 para os demais
+  assert.match(SQL_ESTOQUE, /IN \('121035', '121135', '121235', '121835'\) THEN 2 ELSE 5/);
+  assert.doesNotMatch(SQL_ESTOQUE, /\$\{/); // nenhuma interpolacao ficou sem resolver
 });
