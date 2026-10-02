@@ -1,4 +1,4 @@
-import { IcoGrid, IcoStore, IcoClipboard, IcoTag, IcoCalendar, IcoChart, IcoUsers, IcoSync } from "@/components/Icons";
+import { IcoGrid, IcoStore, IcoClipboard, IcoTag, IcoCalendar, IcoChart, IcoUsers, IcoSync, IcoUpload } from "@/components/Icons";
 
 // Lista UNICA de navegacao: sidebar, sheet mobile e barra inferior leem daqui.
 // `short` e o rotulo curto da barra inferior; `roles` decide quem ve o item.
@@ -10,6 +10,7 @@ export const NAV = [
   { href: "/encartes",             label: "Encartes",         short: "Encartes",  Icon: IcoTag,       roles: ["supervisor", "diretoria", "admin"],   group: "principal" },
   { href: "/encartes/calendario",  label: "Calendário Geral", short: "Cal. Geral", Icon: IcoCalendar, roles: ["supervisor", "diretoria", "admin"],   group: "principal" },
   { href: "/encartes/performance", label: "Performance",      short: "Performance", Icon: IcoChart,   roles: ["diretoria", "admin"],                 group: "principal" },
+  { href: "/integracao-estoque",  label: "Integração Estoque", short: "Integração", Icon: IcoUpload,  roles: ["admin"],                              group: "principal" },
   { href: "/admin/usuarios",         label: "Usuários",       short: "Usuários",  Icon: IcoUsers,     roles: ["admin"],                              group: "admin" },
   { href: "/admin/responsabilidades", label: "Resp. Rede",    short: "Resp. Rede", Icon: IcoUsers,    roles: ["admin"],                              group: "admin" },
   { href: "/admin/sync",             label: "Sincronização",  short: "Sync",      Icon: IcoSync,      roles: ["admin"],                              group: "admin" },

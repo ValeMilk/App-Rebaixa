@@ -174,3 +174,11 @@ export const IcoPanelLeft = (p) => (
     <line x1="9" y1="4" x2="9" y2="20" />
   </Base>
 );
+
+export const IcoUpload = (p) => (
+  <Base {...p}>
+    <path d="M12 16V4" />
+    <path d="M7 9l5-5 5 5" />
+    <path d="M4 16v3a1 1 0 001 1h14a1 1 0 001-1v-3" />
+  </Base>
+);

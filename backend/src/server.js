@@ -19,6 +19,7 @@ const erpRoutes = require("./routes/erp");
 const responsaveisRedeRoutes = require("./routes/responsaveisRede");
 const encartesRoutes = require("./routes/encartes");
 const dashboardRoutes = require("./routes/dashboard");
+const integracaoEstoqueRoutes = require("./routes/integracaoEstoque");
 
 const app = express();
 const PORT = process.env.PORT || 4000;
@@ -54,6 +55,7 @@ app.use("/api/erp", erpRoutes);
 app.use("/api/responsaveis-rede", responsaveisRedeRoutes);
 app.use("/api/encartes", encartesRoutes);
 app.use("/api/dashboard", dashboardRoutes);
+app.use("/api/integracao-estoque", integracaoEstoqueRoutes);
 
 // Erro
 app.use(errorHandler);
