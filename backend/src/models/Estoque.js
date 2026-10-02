@@ -5,9 +5,25 @@ const mongoose = require("mongoose");
  * Origem: view public.vw_ativmob_estoque_critico no Postgres de BI (VPS) —
  * ja aplica a definicao de "critico" (visita recente, limite por produto,
  * nao vencido). Um documento por chave (clienteCodigo+produtoCodigo);
- * quantidade = soma de todos os lotes criticos, dataValidade = a mais proxima
- * entre eles. A cada sync o que nao aparece mais na view eh removido (espelho).
+ * quantidade = soma dos lotes em giro/rebaixa, dataValidade = a mais proxima
+ * entre eles; `lotes` guarda o detalhe (inclusive os lotes ok, fora da soma).
+ * A cada sync o que nao aparece mais na view eh removido (espelho).
  */
+
+// Lote do item (uma data de validade), com quem contou. `entraNaSoma`: compoe a quantidade do item.
+const loteSchema = new mongoose.Schema(
+  {
+    dataValidade: { type: Date },
+    quantidade: { type: Number, default: 0 },
+    status: { type: String, enum: ["rebaixa", "giro", "ok", "sem_shelf"] },
+    entraNaSoma: { type: Boolean, default: true },
+    agente: { type: String, default: null },
+    agenteCodigo: { type: String, default: null },
+    contadoEm: { type: String, default: null }, // "AAAA-MM-DDTHH:MM": hora de relogio da contagem
+  },
+  { _id: false }
+);
+
 const estoqueSchema = new mongoose.Schema(
   {
     chave: { type: String, required: true, unique: true, index: true },
@@ -33,7 +49,12 @@ const estoqueSchema = new mongoose.Schema(
     pctShelf: { type: Number },
     statusShelf: { type: String, enum: ["rebaixa", "giro", "ok", "sem_shelf"], index: true },
 
-    raw: { type: mongoose.Schema.Types.Mixed },
+    // Detalhe da contagem (estoqueSyncService): todos os lotes do item e a contagem mais recente usada
+    lotes: { type: [loteSchema], default: [] },
+    lotesNaSoma: { type: Number, default: 1 },
+    contadoPor: { type: String, default: null },
+    contadoPorCodigo: { type: String, default: null },
+    contadoEm: { type: String, default: null },
   },
   { timestamps: true }
 );

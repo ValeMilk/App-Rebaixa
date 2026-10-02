@@ -19,6 +19,7 @@ import Ranking from "@/components/dashboard/Ranking";
 import TabelaVencimentos from "@/components/dashboard/TabelaVencimentos";
 import RebaixaModal from "@/components/RebaixaModal";
 import RebaixaLoteModal from "@/components/RebaixaLoteModal";
+import DetalheContagemModal from "@/components/dashboard/DetalheContagemModal";
 import Button from "@/components/ui/Button";
 import StatTile from "@/components/ui/StatTile";
 
@@ -112,6 +113,7 @@ export default function DashboardPage() {
   const [visiveis, setVisiveis] = useState(PAGINA);
 
   const [formItem, setFormItem] = useState(null);
+  const [detalheItem, setDetalheItem] = useState(null);
   const [selecionados, setSelecionados] = useState(() => new Set());
   const [loteAberto, setLoteAberto] = useState(false);
   const [toast, setToast] = useState("");
@@ -477,6 +479,7 @@ export default function DashboardPage() {
               onLimpar={limpar}
               getAcaoAtiva={getAcaoAtiva}
               onSolicitar={setFormItem}
+              onDetalhes={setDetalheItem}
               selecionados={selecionados}
               onToggleItem={toggleItem}
               onToggleVisiveis={toggleVisiveis}
@@ -505,6 +508,8 @@ export default function DashboardPage() {
           onEnviado={enviado}
         />
       )}
+
+      {detalheItem && <DetalheContagemModal item={detalheItem} onClose={() => setDetalheItem(null)} />}
 
       {loteAberto && (
         <RebaixaLoteModal

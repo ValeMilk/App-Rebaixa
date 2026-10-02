@@ -55,6 +55,7 @@ export default function TabelaVencimentos({
   onLimpar,
   getAcaoAtiva,
   onSolicitar,
+  onDetalhes,
   selecionados,
   onToggleItem,
   onToggleVisiveis,
@@ -163,7 +164,7 @@ export default function TabelaVencimentos({
       ) : (
         <>
           <div className="-mx-5 overflow-x-auto px-5">
-            <table className="w-full min-w-[780px] text-sm">
+            <table className="w-full min-w-[860px] text-sm">
               <thead>
                 <tr className="border-b border-neutral-200 bg-neutral-50">
                   <th className="w-8 px-3 py-2.5">
@@ -205,7 +206,12 @@ export default function TabelaVencimentos({
                         {rede && <div className="truncate text-[11px] text-neutral-500">{rede}</div>}
                       </td>
                       <td className="max-w-[260px] truncate px-3 py-2 text-neutral-700">{l.produto}</td>
-                      <td className="px-3 py-2 text-right tabular-nums text-neutral-800">{fmtNum(l.quantidade)}</td>
+                      <td className="px-3 py-2 text-right tabular-nums text-neutral-800">
+                        {fmtNum(l.quantidade)}
+                        {l.lotesNaSoma > 1 && (
+                          <div className="mt-0.5 whitespace-nowrap text-[11px] font-normal text-neutral-500">soma de {l.lotesNaSoma} lotes</div>
+                        )}
+                      </td>
                       <td className="whitespace-nowrap px-3 py-2 text-right tabular-nums text-neutral-600">{fmtData(l.dataValidade)}</td>
                       <td className="px-3 py-2 text-right">
                         <span className={clsx("inline-block rounded-full px-2 py-0.5 text-xs font-semibold tabular-nums", seg.bg, seg.text)}>
@@ -221,7 +227,19 @@ export default function TabelaVencimentos({
                           {ativa && <AcaoAtivaBadge ativa={ativa} />}
                         </div>
                       </td>
-                      <td className="px-3 py-2 text-right">
+                      <td className="whitespace-nowrap px-3 py-2 text-right">
+                        {onDetalhes && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="mr-1"
+                            onClick={() => onDetalhes(l)}
+                            aria-label={`Detalhes da contagem de ${l.produto} em ${l.cliente}`}
+                            title="Quem contou, quando e a quantidade de cada validade"
+                          >
+                            Detalhes
+                          </Button>
+                        )}
                         <Button variant="outline" size="sm" onClick={() => onSolicitar(l)}>
                           {ativa ? `Nova ${acao}` : acao === "oferta" ? "Oferta" : "Rebaixar"}
                         </Button>

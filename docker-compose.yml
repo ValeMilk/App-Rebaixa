@@ -1,7 +1,8 @@
-version: "3.9"
-
 services:
-  backend:
+  # O servico se chama "rebaixa-backend" (e nao "backend") porque ele tambem entra na rede do BI,
+  # onde outro sistema ja usa o apelido "backend". Dentro da rede do Rebaixa o apelido "backend"
+  # continua valendo (e o que o nginx usa).
+  rebaixa-backend:
     build: ./backend
     container_name: rebaixa-backend
     restart: unless-stopped
@@ -10,7 +11,11 @@ services:
     expose:
       - "4000"
     networks:
-      - rebaixa-net
+      rebaixa-net:
+        aliases:
+          - backend
+      # Postgres do BI (bi_cometa_db:5432): fonte do estoque. Sem porta exposta para fora.
+      bi-net: {}
 
   frontend:
     build:
@@ -23,7 +28,7 @@ services:
     expose:
       - "3000"
     depends_on:
-      - backend
+      - rebaixa-backend
     networks:
       - rebaixa-net
 
@@ -37,11 +42,15 @@ services:
       - ./nginx/nginx.conf:/etc/nginx/conf.d/default.conf:ro
     depends_on:
       - frontend
-      - backend
+      - rebaixa-backend
     networks:
       - rebaixa-net
 
 networks:
   rebaixa-net:
     driver: bridge
+  # Rede do stack de BI (criada por ele). Precisa existir no servidor antes do deploy.
+  bi-net:
+    external: true
+    name: docker_bi_network
 

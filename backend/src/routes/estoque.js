@@ -1,5 +1,5 @@
 const express = require("express");
-const { listar } = require("../controllers/estoqueController");
+const { listar, detalhes } = require("../controllers/estoqueController");
 const { auth } = require("../middlewares/auth");
 
 const router = express.Router();
@@ -7,5 +7,6 @@ const router = express.Router();
 router.use(auth);
 
 router.get("/", listar);
+router.get("/:id/detalhes", detalhes);
 
 module.exports = router;

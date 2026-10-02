@@ -59,13 +59,16 @@ Login com o admin criado no seed (email/senha = codigo do .env).
 ## Setup com Docker (VPS)
 
 1. Preencher `backend/.env` e `frontend/.env`.
+   O estoque vem do Postgres do BI pela rede Docker `docker_bi_network` (ela precisa existir no
+   servidor): use `PG_HOST=bi_cometa_db` e `PG_PORT=5432`.
 2. Subir:
    ```bash
    docker compose up -d --build
+   docker compose exec -T nginx nginx -s reload   # o nginx precisa reresolver os containers recriados
    ```
 3. Criar admin:
    ```bash
-   docker compose exec backend npm run seed:admin
+   docker compose exec rebaixa-backend npm run seed:admin
    ```
 
 ## Perfis

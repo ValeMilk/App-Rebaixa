@@ -1,5 +1,6 @@
 const Estoque = require("../models/Estoque");
 const Carteira = require("../models/Carteira");
+const { query, pgConfigurado } = require("../services/estoquePgDbService");
 
 /**
  * Lista o estoque critico (ja filtrado pela view do Postgres na sincronizacao —
@@ -37,7 +38,8 @@ async function listar(req, res) {
 
   const pipeline = [
     { $match: match },
-    { $unset: "raw" },
+    // A lista nao carrega os lotes (vem pelo endpoint de detalhes); `raw` e legado
+    { $unset: ["raw", "lotes"] },
     // Busca precoTabela e custo do catalogo de produtos
     {
       $lookup: {
@@ -82,4 +84,63 @@ async function listar(req, res) {
   res.json({ total: itensEnriquecidos.length, itens: itensEnriquecidos });
 }
 
-module.exports = { listar };
+// Historico de contagens do item nos ultimos 15 dias, direto da tabela de origem (somente leitura)
+const SQL_HISTORICO = `
+SELECT to_char(event_dth, 'YYYY-MM-DD"T"HH24:MI') AS contado_em,
+       agent_name, agent_code, COALESCE(quantidade, 0) AS quantidade,
+       to_char(data_validade, 'YYYY-MM-DD') AS data_validade
+FROM public.ativmob_estoque
+WHERE codigo_destino = $1 AND produto_codigo = $2 AND event_dth >= CURRENT_DATE - 15
+ORDER BY event_dth DESC, data_validade
+LIMIT 100;
+`;
+
+/** O usuario pode ver este cliente? Mesmo escopo de carteira da listagem. */
+async function clienteNoEscopo(user, clienteCodigo) {
+  if (user.role === "vendedor") return !!(await Carteira.exists({ vendedorCodigo: user.codigo, clienteCodigo }));
+  if (user.role === "supervisor") return !!(await Carteira.exists({ supervisorCodigo: user.codigo, clienteCodigo }));
+  return true; // admin/diretoria
+}
+
+/**
+ * Detalhe de um item do estoque: de onde veio a quantidade (lotes por validade, quem contou e
+ * quando) e o historico de contagens dos ultimos 15 dias. O historico e melhor esforco: se o
+ * Postgres de BI nao responder, volta `historico: null` e o resto intacto.
+ */
+async function detalhes(req, res) {
+  const item = await Estoque.findById(req.params.id).select("-raw").lean().catch(() => null);
+  if (!item || !(await clienteNoEscopo(req.user, item.clienteCodigo))) {
+    return res.status(404).json({ error: "Item de estoque nao encontrado" });
+  }
+
+  const carteira = await Carteira.findOne({ clienteCodigo: item.clienteCodigo }, "codigoRede redeSubrede subrede").lean();
+
+  let historico = null;
+  if (pgConfigurado()) {
+    try {
+      const linhas = await query(SQL_HISTORICO, [item.clienteCodigo, item.produtoCodigo]);
+      historico = linhas.map((l) => ({
+        contadoEm: l.contado_em,
+        agente: l.agent_name ? String(l.agent_name).trim() : null,
+        agenteCodigo: l.agent_code != null ? String(l.agent_code).trim() : null,
+        quantidade: Number(l.quantidade) || 0,
+        dataValidade: l.data_validade,
+      }));
+    } catch (err) {
+      console.error("[estoque/detalhes] historico indisponivel:", err.message);
+    }
+  }
+
+  res.json({
+    item: {
+      ...item,
+      codigoRede: carteira?.codigoRede || null,
+      redeSubrede: carteira?.redeSubrede || null,
+      subrede: carteira?.subrede || null,
+    },
+    sincronizadoEm: item.updatedAt,
+    historico,
+  });
+}
+
+module.exports = { listar, detalhes };
