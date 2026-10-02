@@ -29,6 +29,8 @@ jobs:
             git pull origin main
             echo "==> docker compose build + restart"
             docker compose up -d --build --remove-orphans
+            echo "==> recarregando nginx (reresolve os IPs dos containers recriados)"
+            docker compose exec -T nginx nginx -s reload
             echo "==> limpando imagens antigas"
             docker image prune -f
             echo "==> Deploy concluido"
