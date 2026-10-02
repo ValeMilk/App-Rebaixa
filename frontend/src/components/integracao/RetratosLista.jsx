@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import Surface from "@/components/ui/Surface";
 import Button from "@/components/ui/Button";
 import EmptyState from "@/components/ui/EmptyState";
@@ -60,7 +61,8 @@ export default function RetratosLista({ retratos, carregando, onBaixar, baixando
                     <div>{r.importadoPorNome || "—"}</div>
                     <div>{fmtDataHora(r.importadoEm)}</div>
                   </td>
-                  <td className="px-3 py-2 text-right">
+                  <td className="whitespace-nowrap px-3 py-2 text-right">
+                    <Link href={`/acompanhamento-estoque?rede=${r.codigoRede}&retrato=${r.id}`} className="btn-secondary mr-2 h-8 px-3 text-xs">Ver painel</Link>
                     <Button variant="outline" size="sm" disabled={baixandoId === r.id} onClick={() => onBaixar(r)}>
                       {baixandoId === r.id ? "Baixando…" : "Baixar arquivo"}
                     </Button>

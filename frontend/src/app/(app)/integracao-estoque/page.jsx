@@ -2,6 +2,7 @@
 import { useTituloDaPagina } from "@/components/PageTitleContext";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import api from "@/lib/api";
 import { useAuth } from "@/lib/auth";
@@ -241,7 +242,8 @@ export default function IntegracaoEstoquePage() {
             <p className="text-sm text-neutral-800">
               <strong>Retrato de {fmtData(resultado.retrato.dataRetrato)} gravado:</strong> {resultado.retrato.linhasValidas.toLocaleString("pt-BR")} linhas
               ({resultado.retrato.linhasDescartadas.toLocaleString("pt-BR")} descartadas), lojas {resultado.retrato.lojasReconhecidas}/{resultado.retrato.lojasNoArquivo}, produtos {resultado.retrato.produtosReconhecidos}/{resultado.retrato.produtosNoArquivo}.
-              Pendências em aberto continuam resolvíveis depois.
+              Pendências em aberto continuam resolvíveis depois.{" "}
+              <Link href={`/acompanhamento-estoque?rede=${resultado.retrato.codigoRede}&retrato=${resultado.retrato.id}`} className="font-medium text-secondary underline">Ver no acompanhamento</Link>
             </p>
           )}
         </div>
