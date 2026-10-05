@@ -75,6 +75,13 @@ async function sincronizarCarteira() {
   }));
 
   const r = await Carteira.insertMany(docs);
+
+  // A carteira foi recriada: recoloca as redes criadas no InfoVale (lojas que nao existem no Lacteus)
+  try {
+    await require("./redesInfovaleService").aplicarNaCarteira();
+  } catch (e) {
+    console.error("[carteira] falha ao reaplicar as redes do InfoVale:", e.message);
+  }
   return {
     atualizados: r.length,
     total: linhas.length,
@@ -183,6 +190,7 @@ async function buscarUltimaCompra(clienteCodigo, produtoCodigo) {
 async function buscarUltimaCompraRede(codigoRede, produtoCodigo) {
   if (!erpConfigurado()) return null;
   if (!codigoRede || !produtoCodigo) return null;
+  if (!/^d+$/.test(String(codigoRede))) return null; // rede criada no InfoVale: nao existe no ERP
   const { getPool } = require("./erpDbService");
   const sql = require("mssql");
   const pool = await getPool();
@@ -242,6 +250,7 @@ ORDER BY dataUltimaCompra DESC;
 async function buscarUltimaCompraRedeBatch(codigoRede, produtosCodigos) {
   if (!erpConfigurado()) return {};
   if (!codigoRede || !Array.isArray(produtosCodigos) || produtosCodigos.length === 0) return {};
+  if (!/^d+$/.test(String(codigoRede))) return {}; // rede criada no InfoVale: nao existe no ERP
   
   const { getPool } = require("./erpDbService");
   const sql = require("mssql");

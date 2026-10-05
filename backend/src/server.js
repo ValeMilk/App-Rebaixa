@@ -22,6 +22,7 @@ const dashboardRoutes = require("./routes/dashboard");
 const integracaoEstoqueRoutes = require("./routes/integracaoEstoque");
 const acompanhamentoEstoqueRoutes = require("./routes/acompanhamentoEstoque");
 const permissoesRoutes = require("./routes/permissoes");
+const redesInfovaleRoutes = require("./routes/redesInfovale");
 
 const app = express();
 const PORT = process.env.PORT || 4000;
@@ -60,6 +61,7 @@ app.use("/api/dashboard", dashboardRoutes);
 app.use("/api/integracao-estoque", integracaoEstoqueRoutes);
 app.use("/api/acompanhamento-estoque", acompanhamentoEstoqueRoutes);
 app.use("/api/permissoes", permissoesRoutes);
+app.use("/api/redes-infovale", redesInfovaleRoutes);
 
 // Erro
 app.use(errorHandler);

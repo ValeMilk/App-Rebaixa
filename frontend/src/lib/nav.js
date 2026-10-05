@@ -15,6 +15,7 @@ export const NAV = [
   { href: "/integracao-estoque",  label: "Integração Estoque", short: "Integração", Icon: IcoUpload,  perm: "integracao_estoque.usar", group: "principal" },
   { href: "/admin/usuarios",         label: "Usuários",       short: "Usuários",  Icon: IcoUsers,     perm: "usuarios.gerenciar", group: "admin" },
   { href: "/admin/responsabilidades", label: "Resp. Rede",    short: "Resp. Rede", Icon: IcoUsers,    perm: "responsaveis_rede.gerenciar", group: "admin" },
+  { href: "/admin/redes",            label: "Redes InfoVale", short: "Redes",     Icon: IcoStore,     perm: "redes_infovale.gerenciar", group: "admin" },
   { href: "/admin/sync",             label: "Sincronização",  short: "Sync",      Icon: IcoSync,      perm: "sincronizacao.executar", group: "admin" },
   { href: "/admin/permissoes",       label: "Permissões",     short: "Permissões", Icon: IcoLock,     perm: "permissoes.gerenciar", group: "admin" },
 ];

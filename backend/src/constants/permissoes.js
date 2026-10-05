@@ -54,6 +54,7 @@ const GRUPOS = [
     permissoes: [
       { chave: "usuarios.gerenciar", label: "Usuários", descricao: "Cadastrar, editar e desativar usuários e definir seus perfis." },
       { chave: "responsaveis_rede.gerenciar", label: "Responsáveis de rede", descricao: "Definir o supervisor responsável por cada rede." },
+      { chave: "redes_infovale.gerenciar", label: "Redes do InfoVale", descricao: "Criar redes para lojas que só existem no Ativmob e definir seus supervisores." },
       { chave: "sincronizacao.executar", label: "Sincronização manual", descricao: "Disparar as sincronizações de estoque, carteira e produtos." },
       { chave: "permissoes.gerenciar", label: "Permissões", descricao: "Editar esta matriz. Exclusiva do perfil Admin.", somenteAdmin: true },
     ],
