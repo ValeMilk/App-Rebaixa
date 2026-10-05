@@ -61,11 +61,25 @@ function agruparPorLote(historico, lotes) {
   }
   const doItem = new Map(lotes.map((l) => [dia(l.dataValidade), l]));
   const hoje = hojeIso();
+  // Dias em que a promotora contou ALGUM lote do produto na loja (visitas "sem o produto" nao contam aqui)
+  const diasSemProduto = new Set((grupos.get(SEM) || []).map((h) => dia(h.contadoEm)));
+  const diasDeVisita = [...new Set(historico.map((h) => dia(h.contadoEm)))].filter((d) => !diasSemProduto.has(d)).sort();
   const lista = [...grupos.entries()].map(([chave, contagens]) => {
     // variacao: diferenca para a contagem imediatamente anterior (a lista vem da mais recente para a mais antiga)
     const linhas = contagens.map((c, i) => ({ ...c, anterior: contagens[i + 1] ? contagens[i + 1].quantidade : null }));
     const lote = chave === SEM ? null : doItem.get(chave) || null;
-    return { chave, semProduto: chave === SEM, validade: chave === SEM ? null : chave, lote, linhas, vencido: chave !== SEM && chave <= hoje };
+    // Visitas em que este lote NAO foi contado: depois da 1a contagem dele e enquanto ainda nao tinha vencido
+    let semContagem = [];
+    if (chave !== SEM) {
+      const contados = new Set(linhas.map((h) => dia(h.contadoEm)));
+      const primeira = dia(linhas[linhas.length - 1].contadoEm);
+      semContagem = diasDeVisita.filter((d) => d > primeira && d < chave && !contados.has(d));
+    }
+    const ultimaContagem = chave === SEM ? null : dia(linhas[0].contadoEm);
+    return {
+      chave, semProduto: chave === SEM, validade: chave === SEM ? null : chave, lote, linhas, vencido: chave !== SEM && chave <= hoje,
+      semContagem, semContagemDepois: semContagem.filter((d) => d > ultimaContagem),
+    };
   });
   const ordem = (g) => (g.lote ? 0 : g.semProduto ? 2 : 1);
   return lista.sort((a, b) => ordem(a) - ordem(b) || (a.lote ? a.validade.localeCompare(b.validade) : (b.validade || "").localeCompare(a.validade || "")));
@@ -83,6 +97,22 @@ function TabelaContagens({ g }) {
   const indiceUsada = g.lote
     ? g.linhas.findIndex((h) => g.lote.contadoEm === h.contadoEm && Number(g.lote.quantidade) === h.quantidade)
     : -1;
+  if (g.semProduto) {
+    // Nao ha quantidade nem variacao a mostrar: so quando e quem registrou
+    return (
+      <ul className="divide-y divide-neutral-100 border-t border-neutral-100 text-sm">
+        {g.linhas.map((h, i) => (
+          <li key={i} className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1 px-3 py-2 text-neutral-600">
+            <span className="whitespace-nowrap tabular-nums">{fmtContagem(h.contadoEm)}</span>
+            <span className="whitespace-nowrap">
+              <span className="capitalize">{(h.agente || "não identificado").toLowerCase()}</span>
+              {h.agenteCodigo && <span className="ml-1 text-xs text-neutral-500">cód {h.agenteCodigo}</span>}
+            </span>
+          </li>
+        ))}
+      </ul>
+    );
+  }
   return (
     <div className="overflow-x-auto">
       <table className="w-full min-w-[520px] text-sm">
@@ -289,16 +319,29 @@ export default function DetalheContagemModal({ item, onClose }) {
                       <div key={g.chave} className="overflow-hidden rounded-xl border border-neutral-200" data-lote={g.validade || "sem-produto"}>
                         <div className="flex flex-wrap items-center gap-2 bg-neutral-50 px-3 py-2">
                           <span className="text-sm font-semibold text-neutral-800">
-                            {g.semProduto ? "Visitas sem o produto na loja" : `Lote com validade ${fmtData(g.validade)}`}
+                            {g.semProduto ? "Visitas em que a promotora registrou que não havia o produto" : `Lote com validade ${fmtData(g.validade)}`}
                           </span>
                           {g.lote && <Badge tone={st.tone} dot>{st.label}</Badge>}
                           {g.lote && <span className="text-xs text-neutral-500">{g.lote.entraNaSoma ? "entra na soma" : "não entra na soma"}</span>}
                           {!g.lote && !g.semProduto && (
                             <Badge tone="neutral">{g.vencido ? "vencido" : g.linhas[0].quantidade === 0 ? "zerado" : "fora do painel"}</Badge>
                           )}
-                          <span className="ml-auto text-xs text-neutral-500">{g.linhas.length} {g.linhas.length === 1 ? "contagem" : "contagens"}</span>
+                          <span className="ml-auto text-xs text-neutral-500">
+                            {g.linhas.length} {g.semProduto ? (g.linhas.length === 1 ? "visita" : "visitas") : g.linhas.length === 1 ? "contagem" : "contagens"}
+                          </span>
                         </div>
-                        {g.semProduto || g.linhas.length < 2 ? (
+                        {g.semProduto && (
+                          <p className="border-t border-neutral-100 px-3 py-2 text-xs text-neutral-500">
+                            Nessas visitas a quantidade informada foi zero, sem nenhum lote. Os lotes contados antes de uma visita assim deixam de valer no painel.
+                          </p>
+                        )}
+                        {g.lote && g.semContagemDepois.length > 0 && (
+                          <p className="border-t border-warning/30 bg-warning/10 px-3 py-2 text-xs text-neutral-800" data-nao-contado>
+                            <strong>Não contado {g.semContagemDepois.length === 1 ? "na última visita" : `nas últimas ${g.semContagemDepois.length} visitas`}</strong>
+                            {" "}({g.semContagemDepois.map((d) => fmtData(d)).join(", ")}). O painel mantém a contagem de {fmtContagem(g.linhas[0].contadoEm)}.
+                          </p>
+                        )}
+                        {g.semProduto || g.linhas.length + g.semContagem.length < 2 ? (
                           // sem evolucao para desenhar (uma contagem so, ou visitas sem o produto): tabela direta
                           <TabelaContagens g={g} />
                         ) : (
@@ -308,6 +351,8 @@ export default function DetalheContagemModal({ item, onClose }) {
                                 contagens={g.linhas}
                                 tone={st ? st.tone : "neutral"}
                                 usadaEm={g.lote ? g.lote.contadoEm : null}
+                                semContagem={g.semContagem}
+                                mantemValor={!!g.lote}
                                 rotulo={`Quantidade do lote com validade ${fmtData(g.validade)} a cada contagem`}
                               />
                             </div>
