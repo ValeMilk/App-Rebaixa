@@ -3,11 +3,7 @@
 import { redirect } from "next/navigation";
 import { useEffect } from "react";
 import { useAuth } from "@/lib/auth";
-
-function homeFor(role) {
-  if (role === "vendedor" || role === "supervisor") return "/estoque";
-  return "/dashboard";
-}
+import { rotaInicial } from "@/lib/nav";
 
 export default function Home() {
   const { init, token, loading, user } = useAuth();
@@ -18,7 +14,7 @@ export default function Home() {
 
   useEffect(() => {
     if (loading) return;
-    if (token && user) redirect(homeFor(user.role));
+    if (token && user) redirect(rotaInicial(user) || "/sem-acesso");
     else if (!loading && !token) redirect("/login");
   }, [loading, token, user]);
 

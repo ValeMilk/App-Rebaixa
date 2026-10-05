@@ -9,6 +9,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import api from "@/lib/api";
 import { fmtData } from "@/lib/utils";
 import { useAuth } from "@/lib/auth";
+import { pode } from "@/lib/permissoes";
 import Link from "next/link";
 import {
   IcoChevronRight,
@@ -533,6 +534,7 @@ export default function EncartesPage() {
   useTituloDaPagina("Agenda de Encartes", "Selecione uma rede para ver o calendário");
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { user } = useAuth();
   const [grupos, setGrupos] = useState([]);
   const [loading, setLoading] = useState(true);
   const [redeSel, setRedeSel] = useState(() => {
@@ -653,7 +655,7 @@ export default function EncartesPage() {
               <IcoCalendar className="w-4 h-4" />
               <span className="hidden sm:inline">Cal. Geral</span>
             </Link>
-            {grupoSel?.podeEditar && (
+            {grupoSel?.podeEditar && pode(user, "encartes.criar") && (
               <Button size="sm" onClick={() => setModalSelecaoTipo(true)}>+ Nova Ação</Button>
             )}
             {grupoSel && (

@@ -4,7 +4,8 @@ import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { useAuth } from "@/lib/auth";
 import api from "@/lib/api";
-import { navVisivel, hrefAtivo, itensBarraInferior } from "@/lib/nav";
+import { navVisivel, hrefAtivo, itensBarraInferior, permissaoDaRota, rotaInicial } from "@/lib/nav";
+import { pode } from "@/lib/permissoes";
 import { PageTitleProvider } from "@/components/PageTitleContext";
 import Sidebar from "@/components/shell/Sidebar";
 import TopBar from "@/components/shell/TopBar";
@@ -17,8 +18,10 @@ const CHAVE_SIDEBAR = "iv.sidebar";
 export default function AppLayout({ children }) {
   const router = useRouter();
   const pathname = usePathname();
-  const { user, token, init, loading, logout } = useAuth();
+  const { user, token, init, loading, logout, refresh } = useAuth();
   const syncedRef = useRef(false);
+  const permissoesEm = useRef(0);
+  const [conferidas, setConferidas] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
   const [sheetOpen, setSheetOpen] = useState(false);
 
@@ -38,6 +41,34 @@ export default function AppLayout({ children }) {
     }
   }, [user, token]);
 
+  // Permissoes do perfil: recarrega ao abrir o app e ao voltar para a aba (no maximo 1x por minuto),
+  // para valer o que o admin mudou. Sessao antiga, sem permissoes guardadas, espera a resposta.
+  useEffect(() => {
+    if (loading || !token) return;
+    function atualizar() {
+      if (document.visibilityState !== "visible" || Date.now() - permissoesEm.current < 60000) return;
+      permissoesEm.current = Date.now();
+      refresh()
+        .catch(() => {
+          permissoesEm.current = 0;
+          if (!useAuth.getState().user?.permissoes) logout();
+        })
+        .finally(() => setConferidas(true));
+    }
+    atualizar();
+    document.addEventListener("visibilitychange", atualizar);
+    return () => document.removeEventListener("visibilitychange", atualizar);
+  }, [loading, token, refresh, logout]);
+
+  // Guarda de rota (RBAC): sem a permissao da tela, vai para a tela inicial do usuario
+  // (so depois da primeira conferencia com o servidor, para nao barrar com permissoes velhas do navegador)
+  const permissoesProntas = conferidas && !!user?.permissoes;
+  const exigida = permissaoDaRota(pathname);
+  const liberada = !exigida || pode(user, exigida);
+  useEffect(() => {
+    if (permissoesProntas && !liberada) router.replace(rotaInicial(user) || "/sem-acesso");
+  }, [permissoesProntas, liberada, user, router]);
+
   function toggleCollapse() {
     setCollapsed((c) => {
       const novo = !c;
@@ -46,7 +77,7 @@ export default function AppLayout({ children }) {
     });
   }
 
-  if (loading || !user) {
+  if (loading || !user || !permissoesProntas || !liberada) {
     return (
       <div className="flex h-screen items-center justify-center bg-page">
         <div className="flex flex-col items-center gap-3">

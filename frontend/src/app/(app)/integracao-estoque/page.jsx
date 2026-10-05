@@ -6,6 +6,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import api from "@/lib/api";
 import { useAuth } from "@/lib/auth";
+import { pode } from "@/lib/permissoes";
 import { fmtData, fmtDataHora } from "@/lib/utils";
 import Surface from "@/components/ui/Surface";
 import Button from "@/components/ui/Button";
@@ -46,14 +47,9 @@ export default function IntegracaoEstoquePage() {
   const [dataRetrato, setDataRetrato] = useState("");
   const arquivoRef = useRef(null);
 
-  // Por enquanto so o administrador acessa
-  useEffect(() => {
-    if (!authLoading && user && user.role !== "admin") router.replace("/encartes");
-  }, [user, authLoading, router]);
-
   // Clientes (redes da carteira)
   useEffect(() => {
-    if (authLoading || !user || user.role !== "admin") return;
+    if (authLoading || !user || !pode(user, "integracao_estoque.usar")) return;
     (async () => {
       try {
         const { data } = await api.get("/integracao-estoque/clientes");
@@ -201,7 +197,7 @@ export default function IntegracaoEstoquePage() {
     }
   }
 
-  if (authLoading || !user || user.role !== "admin") return null;
+  if (authLoading || !user || !pode(user, "integracao_estoque.usar")) return null;
 
   const dataValida = /^\d{4}-\d{2}-\d{2}$/.test(dataRetrato);
   const inferida = analise?.dataInferida;

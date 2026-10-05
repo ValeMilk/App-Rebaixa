@@ -240,9 +240,11 @@ export default function TabelaVencimentos({
                             Detalhes
                           </Button>
                         )}
-                        <Button variant="outline" size="sm" onClick={() => onSolicitar(l)}>
-                          {ativa ? `Nova ${acao}` : acao === "oferta" ? "Oferta" : "Rebaixar"}
-                        </Button>
+                        {onSolicitar && (
+                          <Button variant="outline" size="sm" onClick={() => onSolicitar(l)}>
+                            {ativa ? `Nova ${acao}` : acao === "oferta" ? "Oferta" : "Rebaixar"}
+                          </Button>
+                        )}
                       </td>
                     </tr>
                   );

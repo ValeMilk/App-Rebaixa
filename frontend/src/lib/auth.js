@@ -27,6 +27,14 @@ export const useAuth = create((set) => ({
     return data.user;
   },
 
+  // Recarrega o usuario (e as permissoes do perfil, que o admin pode ter mudado)
+  refresh: async () => {
+    const { data } = await api.get("/auth/me");
+    localStorage.setItem("user", JSON.stringify(data.user));
+    set({ user: data.user });
+    return data.user;
+  },
+
   logout: () => {
     localStorage.removeItem("token");
     localStorage.removeItem("user");

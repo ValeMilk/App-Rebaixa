@@ -6,6 +6,7 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import api from "@/lib/api";
 import { useAuth } from "@/lib/auth";
+import { pode } from "@/lib/permissoes";
 import { fmtBRL } from "@/lib/utils";
 import { normalizar } from "@/lib/estoque";
 import { fmtNum, fmtDias, diaMesAno } from "@/lib/acompanhamentoEstoque";
@@ -60,14 +61,9 @@ export default function AcompanhamentoEstoquePage() {
   const tabelaRef = useRef(null);
   const queryAplicada = useRef(false);
 
-  // Por enquanto so o administrador acessa
-  useEffect(() => {
-    if (!authLoading && user && user.role !== "admin") router.replace("/encartes");
-  }, [user, authLoading, router]);
-
   // Redes que ja tem retratos
   useEffect(() => {
-    if (authLoading || !user || user.role !== "admin") return;
+    if (authLoading || !user || !pode(user, "acompanhamento_estoque.ver")) return;
     (async () => {
       try {
         const { data } = await api.get("/acompanhamento-estoque/redes");
@@ -176,7 +172,7 @@ export default function AcompanhamentoEstoquePage() {
   };
   const onOrdenar = (campo) => setOrdem((o) => (o.campo === campo ? { campo, dir: -o.dir } : { campo, dir: 1 }));
 
-  if (authLoading || !user || user.role !== "admin") return null;
+  if (authLoading || !user || !pode(user, "acompanhamento_estoque.ver")) return null;
 
   const k = dados?.kpis;
   const c = dados?.comparacao;

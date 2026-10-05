@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import api from "@/lib/api";
 import { useAuth } from "@/lib/auth";
+import { pode } from "@/lib/permissoes";
 import { fmtData, fmtDataHora, formatarRede } from "@/lib/utils";
 import { TONE, toneMargem } from "@/lib/tones";
 import Badge from "@/components/ui/Badge";
@@ -84,11 +85,11 @@ export default function DetalheSolicitacao() {
   if (loading) return <p className="text-neutral-500">Carregando...</p>;
   if (!s) return <p className="text-neutral-500">Solicitacao nao encontrada.</p>;
 
-  const podeDecidir =
+  const podeDecidir = pode(user, "solicitacoes.decidir") && (
     (user?.role === "supervisor" && s.status === "pendente_supervisor" &&
       (s.podeDecidirSupervisor !== undefined ? !!s.podeDecidirSupervisor : true)) ||
     ((user?.role === "diretoria" || user?.role === "admin") &&
-      (s.status === "pendente_supervisor" || s.status === "aprovado_supervisor"));
+      (s.status === "pendente_supervisor" || s.status === "aprovado_supervisor")));
 
   const podeCancelar = ["pendente_supervisor", "aprovado_supervisor"].includes(s.status);
   const statusInfo = STATUS_LABEL[s.status] || { l: s.status, tone: "neutral" };

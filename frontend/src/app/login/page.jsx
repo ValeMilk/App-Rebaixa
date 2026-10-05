@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth";
 import api from "@/lib/api";
+import { rotaInicial } from "@/lib/nav";
 import Image from "next/image";
 import { IcoChevronDown } from "@/components/Icons";
 
@@ -50,16 +51,8 @@ export default function LoginPage() {
     setLoading(true);
     try {
       const u = await login(email, senha);
-      const role = u?.role ?? "vendedor";
-      
-      // Redirecionamento baseado em role
-      if (role === "supervisor") {
-        router.replace("/dashboard/supervisor"); // Supervisor → Métricas Redes
-      } else if (role === "vendedor") {
-        router.replace("/estoque"); // Vendedor → Estoque
-      } else {
-        router.replace("/dashboard"); // Admin/Diretoria → Dashboard
-      }
+      // Tela inicial conforme o perfil e as permissoes dele
+      router.replace(rotaInicial(u) || "/sem-acesso");
     } catch (err) {
       setErro(err.response?.data?.error || "Falha no login");
     } finally {

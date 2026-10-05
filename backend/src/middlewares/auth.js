@@ -1,4 +1,5 @@
 const jwt = require("jsonwebtoken");
+const { usuarioPode } = require("../services/permissoesService");
 
 function auth(req, res, next) {
   const header = req.headers.authorization || "";
@@ -13,6 +14,8 @@ function auth(req, res, next) {
   }
 }
 
+// Checagem pelo NOME do perfil. Fica para regras que sao do perfil em si (ex.: filtros de escopo);
+// o acesso a telas e acoes usa requirePermission.
 function requireRole(...roles) {
   return (req, res, next) => {
     if (!req.user) return res.status(401).json({ error: "Nao autenticado" });
@@ -23,4 +26,20 @@ function requireRole(...roles) {
   };
 }
 
-module.exports = { auth, requireRole };
+/**
+ * RBAC: libera se algum perfil do usuario tiver QUALQUER uma das permissoes informadas.
+ * As permissoes de cada perfil vem do permissoesService (padrao + matriz editada pelo admin).
+ */
+function requirePermission(...chaves) {
+  return async (req, res, next) => {
+    if (!req.user) return res.status(401).json({ error: "Nao autenticado" });
+    try {
+      if (await usuarioPode(req.user, ...chaves)) return next();
+      return res.status(403).json({ error: "Acesso negado", permissao: chaves });
+    } catch (err) {
+      return next(err);
+    }
+  };
+}
+
+module.exports = { auth, requireRole, requirePermission };

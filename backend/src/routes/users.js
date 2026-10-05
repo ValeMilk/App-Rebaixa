@@ -1,10 +1,10 @@
 const express = require("express");
 const { listar, criar, atualizar, remover } = require("../controllers/userController");
-const { auth, requireRole } = require("../middlewares/auth");
+const { auth, requirePermission } = require("../middlewares/auth");
 
 const router = express.Router();
 
-router.use(auth, requireRole("admin"));
+router.use(auth, requirePermission("usuarios.gerenciar"));
 
 router.get("/", listar);
 router.post("/", criar);

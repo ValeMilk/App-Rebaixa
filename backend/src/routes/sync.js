@@ -10,14 +10,14 @@ const {
   triggerBackground,
   status,
 } = require("../controllers/syncController");
-const { auth, requireRole } = require("../middlewares/auth");
+const { auth, requirePermission } = require("../middlewares/auth");
 
 const router = express.Router();
 
 // Qualquer usuário autenticado pode disparar sync em background ao abrir o app
 router.post("/trigger", auth, triggerBackground);
 
-router.use(auth, requireRole("admin", "diretoria"));
+router.use(auth, requirePermission("sincronizacao.executar"));
 
 router.get("/status", status);
 router.post("/estoque",  rodarSyncEstoque);

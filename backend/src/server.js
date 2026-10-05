@@ -21,6 +21,7 @@ const encartesRoutes = require("./routes/encartes");
 const dashboardRoutes = require("./routes/dashboard");
 const integracaoEstoqueRoutes = require("./routes/integracaoEstoque");
 const acompanhamentoEstoqueRoutes = require("./routes/acompanhamentoEstoque");
+const permissoesRoutes = require("./routes/permissoes");
 
 const app = express();
 const PORT = process.env.PORT || 4000;
@@ -58,6 +59,7 @@ app.use("/api/encartes", encartesRoutes);
 app.use("/api/dashboard", dashboardRoutes);
 app.use("/api/integracao-estoque", integracaoEstoqueRoutes);
 app.use("/api/acompanhamento-estoque", acompanhamentoEstoqueRoutes);
+app.use("/api/permissoes", permissoesRoutes);
 
 // Erro
 app.use(errorHandler);

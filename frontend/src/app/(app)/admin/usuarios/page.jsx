@@ -20,13 +20,6 @@ export default function UsuariosPage() {
   const [editId, setEditId] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  // Proteger rota: apenas admin
-  useEffect(() => {
-    if (!authLoading && user && user.role !== "admin") {
-      router.replace("/encartes");
-    }
-  }, [user, authLoading, router]);
-
   async function carregar() {
     setLoading(true);
     try {

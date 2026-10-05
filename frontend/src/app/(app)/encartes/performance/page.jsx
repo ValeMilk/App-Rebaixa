@@ -315,13 +315,6 @@ export default function PerformancePage() {
   const router = useRouter();
   const { user, loading: authLoading } = useAuth();
 
-  // Proteger rota
-  useEffect(() => {
-    if (!authLoading && user && user.role !== "admin" && user.role !== "diretoria") {
-      router.replace("/encartes");
-    }
-  }, [user, authLoading, router]);
-
   // Filtros - default: mês atual vs mês anterior
   const [p1inicio, setP1inicio] = useState(primeiroDiaMes(0));
   const [p1fim, setP1fim] = useState(ultimoDiaMes(0));

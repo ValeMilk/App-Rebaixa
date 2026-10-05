@@ -1,11 +1,11 @@
 const express = require("express");
-const { auth, requireRole } = require("../middlewares/auth");
+const { auth, requirePermission } = require("../middlewares/auth");
 const c = require("../controllers/integracaoEstoqueController");
 
 const router = express.Router();
 
 // Por enquanto, so o administrador enxerga a Integracao Estoque.
-router.use(auth, requireRole("admin"));
+router.use(auth, requirePermission("integracao_estoque.usar"));
 
 // A planilha chega como corpo binario (nome e rede vao na query string).
 const arquivo = express.raw({ type: () => true, limit: "8mb" });

@@ -1,5 +1,11 @@
 const jwt = require("jsonwebtoken");
 const User = require("../models/User");
+const { permissoesDoUsuario } = require("../services/permissoesService");
+
+// Usuario como o front recebe: dados + permissoes efetivas dos seus perfis (RBAC)
+async function comPermissoes(user) {
+  return { ...user.toJSON(), permissoes: await permissoesDoUsuario(user) };
+}
 
 async function login(req, res) {
   const { email, senha } = req.body || {};
@@ -21,13 +27,13 @@ async function login(req, res) {
     { expiresIn: process.env.JWT_EXPIRES_IN || "8h" }
   );
 
-  res.json({ token, user });
+  res.json({ token, user: await comPermissoes(user) });
 }
 
 async function me(req, res) {
   const user = await User.findById(req.user.id);
   if (!user) return res.status(404).json({ error: "Usuario nao encontrado" });
-  res.json({ user });
+  res.json({ user: await comPermissoes(user) });
 }
 
 // Endpoint publico para popular o select de login

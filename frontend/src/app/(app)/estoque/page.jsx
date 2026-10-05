@@ -6,6 +6,7 @@ import Button from "@/components/ui/Button";
 import { useEffect, useMemo, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth";
+import { pode } from "@/lib/permissoes";
 import api from "@/lib/api";
 import { fmtData, formatarRede, fmtBRL } from "@/lib/utils";
 import { rankStatus, SEGMENTO } from "@/lib/estoque";
@@ -341,12 +342,14 @@ function ProdutoCard({ item, onRebaixar, acaoAtiva }) {
           </div>
         </div>
       </div>
+      {onRebaixar && (
       <button
         onClick={() => onRebaixar(item)}
         className={`w-full py-2 text-sm font-semibold rounded-xl active:scale-[0.98] transition ${acaoAtiva ? "text-neutral-500 border border-neutral-200 bg-neutral-50 hover:bg-neutral-100" : "text-secondary border border-secondary/30 bg-white hover:bg-secondary/5"}`}
       >
         {acaoAtiva ? "Nova rebaixa (já existe ação)" : "Solicitar Rebaixa"}
       </button>
+      )}
     </div>
   );
 }
@@ -440,7 +443,7 @@ function RedeCard({ codigoRede, redeSubrede, lojas, produtos, expandedRede, onTo
               key={prod.produtoCodigo || prod.produto}
               produto={prod}
               acaoAtiva={getAcaoAtivaRede && getAcaoAtivaRede(codigoRede, prod.produtoCodigo)}
-              onRebaixar={() => onRebaixarRede(prod)}
+              onRebaixar={onRebaixarRede ? () => onRebaixarRede(prod) : null}
             />
           ))}
         </div>
@@ -466,12 +469,14 @@ function ProdutoRedeCard({ produto, onRebaixar, acaoAtiva }) {
           </div>
         </div>
       </div>
+      {onRebaixar && (
       <button
         onClick={onRebaixar}
         className={`w-full py-2 text-sm font-semibold rounded-xl active:scale-[0.98] transition ${acaoAtiva ? "text-neutral-500 border border-neutral-200 bg-neutral-50 hover:bg-neutral-100" : "text-info border border-info/30 bg-white hover:bg-info/10"}`}
       >
         {acaoAtiva ? `Nova ação (já existe ${acaoAtiva.tipo === "oferta_interna" ? "oferta" : "rebaixa"})` : `Solicitar Ação (${produto.lojas.length} loja${produto.lojas.length !== 1 ? "s" : ""})`}
       </button>
+      )}
     </div>
   );
 }
@@ -480,6 +485,7 @@ export default function EstoquePage() {
   useTituloDaPagina("Lojas", "Produtos próximos ao vencimento");
   const router = useRouter();
   const { user, loading: authLoading } = useAuth();
+  const podeSolicitar = pode(user, "solicitacoes.criar");
   const [itens, setItens] = useState([]);
   const [q, setQ] = useState("");
   const [loading, setLoading] = useState(true);
@@ -489,13 +495,6 @@ export default function EstoquePage() {
   const [formRedeProduto, setFormRedeProduto] = useState(null); // { codigoRede, redeSubrede, produto }
   const [toast, setToast] = useState("");
   const [acoesAtivas, setAcoesAtivas] = useState([]);
-
-  // Proteger rota: apenas vendedor e admin (não diretoria)
-  useEffect(() => {
-    if (!authLoading && user && user.role === "diretoria") {
-      router.replace("/encartes");
-    }
-  }, [user, authLoading, router]);
 
   const carregarAtivas = useCallback(async () => {
     try {
@@ -746,7 +745,7 @@ export default function EstoquePage() {
                   produtos={grupo.produtos || []}
                   expandedRede={expandedRedes.has(codigoRede)}
                   onToggleRede={() => toggleRede(codigoRede)}
-                  onRebaixarRede={(produto) => setFormRedeProduto({ codigoRede, redeSubrede, produto })}
+                  onRebaixarRede={podeSolicitar ? (produto) => setFormRedeProduto({ codigoRede, redeSubrede, produto }) : null}
                   getAcaoAtivaRede={getAcaoAtivaRede}
                 />
               );
@@ -763,7 +762,7 @@ export default function EstoquePage() {
                 itens={loja.itens}
                 expanded={expanded.has(loja.clienteCodigo)}
                 onToggle={() => toggleLoja(loja.clienteCodigo)}
-                onRebaixar={setFormItem}
+                onRebaixar={podeSolicitar ? setFormItem : null}
                 getAcaoAtiva={getAcaoAtiva}
               />
             );

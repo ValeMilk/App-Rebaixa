@@ -15,13 +15,6 @@ export default function SyncPage() {
   const [rodando, setRodando] = useState(false);
   const [msg, setMsg] = useState("");
 
-  // Proteger rota: apenas admin
-  useEffect(() => {
-    if (!authLoading && user && user.role !== "admin") {
-      router.replace("/encartes");
-    }
-  }, [user, authLoading, router]);
-
   async function carregar() {
     const { data } = await api.get("/sync/status");
     setStatus(data);

@@ -4,6 +4,7 @@ import { useTituloDaPagina } from "@/components/PageTitleContext";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth";
+import { pode } from "@/lib/permissoes";
 import api from "@/lib/api";
 import { fmtDataHora } from "@/lib/utils";
 import {
@@ -99,6 +100,7 @@ export default function DashboardPage() {
   useTituloDaPagina("Painel de Vencimentos", "Estoque em giro/rebaixa · fonte: relatório BI (Ativmob)");
   const router = useRouter();
   const { user, loading } = useAuth();
+  const podeSolicitar = pode(user, "solicitacoes.criar");
 
   const [itens, setItens] = useState([]);
   const [ativas, setAtivas] = useState([]);
@@ -118,13 +120,6 @@ export default function DashboardPage() {
   const [loteAberto, setLoteAberto] = useState(false);
   const [toast, setToast] = useState("");
   const tabelaRef = useRef(null);
-
-  // Proteger rota: apenas admin
-  useEffect(() => {
-    if (!loading && user && user.role !== "admin") {
-      router.replace("/encartes");
-    }
-  }, [user, loading, router]);
 
   const carregarAtivas = useCallback(async () => {
     try {
@@ -478,7 +473,7 @@ export default function DashboardPage() {
               onMais={() => setVisiveis((v) => v + PAGINA)}
               onLimpar={limpar}
               getAcaoAtiva={getAcaoAtiva}
-              onSolicitar={setFormItem}
+              onSolicitar={podeSolicitar ? setFormItem : null}
               onDetalhes={setDetalheItem}
               selecionados={selecionados}
               onToggleItem={toggleItem}
@@ -488,7 +483,7 @@ export default function DashboardPage() {
         </>
       )}
 
-      {itensSelecionados.length > 0 && !loteAberto && (
+      {podeSolicitar && itensSelecionados.length > 0 && !loteAberto && (
         <div className="fixed bottom-20 lg:bottom-6 left-1/2 -translate-x-1/2 z-40 flex items-center gap-3 rounded-2xl bg-neutral-900 text-white shadow-2xl px-4 py-2.5 animate-slide-up max-w-[calc(100vw-2rem)]">
           <span className="text-sm whitespace-nowrap">
             <b>{itensSelecionados.length}</b> {itensSelecionados.length === 1 ? "item" : "itens"} · <b>{lojasSelecionadas}</b> {lojasSelecionadas === 1 ? "loja" : "lojas"}

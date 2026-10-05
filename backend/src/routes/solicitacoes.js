@@ -7,7 +7,7 @@ const {
   cancelar,
   listarAtivas,
 } = require("../controllers/solicitacaoController");
-const { auth, requireRole } = require("../middlewares/auth");
+const { auth, requirePermission } = require("../middlewares/auth");
 
 const router = express.Router();
 
@@ -15,9 +15,9 @@ router.use(auth);
 
 router.get("/", listar);
 router.get("/ativas", listarAtivas);
-router.post("/", criar);
+router.post("/", requirePermission("solicitacoes.criar"), criar);
 router.get("/:id", obter);
-router.post("/:id/decidir", requireRole("diretoria", "admin"), decidir);
+router.post("/:id/decidir", requirePermission("solicitacoes.decidir"), decidir);
 router.post("/:id/cancelar", cancelar);
 
 module.exports = router;

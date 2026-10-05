@@ -1,5 +1,5 @@
 const express = require("express");
-const { auth, requireRole } = require("../middlewares/auth");
+const { auth, requirePermission } = require("../middlewares/auth");
 const {
   listar,
   criar,
@@ -23,15 +23,15 @@ const router = express.Router();
 router.use(auth);
 
 // Supervisores, admin e diretoria podem acessar encartes
-const roles = requireRole("supervisor", "admin", "diretoria");
+const roles = requirePermission("encartes.ver");
 
 router.get("/",                           roles, listar);
-router.post("/",                          requireRole("supervisor", "admin"), criar);
+router.post("/",                          requirePermission("encartes.criar"), criar);
 router.get("/categorias",                 roles, listarCategorias);
 router.get("/produtos",                   roles, listarProdutos);
 router.get("/subcategorias",              roles, listarSubcategorias);
 router.get("/subredes",                   roles, listarSubredes);
-router.get("/performance",                requireRole("admin", "diretoria"), performance);
+router.get("/performance",                requirePermission("encartes.performance"), performance);
 router.get("/pdf/geral",                  roles, gerarPdfGeral);
 router.get("/pdf/rede/:codigoRede",       roles, gerarPdfRede);
 router.get("/debug/rede/:codigoRede",     roles, async (req, res) => {

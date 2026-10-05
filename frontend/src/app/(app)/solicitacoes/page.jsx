@@ -7,6 +7,7 @@ import Link from "next/link";
 import api from "@/lib/api";
 import { fmtDataHora } from "@/lib/utils";
 import { useAuth } from "@/lib/auth";
+import { pode } from "@/lib/permissoes";
 import { IcoClipboard, IcoChevronRight, IcoChevronDown, IcoCheck, IcoX, IcoSync, IcoClock, IcoUser, IcoAlert, IcoUsers, IcoStore } from "@/components/Icons";
 import Badge from "@/components/ui/Badge";
 
@@ -271,13 +272,6 @@ export default function SolicitacoesPage() {
   const [decidindo, setDecidindo] = useState(null);
   const [motivoDecisao, setMotivoDecisao] = useState("");
 
-  // Proteger rota: apenas vendedor e admin (não diretoria)
-  useEffect(() => {
-    if (!authLoading && user && user.role === "diretoria") {
-      router.replace("/encartes");
-    }
-  }, [user, authLoading, router]);
-
   async function carregar(stOverride) {
     setLoading(true);
     try {
@@ -299,6 +293,7 @@ export default function SolicitacoesPage() {
   }
 
   function podeDecidir(sol) {
+    if (!pode(user, "solicitacoes.decidir")) return false;
     if (user?.role === "supervisor") {
       // Backend já calcula `podeDecidirSupervisor` considerando override de rede;
       // se a flag vier definida, respeita; caso contrário fallback p/ regra antiga.

@@ -18,13 +18,6 @@ export default function ResponsabilidadesPage() {
   const [editId, setEditId] = useState(null);
   const [filtroRede, setFiltroRede] = useState("");
 
-  // Proteger rota: apenas admin
-  useEffect(() => {
-    if (!authLoading && user && user.role !== "admin") {
-      router.replace("/encartes");
-    }
-  }, [user, authLoading, router]);
-
   async function carregar() {
     setLoading(true);
     try {
