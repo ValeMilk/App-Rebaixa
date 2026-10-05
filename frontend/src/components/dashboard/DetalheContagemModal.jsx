@@ -10,6 +10,7 @@ import Badge from "@/components/ui/Badge";
 import Button from "@/components/ui/Button";
 import Skeleton from "@/components/ui/Skeleton";
 import { IcoX } from "@/components/Icons";
+import LoteHistoricoChart from "@/components/dashboard/LoteHistoricoChart";
 
 const fmtNum = (n) => Number(n || 0).toLocaleString("pt-BR");
 const dia = (s) => (s || "").slice(0, 10);
@@ -75,6 +76,43 @@ function Variacao({ atual, anterior }) {
   const d = atual - anterior;
   if (d === 0) return <span className="text-xs text-neutral-500">= igual</span>;
   return <span className={clsx("text-xs font-semibold tabular-nums", d < 0 ? "text-success" : "text-warning")}>{d > 0 ? "+" : "−"}{fmtNum(Math.abs(d))}</span>;
+}
+
+/** Contagens de um lote em tabela: quando, quantidade, variacao e quem contou. */
+function TabelaContagens({ g }) {
+  const indiceUsada = g.lote
+    ? g.linhas.findIndex((h) => g.lote.contadoEm === h.contadoEm && Number(g.lote.quantidade) === h.quantidade)
+    : -1;
+  return (
+    <div className="overflow-x-auto">
+      <table className="w-full min-w-[520px] text-sm">
+        <thead className="text-left text-xs font-medium text-neutral-500">
+          <tr className="border-t border-neutral-100">
+            <th className="px-3 py-1.5">Quando</th>
+            <th className="px-3 py-1.5 text-right">Qtd</th>
+            <th className="px-3 py-1.5">Variação</th>
+            <th className="whitespace-nowrap px-3 py-1.5">Quem contou</th>
+            <th className="px-3 py-1.5" />
+          </tr>
+        </thead>
+        <tbody>
+          {g.linhas.map((h, i) => {
+            // so a primeira linha que casa (registros duplicados da mesma contagem nao repetem a marca)
+            const usada = i === indiceUsada;
+            return (
+              <tr key={i} className={clsx("border-t border-neutral-100", !usada && "text-neutral-600")}>
+                <td className="whitespace-nowrap px-3 py-2 tabular-nums">{fmtContagem(h.contadoEm)}</td>
+                <td className={clsx("px-3 py-2 text-right tabular-nums", usada && "font-semibold text-neutral-900")}>{fmtNum(h.quantidade)}</td>
+                <td className="whitespace-nowrap px-3 py-2">{g.semProduto ? null : <Variacao atual={h.quantidade} anterior={h.anterior} />}</td>
+                <td className="px-3 py-2"><Agente nome={h.agente} codigo={h.agenteCodigo} /></td>
+                <td className="px-3 py-2 text-right">{usada && <Badge tone="info">usada no painel</Badge>}</td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+    </div>
+  );
 }
 
 /**
@@ -260,33 +298,27 @@ export default function DetalheContagemModal({ item, onClose }) {
                           )}
                           <span className="ml-auto text-xs text-neutral-500">{g.linhas.length} {g.linhas.length === 1 ? "contagem" : "contagens"}</span>
                         </div>
-                        <div className="overflow-x-auto">
-                          <table className="w-full min-w-[520px] text-sm">
-                            <thead className="text-left text-xs font-medium text-neutral-500">
-                              <tr className="border-t border-neutral-100">
-                                <th className="px-3 py-1.5">Quando</th>
-                                <th className="px-3 py-1.5 text-right">Qtd</th>
-                                <th className="px-3 py-1.5">Variação</th>
-                                <th className="whitespace-nowrap px-3 py-1.5">Quem contou</th>
-                                <th className="px-3 py-1.5" />
-                              </tr>
-                            </thead>
-                            <tbody>
-                              {g.linhas.map((h, i) => {
-                                const usada = g.lote && g.lote.contadoEm === h.contadoEm && Number(g.lote.quantidade) === h.quantidade;
-                                return (
-                                  <tr key={i} className={clsx("border-t border-neutral-100", !usada && "text-neutral-600")}>
-                                    <td className="whitespace-nowrap px-3 py-2 tabular-nums">{fmtContagem(h.contadoEm)}</td>
-                                    <td className={clsx("px-3 py-2 text-right tabular-nums", usada && "font-semibold text-neutral-900")}>{fmtNum(h.quantidade)}</td>
-                                    <td className="whitespace-nowrap px-3 py-2">{g.semProduto ? null : <Variacao atual={h.quantidade} anterior={h.anterior} />}</td>
-                                    <td className="px-3 py-2"><Agente nome={h.agente} codigo={h.agenteCodigo} /></td>
-                                    <td className="px-3 py-2 text-right">{usada && <Badge tone="info">usada no painel</Badge>}</td>
-                                  </tr>
-                                );
-                              })}
-                            </tbody>
-                          </table>
-                        </div>
+                        {g.semProduto || g.linhas.length < 2 ? (
+                          // sem evolucao para desenhar (uma contagem so, ou visitas sem o produto): tabela direta
+                          <TabelaContagens g={g} />
+                        ) : (
+                          <>
+                            <div className="overflow-x-auto border-t border-neutral-100 px-3 pb-1 pt-2">
+                              <LoteHistoricoChart
+                                contagens={g.linhas}
+                                tone={st ? st.tone : "neutral"}
+                                usadaEm={g.lote ? g.lote.contadoEm : null}
+                                rotulo={`Quantidade do lote com validade ${fmtData(g.validade)} a cada contagem`}
+                              />
+                            </div>
+                            <details className="border-t border-neutral-100">
+                              <summary className="cursor-pointer select-none px-3 py-2 text-xs font-medium text-secondary hover:underline">
+                                Ver em tabela (quem contou e variação)
+                              </summary>
+                              <TabelaContagens g={g} />
+                            </details>
+                          </>
+                        )}
                       </div>
                     );
                   })}
