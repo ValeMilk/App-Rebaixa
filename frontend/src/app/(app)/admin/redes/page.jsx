@@ -18,6 +18,10 @@ const semAcento = (s) => String(s || "").normalize("NFD").replace(/[̀-ͯ]/g, ""
 // Formulario de criar/editar rede: nome, supervisores e lojas
 function RedeDialog({ rede, opcoes, onClose, onSalvo }) {
   const [nome, setNome] = useState(rede?.nome || "");
+  // Rede nova (com nome proprio) ou lojas a mais numa rede que ja existe no Lacteus
+  const [tipo, setTipo] = useState("nova");
+  const [codigoLacteus, setCodigoLacteus] = useState("");
+  const doLacteus = rede ? !!rede.doLacteus : tipo === "lacteus";
   const [supervisores, setSupervisores] = useState(() => new Set((rede?.supervisores || []).map((s) => s.id)));
   const [lojas, setLojas] = useState(() => new Map((rede?.lojas || []).map((l) => [l.clienteCodigo, l.clienteNome])));
   const [busca, setBusca] = useState("");
@@ -51,14 +55,26 @@ function RedeDialog({ rede, opcoes, onClose, onSalvo }) {
     setLojas((m) => { const n = new Map(m); for (const l of visiveis) marcar ? n.set(l.clienteCodigo, l.clienteNome) : n.delete(l.clienteCodigo); return n; });
   }
 
+  // Ao escolher a rede do Lacteus, sugere os supervisores que ja a tem na carteira
+  function escolherRedeLacteus(codigo) {
+    setCodigoLacteus(codigo);
+    const escolhida = opcoes.redesLacteus.find((r) => r.codigoRede === codigo);
+    if (escolhida) setSupervisores(new Set(opcoes.supervisores.filter((s) => escolhida.supervisoresCodigos.includes(s.codigo)).map((s) => s.id)));
+  }
+
+  const redeLacteus = opcoes.redesLacteus.find((r) => r.codigoRede === codigoLacteus);
+  const nomeFinal = rede ? (rede.doLacteus ? rede.nome : nome.trim()) : doLacteus ? redeLacteus?.nome || "" : nome.trim();
+
   async function salvar(e) {
     e.preventDefault();
     setSalvando(true);
     setErro("");
-    const corpo = { nome, supervisores: [...supervisores], lojas: [...lojas].map(([clienteCodigo, clienteNome]) => ({ clienteCodigo, clienteNome })) };
+    const corpo = { supervisores: [...supervisores], lojas: [...lojas].map(([clienteCodigo, clienteNome]) => ({ clienteCodigo, clienteNome })) };
+    if (!rede && doLacteus) corpo.codigoRedeLacteus = codigoLacteus;
+    else corpo.nome = nome;
     try {
       const { data } = rede ? await api.put(`/redes-infovale/${rede.id}`, corpo) : await api.post("/redes-infovale", corpo);
-      onSalvo(data.redes, rede ? `Rede ${nome.trim()} atualizada.` : `Rede ${nome.trim()} criada.`);
+      onSalvo(data.redes, rede ? `Rede ${nomeFinal} atualizada.` : doLacteus ? `Lojas adicionadas à rede ${nomeFinal}.` : `Rede ${nomeFinal} criada.`);
     } catch (err) {
       setErro(msgErro(err, "Não foi possível salvar a rede."));
       setSalvando(false);
@@ -81,14 +97,42 @@ function RedeDialog({ rede, opcoes, onClose, onSalvo }) {
         <div className="min-h-0 flex-1 space-y-5 overflow-y-auto px-5 py-4">
           {erro && <p role="alert" className="rounded-lg border border-danger/30 bg-danger/10 px-3 py-2 text-sm text-danger">{erro}</p>}
 
-          <div>
-            <label htmlFor="rede-nome" className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-neutral-500">Nome da rede</label>
-            <input id="rede-nome" className="input" value={nome} onChange={(e) => setNome(e.target.value)} maxLength={60} placeholder="Ex.: Mega Supermercados" required autoFocus={!rede} />
-          </div>
+          {!rede && (
+            <div className="grid grid-cols-2 gap-1 rounded-lg bg-neutral-100 p-1" role="group" aria-label="Tipo de rede">
+              {[["nova", "Rede nova"], ["lacteus", "Rede que já existe no Lacteus"]].map(([valor, rotulo]) => (
+                <button
+                  key={valor} type="button" aria-pressed={tipo === valor} onClick={() => setTipo(valor)} data-tipo={valor}
+                  className={`rounded-md px-3 py-1.5 text-sm font-medium transition ${tipo === valor ? "bg-white text-neutral-900 shadow-sm" : "text-neutral-600 hover:text-neutral-900"}`}
+                >
+                  {rotulo}
+                </button>
+              ))}
+            </div>
+          )}
+
+          {doLacteus ? (
+            <div>
+              <label htmlFor="rede-lacteus" className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-neutral-500">Rede do Lacteus</label>
+              {rede ? (
+                <p className="text-sm font-medium text-neutral-800">{rede.nome} <span className="font-normal text-neutral-500">· cód. {rede.codigoRede}</span></p>
+              ) : (
+                <select id="rede-lacteus" className="input" value={codigoLacteus} onChange={(e) => escolherRedeLacteus(e.target.value)} required>
+                  <option value="">Selecione a rede...</option>
+                  {opcoes.redesLacteus.map((r) => <option key={r.codigoRede} value={r.codigoRede}>{r.nome}</option>)}
+                </select>
+              )}
+              <p className="mt-1.5 text-xs text-neutral-500">As lojas escolhidas abaixo se somam às que a rede já tem no Lacteus. Nada muda no Lacteus.</p>
+            </div>
+          ) : (
+            <div>
+              <label htmlFor="rede-nome" className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-neutral-500">Nome da rede</label>
+              <input id="rede-nome" className="input" value={nome} onChange={(e) => setNome(e.target.value)} maxLength={60} placeholder="Ex.: Mega Supermercados" required autoFocus={!rede} />
+            </div>
+          )}
 
           <div>
             <p className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-neutral-500">
-              Supervisores <span className="font-normal normal-case text-neutral-400">(a rede entra na carteira de cada um)</span>
+              Supervisores <span className="font-normal normal-case text-neutral-400">({doLacteus ? "as lojas adicionadas entram na carteira de cada um" : "a rede entra na carteira de cada um"})</span>
             </p>
             {opcoes.supervisores.length === 0 ? (
               <p className="text-sm text-neutral-500">Nenhum supervisor ativo cadastrado.</p>
@@ -108,7 +152,7 @@ function RedeDialog({ rede, opcoes, onClose, onSalvo }) {
               </div>
             )}
             {supervisores.size === 0 && opcoes.supervisores.length > 0 && (
-              <p className="mt-1.5 text-xs text-neutral-500">Sem supervisor, só diretoria e administrador veem as lojas desta rede.</p>
+              <p className="mt-1.5 text-xs text-neutral-500">Sem supervisor, só diretoria e administrador veem {doLacteus ? "estas lojas" : "as lojas desta rede"}.</p>
             )}
           </div>
 
@@ -164,7 +208,7 @@ function RedeDialog({ rede, opcoes, onClose, onSalvo }) {
 
         <div className="flex shrink-0 items-center justify-end gap-2 border-t border-neutral-200 px-5 py-3">
           <Button variant="ghost" onClick={onClose} disabled={salvando}>Cancelar</Button>
-          <Button type="submit" disabled={salvando || !nome.trim() || lojas.size === 0}>{salvando ? "Salvando..." : rede ? "Salvar rede" : "Criar rede"}</Button>
+          <Button type="submit" disabled={salvando || !nomeFinal || lojas.size === 0}>{salvando ? "Salvando..." : rede ? "Salvar rede" : doLacteus ? "Adicionar lojas" : "Criar rede"}</Button>
         </div>
       </form>
     </Dialog>
@@ -210,7 +254,10 @@ export default function RedesInfovalePage() {
   }
 
   async function excluir(rede) {
-    if (!confirm(`Excluir a rede ${rede.nome}? As ${rede.lojas.length} lojas dela voltam a ficar sem rede.`)) return;
+    const pergunta = rede.doLacteus
+      ? `Tirar da rede ${rede.nome} as ${rede.lojas.length} lojas adicionadas aqui? Elas voltam a ficar sem rede; a rede continua existindo no Lacteus.`
+      : `Excluir a rede ${rede.nome}? As ${rede.lojas.length} lojas dela voltam a ficar sem rede.`;
+    if (!confirm(pergunta)) return;
     setErro("");
     setAviso("");
     try {
@@ -236,7 +283,7 @@ export default function RedesInfovalePage() {
       <Surface className="flex flex-wrap items-start justify-between gap-3 p-4">
         <p className="max-w-3xl text-sm text-neutral-600">
           A rede de cada loja vem do cadastro do cliente no Lacteus. Para lojas que <strong className="font-semibold text-neutral-800">só existem no Ativmob</strong>,
-          crie a rede aqui, escolha os supervisores e selecione as lojas. A rede passa a valer nas telas de estoque, solicitações e encartes como qualquer outra.
+          crie a rede aqui (ou escolha uma rede que já existe no Lacteus), defina os supervisores e selecione as lojas. A rede passa a valer nas telas de estoque, solicitações e encartes como qualquer outra.
           Se uma loja for cadastrada depois no Lacteus, passa a valer a rede do Lacteus.
         </p>
         <Button onClick={() => abrir(null)} disabled={abrindo} id="btn-nova-rede">{abrindo && !form ? "Carregando..." : "+ Nova rede"}</Button>
@@ -262,9 +309,12 @@ export default function RedesInfovalePage() {
               <Surface key={r.id} className="flex flex-col p-4" data-rede={r.codigoRede}>
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
-                    <h2 className="truncate text-base font-semibold text-neutral-900">{r.nome}</h2>
+                    <h2 className="flex items-center gap-2 text-base font-semibold text-neutral-900">
+                      <span className="truncate">{r.nome}</span>
+                      {r.doLacteus && <Badge tone="neutral" title="A rede já existe no Lacteus; aqui ficam só as lojas a mais.">Rede do Lacteus</Badge>}
+                    </h2>
                     <p className="mt-0.5 text-xs text-neutral-500">
-                      Cód. {r.codigoRede} · {r.lojas.length} {r.lojas.length === 1 ? "loja" : "lojas"}
+                      Cód. {r.codigoRede} · {r.lojas.length} {r.lojas.length === 1 ? "loja" : "lojas"}{r.doLacteus ? (r.lojas.length === 1 ? " adicionada" : " adicionadas") : ""}
                       {r.atualizadoPorNome && ` · alterada por ${r.atualizadoPorNome} em ${fmtDataHora(r.atualizadoEm)}`}
                     </p>
                   </div>

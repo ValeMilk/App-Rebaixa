@@ -57,11 +57,36 @@ function montarDocsCarteira(redes, codigosNoLacteus) {
   return docs;
 }
 
+/** Redes do Lacteus (sem as inativas): { nomes: codigo -> nome, supervisores: codigo -> [codigos] }. Com `codigos`, so essas. */
+async function redesDoLacteus(codigos) {
+  if (codigos && !codigos.length) return { nomes: new Map(), supervisores: new Map() };
+  const docs = await Carteira.aggregate([
+    { $match: { ...NAO_INFOVALE, codigoRede: codigos ? { $in: codigos } : { $ne: null }, $or: [{ redeSubrede: { $not: /INATIVO/i } }, { redeSubrede: null }] } },
+    { $group: { _id: "$codigoRede", nome: { $first: "$redeSubrede" }, supervisores: { $addToSet: "$supervisorCodigo" } } },
+  ]);
+  return {
+    nomes: new Map(docs.map((d) => [String(d._id), normalizar(d.nome) || String(d._id)])),
+    supervisores: new Map(docs.map((d) => [String(d._id), d.supervisores.filter(Boolean)])),
+  };
+}
+
+/** Redes do Lacteus que ainda podem receber lojas por aqui, com os supervisores que ja as tem na carteira. */
+async function redesLacteusDisponiveis() {
+  const [{ nomes, supervisores }, usadas] = await Promise.all([redesDoLacteus(), RedeInfovale.distinct("codigoRede", { doLacteus: true })]);
+  return [...nomes.entries()]
+    .filter(([codigo]) => !usadas.includes(codigo))
+    .map(([codigoRede, nome]) => ({ codigoRede, nome, supervisoresCodigos: supervisores.get(codigoRede) || [] }))
+    .sort((a, b) => a.nome.localeCompare(b.nome, "pt-BR"));
+}
+
 /** Recria na Carteira as linhas das redes do InfoVale. Chamar apos gravar uma rede e apos sincronizar a carteira. */
 async function aplicarNaCarteira() {
   const redes = await RedeInfovale.find({}).lean();
   const codigos = redes.flatMap((r) => r.lojas.map((l) => l.clienteCodigo));
   const noLacteus = new Set(codigos.length ? await Carteira.distinct("clienteCodigo", { ...NAO_INFOVALE, clienteCodigo: { $in: codigos } }) : []);
+  // rede do Lacteus: usa o nome que ela tem hoje la
+  const { nomes } = await redesDoLacteus(redes.filter((r) => r.doLacteus).map((r) => r.codigoRede));
+  for (const r of redes) if (r.doLacteus && nomes.has(r.codigoRede)) r.nome = nomes.get(r.codigoRede);
   const docs = montarDocsCarteira(redes, noLacteus);
   await Carteira.deleteMany({ origem: "infovale" });
   if (docs.length) await Carteira.insertMany(docs.map((d) => ({ ...d, sincronizadoEm: new Date() })));
@@ -115,10 +140,12 @@ async function listar() {
   const codigos = redes.flatMap((r) => r.lojas.map((l) => l.clienteCodigo));
   const noLacteus = codigos.length ? await Carteira.find({ ...NAO_INFOVALE, clienteCodigo: { $in: codigos } }, "clienteCodigo redeSubrede").lean() : [];
   const redeLacteus = new Map(noLacteus.map((c) => [c.clienteCodigo, normalizar(c.redeSubrede) || "sem rede"]));
+  const { nomes } = await redesDoLacteus(redes.filter((r) => r.doLacteus).map((r) => r.codigoRede));
   return redes.map((r) => ({
     id: String(r._id),
     codigoRede: r.codigoRede,
-    nome: r.nome,
+    doLacteus: !!r.doLacteus,
+    nome: (r.doLacteus && nomes.get(r.codigoRede)) || r.nome,
     supervisores: r.supervisores.map((s) => ({ id: String(s.id), codigo: s.codigo, nome: s.nome })),
     lojas: r.lojas.map((l) => ({ ...l, noLacteus: redeLacteus.get(l.clienteCodigo) || null })),
     atualizadoPorNome: r.atualizadoPorNome || r.criadoPorNome || null,
@@ -128,19 +155,22 @@ async function listar() {
 
 async function proximoCodigo() {
   const codigos = await RedeInfovale.distinct("codigoRede");
-  const maior = codigos.reduce((m, c) => Math.max(m, Number(String(c).replace(/^IV/, "")) || 0), 0);
+  const maior = codigos.reduce((m, c) => (/^IV\d+$/.test(c) ? Math.max(m, Number(c.slice(2))) : m), 0);
   return `IV${maior + 1}`;
 }
 
 /** Valida e monta os campos de uma rede (criacao ou edicao). */
-async function prepararDados(dados, idAtual) {
-  const nome = normalizar(dados?.nome);
-  if (nome.length < 2 || nome.length > 60) throw erro(400, "Informe o nome da rede (de 2 a 60 caracteres).");
-
-  const outras = await RedeInfovale.find(idAtual ? { _id: { $ne: idAtual } } : {}, "nome codigoRede lojas").lean();
-  if (outras.some((r) => chaveNome(r.nome) === chaveNome(nome))) throw erro(400, "Ja existe uma rede do InfoVale com esse nome.");
-  const nomesLacteus = await Carteira.distinct("redeSubrede", { ...NAO_INFOVALE, redeSubrede: { $ne: null } });
-  if (nomesLacteus.some((n) => chaveNome(n) === chaveNome(nome))) throw erro(400, "Ja existe uma rede com esse nome no Lacteus. Use outro nome.");
+async function prepararDados(dados, idAtual, redeLacteus) {
+  const outras = await RedeInfovale.find(idAtual ? { _id: { $ne: idAtual } } : {}, "nome codigoRede doLacteus lojas").lean();
+  // rede do Lacteus: o nome e o de la; rede nova: nome proprio, sem repetir nenhum outro
+  let nome = redeLacteus?.nome;
+  if (!redeLacteus) {
+    nome = normalizar(dados?.nome);
+    if (nome.length < 2 || nome.length > 60) throw erro(400, "Informe o nome da rede (de 2 a 60 caracteres).");
+    if (outras.some((r) => !r.doLacteus && chaveNome(r.nome) === chaveNome(nome))) throw erro(400, "Ja existe uma rede do InfoVale com esse nome.");
+    const nomesLacteus = await Carteira.distinct("redeSubrede", { ...NAO_INFOVALE, redeSubrede: { $ne: null } });
+    if (nomesLacteus.some((n) => chaveNome(n) === chaveNome(nome))) throw erro(400, 'Essa rede ja existe no Lacteus. Para colocar lojas nela, escolha a opcao "Rede que ja existe no Lacteus".');
+  }
 
   if (!Array.isArray(dados.supervisores)) throw erro(400, "Envie a lista de supervisores.");
   const ids = [...new Set(dados.supervisores.map(String))];
@@ -164,8 +194,23 @@ async function prepararDados(dados, idAtual) {
 }
 
 async function criar(dados, user) {
-  const campos = await prepararDados(dados, null);
-  const rede = await RedeInfovale.create({ ...campos, codigoRede: await proximoCodigo(), criadoPorNome: user?.nome, atualizadoPorNome: user?.nome });
+  // Com codigoRedeLacteus, as lojas entram numa rede que ja existe no Lacteus
+  let redeLacteus = null;
+  if (dados?.codigoRedeLacteus) {
+    const codigoRede = String(dados.codigoRedeLacteus);
+    const { nomes } = await redesDoLacteus([codigoRede]);
+    if (!nomes.has(codigoRede)) throw erro(400, "Rede do Lacteus nao encontrada.");
+    if (await RedeInfovale.exists({ codigoRede })) throw erro(400, "Essa rede do Lacteus ja tem lojas adicionadas aqui. Edite o cadastro dela.");
+    redeLacteus = { codigoRede, nome: nomes.get(codigoRede) };
+  }
+  const campos = await prepararDados(dados, null, redeLacteus);
+  const rede = await RedeInfovale.create({
+    ...campos,
+    codigoRede: redeLacteus ? redeLacteus.codigoRede : await proximoCodigo(),
+    doLacteus: !!redeLacteus,
+    criadoPorNome: user?.nome,
+    atualizadoPorNome: user?.nome,
+  });
   await aplicarNaCarteira();
   return rede;
 }
@@ -173,10 +218,11 @@ async function criar(dados, user) {
 async function atualizar(id, dados, user) {
   const rede = await RedeInfovale.findById(id).catch(() => null);
   if (!rede) throw erro(404, "Rede nao encontrada.");
-  Object.assign(rede, await prepararDados(dados, rede._id), { atualizadoPorNome: user?.nome });
+  const redeLacteus = rede.doLacteus ? { codigoRede: rede.codigoRede, nome: rede.nome } : null;
+  Object.assign(rede, await prepararDados(dados, rede._id, redeLacteus), { atualizadoPorNome: user?.nome });
   await rede.save();
   // o nome da rede fica copiado em quem a referencia
-  await ResponsavelRede.updateMany({ codigoRede: rede.codigoRede }, { $set: { redeSubrede: rede.nome } });
+  if (!rede.doLacteus) await ResponsavelRede.updateMany({ codigoRede: rede.codigoRede }, { $set: { redeSubrede: rede.nome } });
   await aplicarNaCarteira();
   return rede;
 }
@@ -184,11 +230,12 @@ async function atualizar(id, dados, user) {
 async function remover(id) {
   const rede = await RedeInfovale.findById(id).catch(() => null);
   if (!rede) throw erro(404, "Rede nao encontrada.");
-  const encartes = await Encarte.countDocuments({ codigoRede: rede.codigoRede });
+  // rede do Lacteus continua existindo (com encartes e responsavel): aqui so saem as lojas a mais
+  const encartes = rede.doLacteus ? 0 : await Encarte.countDocuments({ codigoRede: rede.codigoRede });
   if (encartes) throw erro(409, `Esta rede tem ${encartes} ${encartes === 1 ? "acao cadastrada" : "acoes cadastradas"} em Encartes e nao pode ser excluida. Voce pode tirar as lojas e os supervisores dela.`);
   await rede.deleteOne();
-  await ResponsavelRede.deleteMany({ codigoRede: rede.codigoRede });
+  if (!rede.doLacteus) await ResponsavelRede.deleteMany({ codigoRede: rede.codigoRede });
   await aplicarNaCarteira();
 }
 
-module.exports = { montarDocsCarteira, aplicarNaCarteira, lojasDisponiveis, supervisoresDisponiveis, listar, criar, atualizar, remover };
+module.exports = { montarDocsCarteira, aplicarNaCarteira, redesLacteusDisponiveis, lojasDisponiveis, supervisoresDisponiveis, listar, criar, atualizar, remover };

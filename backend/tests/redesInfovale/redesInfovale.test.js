@@ -191,3 +191,38 @@ test("editar: troca nome, supervisores e lojas; excluir tira tudo da carteira", 
   assert.equal(nova.dados.redes[0].codigoRede, "IV1");
   assert.equal((await Carteira.findOne({ origem: "infovale" }).lean()).supervisorCodigo, "");
 });
+
+test("rede que ja existe no Lacteus: recebe lojas do Ativmob sem criar rede nova", async (t) => {
+  if (!pronto()) return t.skip("sem banco de teste");
+  const SOLTO = [{ clienteCodigo: "902", clienteNome: "MERCADINHO SOLTO" }];
+  const op = await chamar("admin", "GET", "/redes-infovale/opcoes");
+  assert.deepEqual(op.dados.redesLacteus, [{ codigoRede: "21", nome: "FRANGOLANDIA", supervisoresCodigos: ["S3"] }]);
+
+  // pelo nome nao cria (a mensagem aponta o caminho); pelo codigo do Lacteus, sim
+  const porNome = await chamar("admin", "POST", "/redes-infovale", { nome: "Frangolandia", supervisores: [], lojas: SOLTO });
+  assert.equal(porNome.status, 400);
+  assert.match(porNome.dados.error, /ja existe no Lacteus/);
+  assert.equal((await chamar("admin", "POST", "/redes-infovale", { codigoRedeLacteus: "999", supervisores: [], lojas: SOLTO })).status, 400);
+
+  const r = await chamar("admin", "POST", "/redes-infovale", { codigoRedeLacteus: "21", supervisores: [ids.sup1], lojas: SOLTO });
+  assert.equal(r.status, 201);
+  const rede = r.dados.redes.find((x) => x.codigoRede === "21");
+  assert.equal(rede.doLacteus, true);
+  assert.equal(rede.nome, "FRANGOLANDIA");
+  const linha = await Carteira.findOne({ origem: "infovale", clienteCodigo: "902" }).lean();
+  assert.equal(`${linha.codigoRede}/${linha.redeSubrede}/${linha.supervisorCodigo}`, "21/FRANGOLANDIA/S1");
+  const est = await chamar("sup1", "GET", "/estoque");
+  assert.equal(est.dados.itens.find((i) => i.clienteCodigo === "902").redeSubrede, "FRANGOLANDIA");
+
+  // uma entrada por rede do Lacteus; ela sai das opcoes; o proximo codigo IV ignora o codigo numerico
+  assert.equal((await chamar("admin", "POST", "/redes-infovale", { codigoRedeLacteus: "21", supervisores: [], lojas: SOLTO })).status, 400);
+  assert.deepEqual((await chamar("admin", "GET", "/redes-infovale/opcoes")).dados.redesLacteus, []);
+
+  // editar mantem o nome do Lacteus; excluir tira so as lojas a mais
+  const ed = await chamar("admin", "PUT", `/redes-infovale/${rede.id}`, { nome: "Outro nome", supervisores: [ids.sup2], lojas: SOLTO });
+  assert.equal(ed.dados.redes.find((x) => x.codigoRede === "21").nome, "FRANGOLANDIA");
+  assert.equal((await Carteira.findOne({ origem: "infovale", clienteCodigo: "902" }).lean()).supervisorCodigo, "S2");
+  assert.equal((await chamar("admin", "DELETE", `/redes-infovale/${rede.id}`)).status, 200);
+  assert.equal(await Carteira.countDocuments({ codigoRede: "21" }), 2); // as lojas do Lacteus continuam la
+  assert.equal(await Carteira.countDocuments({ clienteCodigo: "902" }), 0);
+});

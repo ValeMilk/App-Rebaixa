@@ -8,7 +8,10 @@ const mongoose = require("mongoose");
  */
 const redeInfovaleSchema = new mongoose.Schema(
   {
-    codigoRede: { type: String, required: true, unique: true }, // "IV1", "IV2"... (nunca colide com o Lacteus, que e numerico)
+    // Rede nova: "IV1", "IV2"... (nunca colide com o Lacteus, que e numerico).
+    // Rede que ja existe no Lacteus (doLacteus): o proprio codigo dela; aqui ficam so as lojas a MAIS.
+    codigoRede: { type: String, required: true, unique: true },
+    doLacteus: { type: Boolean, default: false },
     nome: { type: String, required: true, trim: true },
     supervisores: [
       {
