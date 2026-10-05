@@ -72,7 +72,7 @@ async function aplicarNaCarteira() {
 async function lojasDoAtivmob() {
   if (pgConfigurado()) {
     try {
-      const { rows } = await query(
+      const rows = await query(
         `SELECT codigo_destino AS codigo, MAX(nome_fantasia_dest) AS nome,
                 to_char(MAX(event_dth), 'YYYY-MM-DD') AS ultima_contagem
            FROM public.ativmob_estoque
