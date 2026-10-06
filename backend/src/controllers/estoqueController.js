@@ -1,6 +1,8 @@
 const Estoque = require("../models/Estoque");
 const Carteira = require("../models/Carteira");
 const { query, pgConfigurado } = require("../services/estoquePgDbService");
+const { buscarUltimasComprasLote } = require("../services/erpService");
+const { montarLinhas, gerarPlanilha } = require("../services/exportacaoVencimentosService");
 
 /**
  * Lista o estoque critico (ja filtrado pela view do Postgres na sincronizacao —
@@ -146,4 +148,50 @@ async function detalhes(req, res) {
   });
 }
 
-module.exports = { listar, detalhes };
+/** Codigos de cliente que o usuario enxerga (null = todos). Mesmo escopo da listagem. */
+async function clientesNoEscopo(user) {
+  if (user.role === "vendedor") return Carteira.distinct("clienteCodigo", { vendedorCodigo: user.codigo });
+  if (user.role === "supervisor") return Carteira.distinct("clienteCodigo", { supervisorCodigo: user.codigo });
+  return null;
+}
+
+const MAX_EXPORTACAO = 2000;
+
+/**
+ * Planilha (xlsx) dos itens selecionados no painel, com o preco da ultima compra de cada loja no
+ * ERP. Se o ERP nao responder, a planilha sai com as colunas de compra vazias.
+ */
+async function exportar(req, res) {
+  const ids = Array.isArray(req.body?.ids) ? req.body.ids.map(String).slice(0, MAX_EXPORTACAO) : [];
+  if (!ids.length) return res.status(400).json({ error: "Selecione ao menos um item." });
+
+  const escopo = await clientesNoEscopo(req.user);
+  const match = { _id: { $in: ids } };
+  if (escopo) match.clienteCodigo = { $in: escopo };
+  const itens = await Estoque.find(match, "clienteCodigo cliente produtoCodigo produto quantidade dataValidade")
+    .sort({ dataValidade: 1, cliente: 1, produto: 1 })
+    .lean();
+  if (!itens.length) return res.status(404).json({ error: "Nenhum item encontrado." });
+
+  const hoje = new Date();
+  hoje.setHours(0, 0, 0, 0);
+  for (const it of itens) {
+    it.diasParaVencer = it.dataValidade ? Math.round((new Date(it.dataValidade) - hoje) / 864e5) : null;
+  }
+
+  let compras = new Map();
+  try {
+    compras = await buscarUltimasComprasLote(itens.map((it) => ({ clienteCodigo: it.clienteCodigo, produtoCodigo: it.produtoCodigo })));
+  } catch (err) {
+    console.error("[estoque/exportar] ultima compra indisponivel:", err.message);
+  }
+
+  const buffer = await gerarPlanilha(montarLinhas(itens, compras));
+  const nome = `vencimentos-${new Date().toISOString().slice(0, 10)}.xlsx`;
+  res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+  res.setHeader("Content-Disposition", `attachment; filename="${nome}"`);
+  res.setHeader("X-Itens", String(itens.length));
+  res.send(buffer);
+}
+
+module.exports = { listar, detalhes, exportar };

@@ -118,6 +118,7 @@ export default function DashboardPage() {
   const [detalheItem, setDetalheItem] = useState(null);
   const [selecionados, setSelecionados] = useState(() => new Set());
   const [loteAberto, setLoteAberto] = useState(false);
+  const [exportando, setExportando] = useState(false);
   const [toast, setToast] = useState("");
   const tabelaRef = useRef(null);
 
@@ -320,6 +321,30 @@ export default function DashboardPage() {
     [itensSelecionados]
   );
 
+  // Planilha dos itens selecionados (loja, produto, estoque, validade e preco de compra no ERP)
+  async function exportarSelecao() {
+    setExportando(true);
+    try {
+      const { data } = await api.post("/estoque/exportar", { ids: itensSelecionados.map((it) => it._id) }, { responseType: "blob" });
+      const url = URL.createObjectURL(data);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `vencimentos-${new Date().toISOString().slice(0, 10)}.xlsx`;
+      a.click();
+      URL.revokeObjectURL(url);
+      setToast(`Planilha com ${itensSelecionados.length} ${itensSelecionados.length === 1 ? "item" : "itens"} gerada`);
+      setTimeout(() => setToast(""), 3000);
+    } catch (err) {
+      let msg = "Não foi possível gerar a planilha.";
+      if (err.response?.data instanceof Blob) {
+        try { msg = JSON.parse(await err.response.data.text())?.error || msg; } catch { /* mantem a mensagem padrao */ }
+      }
+      alert(msg);
+    } finally {
+      setExportando(false);
+    }
+  }
+
   // ── Interações ─────────────────────────────────────────────────────────────
   function irParaTabela() {
     requestAnimationFrame(() => tabelaRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }));
@@ -483,7 +508,7 @@ export default function DashboardPage() {
         </>
       )}
 
-      {podeSolicitar && itensSelecionados.length > 0 && !loteAberto && (
+      {itensSelecionados.length > 0 && !loteAberto && (
         <div className="fixed bottom-20 lg:bottom-6 left-1/2 -translate-x-1/2 z-40 flex items-center gap-3 rounded-2xl bg-neutral-900 text-white shadow-2xl px-4 py-2.5 animate-slide-up max-w-[calc(100vw-2rem)]">
           <span className="text-sm whitespace-nowrap">
             <b>{itensSelecionados.length}</b> {itensSelecionados.length === 1 ? "item" : "itens"} · <b>{lojasSelecionadas}</b> {lojasSelecionadas === 1 ? "loja" : "lojas"}
@@ -491,7 +516,10 @@ export default function DashboardPage() {
           <button type="button" onClick={limparSelecao} className="text-xs text-neutral-300 hover:text-white underline whitespace-nowrap">
             Limpar
           </button>
-          <Button size="sm" onClick={() => setLoteAberto(true)}>Criar rebaixa</Button>
+          <Button size="sm" variant="outline" onClick={exportarSelecao} disabled={exportando} id="btn-exportar">
+            {exportando ? "Gerando..." : "Exportar planilha"}
+          </Button>
+          {podeSolicitar && <Button size="sm" onClick={() => setLoteAberto(true)}>Criar rebaixa</Button>}
         </div>
       )}
 

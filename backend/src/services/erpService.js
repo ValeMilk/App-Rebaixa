@@ -189,6 +189,49 @@ async function buscarUltimaCompra(clienteCodigo, produtoCodigo) {
 }
 
 /**
+ * Ultima compra de VARIOS pares loja+produto numa consulta so (exportacao do painel).
+ * Devolve um Map "clienteCodigo|produtoCodigo" -> { precoUltimaCompra, dataUltimaCompra }.
+ */
+async function buscarUltimasComprasLote(pares) {
+  const resultado = new Map();
+  if (!erpConfigurado() || !pares.length) return resultado;
+  const { getPool } = require("./erpDbService");
+  const sql = require("mssql");
+  const pool = await getPool();
+  const LOTE = 150;
+  for (let i = 0; i < pares.length; i += LOTE) {
+    const fatia = pares.slice(i, i + LOTE);
+    const clientes = [...new Set(fatia.map((p) => String(p.clienteCodigo)))];
+    const produtos = [...new Set(fatia.map((p) => String(p.produtoCodigo)))];
+    const req = pool.request();
+    clientes.forEach((c, k) => req.input(`c${k}`, sql.VarChar(50), c));
+    produtos.forEach((p, k) => req.input(`p${k}`, sql.VarChar(50), p));
+    const { recordset } = await req.query(`
+      WITH UltimaCompra AS (
+        SELECT m00.M00_ID_A00 AS clienteCodigo, e02.E02_LIVRE AS produtoCodigo,
+               m01.M01_PRECOU AS precoUltimaCompra, m00.M00_ENTSAI AS dataUltimaCompra,
+               ROW_NUMBER() OVER (PARTITION BY m00.M00_ID_A00, m01.M01_ID_E02 ORDER BY m00.M00_ENTSAI DESC) AS rn
+        FROM dbo.M01 WITH (NOLOCK)
+        INNER JOIN dbo.M00 WITH (NOLOCK) ON m01.M01_ID_M00 = m00.M00_ID
+        INNER JOIN dbo.E02 WITH (NOLOCK) ON m01.M01_ID_E02 = e02.E02_ID
+        WHERE m00.M00_ENTSAI IS NOT NULL
+          AND m00.M00_STATUS = 'N'
+          AND m00.M00_ID_A00 IN (${clientes.map((_, k) => `@c${k}`).join(",")})
+          AND e02.E02_LIVRE IN (${produtos.map((_, k) => `@p${k}`).join(",")})
+          AND m00.M00_ID_A76 IN (38, 39, 45, 46, 1134)
+      )
+      SELECT clienteCodigo, produtoCodigo, precoUltimaCompra, dataUltimaCompra FROM UltimaCompra WHERE rn = 1
+    `);
+    const pedidos = new Set(fatia.map((p) => `${p.clienteCodigo}|${p.produtoCodigo}`));
+    for (const r of recordset) {
+      const chave = `${String(r.clienteCodigo).trim()}|${String(r.produtoCodigo).trim()}`;
+      if (pedidos.has(chave)) resultado.set(chave, { precoUltimaCompra: r.precoUltimaCompra, dataUltimaCompra: r.dataUltimaCompra });
+    }
+  }
+  return resultado;
+}
+
+/**
  * Retorna a ultima compra MAIS RECENTE de qualquer loja de uma rede para um produto.
  * Filtra diretamente por A00_ID_A16 no ERP — sem depender do MongoDB Carteira.
  */
@@ -320,6 +363,7 @@ WHERE rn = 1;
 
 module.exports = {
   ehRedeDoErp,
+  buscarUltimasComprasLote,
   buscarCarteiraDoErp,
   sincronizarCarteira,
   buscarProdutosDoErp,
