@@ -56,6 +56,9 @@ const estoqueSchema = new mongoose.Schema(
     contadoPor: { type: String, default: null },
     contadoPorCodigo: { type: String, default: null },
     contadoEm: { type: String, default: null },
+    // Ultima visita do promotor a loja (qualquer produto): "AAAA-MM-DDTHH:MM" e quem foi
+    ultimaVisitaEm: { type: String, default: null },
+    ultimaVisitaPor: { type: String, default: null },
   },
   { timestamps: true }
 );

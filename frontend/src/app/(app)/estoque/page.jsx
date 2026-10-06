@@ -8,7 +8,7 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth";
 import { pode } from "@/lib/permissoes";
 import api from "@/lib/api";
-import { fmtData, formatarRede, fmtBRL } from "@/lib/utils";
+import { fmtData, fmtDataHoraCurta, formatarRede, fmtBRL } from "@/lib/utils";
 import { rankStatus, SEGMENTO } from "@/lib/estoque";
 import { IcoSearch, IcoX, IcoChevronDown, IcoStore, IcoAlert, IcoClock, IcoPackage, IcoTrendDown, IcoTag, IcoUsers } from "@/components/Icons";
 import RebaixaModal, { MargemBadge } from "@/components/RebaixaModal";
@@ -355,6 +355,8 @@ function ProdutoCard({ item, onRebaixar, acaoAtiva }) {
 }
 
 function LojaCard({ clienteCodigo, clienteNome, redeSubrede, subrede, itens, expanded, onToggle, onRebaixar, getAcaoAtiva }) {
+  // Ultima visita do promotor a loja (igual em todos os itens da loja)
+  const visita = itens.find((i) => i.ultimaVisitaEm);
   const criticos = itens.filter((i) => i.classificacao === "critico").length;
   const alertas  = itens.filter((i) => i.classificacao === "alerta").length;
   const borda = criticos > 0 ? "border-danger/30" : alertas > 0 ? "border-warning/30" : "border-neutral-200";
@@ -374,6 +376,11 @@ function LojaCard({ clienteCodigo, clienteNome, redeSubrede, subrede, itens, exp
           <div className="font-semibold text-neutral-900 truncate text-sm">{clienteNome}</div>
           <div className="text-[11px] text-neutral-500 mt-1 flex items-center gap-1.5 flex-wrap">
             <span className="whitespace-nowrap">{itens.length} prod.</span>
+            {visita && (
+              <span className="whitespace-nowrap" title={visita.ultimaVisitaPor ? `Última visita do promotor: ${visita.ultimaVisitaPor}` : "Última visita do promotor"}>
+                · visita {fmtDataHoraCurta(visita.ultimaVisitaEm)}
+              </span>
+            )}
             {criticos > 0 && (
               <span className="inline-flex items-center gap-0.5 bg-danger/15 text-danger px-1.5 py-0.5 rounded-full font-bold whitespace-nowrap">
                 <span className="w-1 h-1 rounded-full bg-danger" />{criticos} crít.

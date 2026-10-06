@@ -12,6 +12,8 @@ const COLUNAS = [
   { header: "Estoque", key: "quantidade", width: 10 },
   { header: "Data de validade", key: "dataValidade", width: 16, style: { numFmt: "dd/mm/yyyy" } },
   { header: "Dias para vencer", key: "diasParaVencer", width: 16 },
+  { header: "Última visita do promotor", key: "ultimaVisita", width: 22, style: { numFmt: "dd/mm/yyyy hh:mm" } },
+  { header: "Promotor", key: "promotor", width: 24 },
   { header: "Preço de compra (ERP)", key: "precoCompra", width: 20, style: { numFmt: '"R$" #,##0.00' } },
   { header: "Data da última compra", key: "dataCompra", width: 20, style: { numFmt: "dd/mm/yyyy" } },
   { header: "Preço vem de", key: "origemPreco", width: 24 },
@@ -48,6 +50,9 @@ function montarLinhas(itens, compras, comprasRede = new Map()) {
       quantidade: Number(it.quantidade) || 0,
       dataValidade: soDia(it.dataValidade),
       diasParaVencer: it.diasParaVencer ?? null,
+      // hora de relogio da visita, gravada como UTC para o Excel nao deslocar o fuso
+      ultimaVisita: it.ultimaVisitaEm ? new Date(`${it.ultimaVisitaEm}:00Z`) : null,
+      promotor: it.ultimaVisitaPor || null,
       precoCompra: c ? Number(c.precoUltimaCompra) || 0 : null,
       dataCompra: c ? soDia(c.dataUltimaCompra) : null,
       origemPreco: c ? ORIGEM[origem] : "sem compra no ERP",

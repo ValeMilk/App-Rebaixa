@@ -1,7 +1,7 @@
 "use client";
 
 import clsx from "clsx";
-import { fmtData, formatarRede } from "@/lib/utils";
+import { fmtData, fmtDataHoraCurta, formatarRede } from "@/lib/utils";
 import { STATUS_SHELF_MAP } from "@/lib/estoque";
 import AcaoAtivaBadge from "@/components/AcaoAtivaBadge";
 import Badge from "@/components/ui/Badge";
@@ -204,6 +204,11 @@ export default function TabelaVencimentos({
                       <td className="max-w-[220px] px-3 py-2">
                         <div className="truncate font-medium text-neutral-800">{l.cliente}</div>
                         {rede && <div className="truncate text-[11px] text-neutral-500">{rede}</div>}
+                        {l.ultimaVisitaEm && (
+                          <div className="truncate text-[11px] text-neutral-500" title={l.ultimaVisitaPor ? `Última visita do promotor: ${l.ultimaVisitaPor}` : "Última visita do promotor"}>
+                            Visita {fmtDataHoraCurta(l.ultimaVisitaEm)}
+                          </div>
+                        )}
                       </td>
                       <td className="max-w-[260px] truncate px-3 py-2 text-neutral-700">{l.produto}</td>
                       <td className="px-3 py-2 text-right tabular-nums text-neutral-800">

@@ -47,14 +47,16 @@ test("planilha: colunas pedidas, uma linha por item, preco e data da ultima comp
   const [cabecalho, l1, l2] = await lerPlanilha(await gerarPlanilha(montarLinhas(itens.slice(0, 2), compras)));
   assert.deepEqual(cabecalho, COLUNAS.map((c) => c.header));
   assert.deepEqual(cabecalho.slice(0, 6), ["ID loja", "Loja", "Código produto", "Nome produto", "Estoque", "Data de validade"]);
-  assert.equal(cabecalho[7], "Preço de compra (ERP)");
+  const P = cabecalho.indexOf("Preço de compra (ERP)");
+  assert.ok(P > 5 && cabecalho[P + 1] === "Data da última compra" && cabecalho[P + 2] === "Preço vem de");
+  assert.ok(cabecalho.includes("Última visita do promotor") && cabecalho.includes("Promotor"));
   assert.deepEqual(l1.slice(0, 5), ["9634", "MEGA - PACAJUS", "152530", "MANTEIGA GHEE 160G", 5]);
   assert.equal(l1[5].toISOString().slice(0, 10), "2026-11-03");
-  assert.equal(l1[7], 10.3);
-  assert.equal(l1[8].toISOString().slice(0, 10), "2026-10-01");
+  assert.equal(l1[P], 10.3);
+  assert.equal(l1[P + 1].toISOString().slice(0, 10), "2026-10-01");
   assert.equal(l2[5].toISOString().slice(0, 10), "2026-11-07"); // data com hora nao desloca o dia
-  assert.equal(l2[7], undefined); // sem compra: celula vazia
-  assert.equal(l2[9], "sem compra no ERP");
+  assert.equal(l2[P], undefined); // sem compra: celula vazia
+  assert.equal(l2[P + 2], "sem compra no ERP");
 });
 
 // ── API ─────────────────────────────────────────────────────────────────────────

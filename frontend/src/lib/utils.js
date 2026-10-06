@@ -12,6 +12,12 @@ export function fmtDataHora(d) {
   return new Date(d).toLocaleString("pt-BR");
 }
 
+// "AAAA-MM-DDTHH:MM" (hora de relogio, sem fuso) -> "05/10 14:32"
+export function fmtDataHoraCurta(s) {
+  const m = String(s || "").match(/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})/);
+  return m ? `${m[3]}/${m[2]} ${m[4]}:${m[5]}` : "-";
+}
+
 export function fmtBRL(v) {
   if (v == null || v === "") return "—";
   return Number(v).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });

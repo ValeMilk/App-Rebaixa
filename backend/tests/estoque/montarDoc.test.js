@@ -23,6 +23,15 @@ const linha = (extra = {}) => ({
   ...extra,
 });
 
+test("montarDoc: ultima visita do promotor a loja vem da consulta (texto de relogio, nome aparado)", () => {
+  const doc = montarDoc({ codigo_destino: "1", produto_codigo: "2", quantidade: 1, peso_max: 3, lotes: [], visita_em: "2099-09-26T08:15", visita_por: "Carla  " });
+  assert.equal(doc.ultimaVisitaEm, "2099-09-26T08:15");
+  assert.equal(doc.ultimaVisitaPor, "Carla");
+  const sem = montarDoc({ codigo_destino: "1", produto_codigo: "2", quantidade: 1, peso_max: 3, lotes: [] });
+  assert.equal(sem.ultimaVisitaEm, null);
+  assert.equal(sem.ultimaVisitaPor, null);
+});
+
 test("montarDoc: so os lotes em giro/rebaixa entram na soma; o lote ok fica registrado, fora dela", () => {
   const d = montarDoc(linha());
   assert.equal(d.chave, "10752|187001");

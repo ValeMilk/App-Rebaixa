@@ -168,7 +168,7 @@ async function exportar(req, res) {
   const escopo = await clientesNoEscopo(req.user);
   const match = { _id: { $in: ids } };
   if (escopo) match.clienteCodigo = { $in: escopo };
-  const itens = await Estoque.find(match, "clienteCodigo cliente produtoCodigo produto quantidade dataValidade")
+  const itens = await Estoque.find(match, "clienteCodigo cliente produtoCodigo produto quantidade dataValidade ultimaVisitaEm ultimaVisitaPor")
     .sort({ dataValidade: 1, cliente: 1, produto: 1 })
     .lean();
   if (!itens.length) return res.status(404).json({ error: "Nenhum item encontrado." });

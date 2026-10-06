@@ -33,6 +33,13 @@ WITH base AS (
   WHERE NULLIF(TRIM(e.codigo_destino), '') IS NOT NULL
     AND e.event_dth::date BETWEEN CURRENT_DATE - ${JANELA_DIAS} AND CURRENT_DATE
 ),
+visitas AS (
+  -- Ultima visita do promotor a cada loja (qualquer produto, inclusive "sem produto")
+  SELECT DISTINCT ON (codigo_destino) codigo_destino,
+    to_char(event_dth, 'YYYY-MM-DD"T"HH24:MI') AS visita_em, agent_name AS visita_por
+  FROM base
+  ORDER BY codigo_destino, event_dth DESC, id
+),
 sem_estoque AS (
   -- Ultima visita em que a promotora registrou que NAO havia o produto: quantidade zero sem lote
   -- (validade vazia ou nao futura). Cancela os lotes contados antes dela.
@@ -117,8 +124,9 @@ SELECT
   CASE WHEN COALESCE(shelf, 0) <= 0 THEN NULL
        ELSE ROUND(GREATEST(0, LEAST(1, (shelf - (data_validade - CURRENT_DATE))::numeric / shelf)), 4) END AS pct_shelf,
   CASE peso_max WHEN 3 THEN 'rebaixa' WHEN 2 THEN 'giro' ELSE 'sem_shelf' END AS status_shelf,
-  peso_max, lotes
+  peso_max, lotes, v.visita_em, v.visita_por
 FROM sel
+LEFT JOIN visitas v USING (codigo_destino)
 ORDER BY data_validade, codigo_destino, produto_codigo;
 `;
 
@@ -180,6 +188,8 @@ function montarDoc(l) {
     contadoPor: ultima ? ultima.agente : null,
     contadoPorCodigo: ultima ? ultima.agenteCodigo : null,
     contadoEm: ultima ? ultima.contadoEm : null,
+    ultimaVisitaEm: l.visita_em || null,
+    ultimaVisitaPor: l.visita_por ? String(l.visita_por).trim() : null,
   };
 }
 
