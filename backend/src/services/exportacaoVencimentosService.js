@@ -14,7 +14,10 @@ const COLUNAS = [
   { header: "Dias para vencer", key: "diasParaVencer", width: 16 },
   { header: "Preço de compra (ERP)", key: "precoCompra", width: 20, style: { numFmt: '"R$" #,##0.00' } },
   { header: "Data da última compra", key: "dataCompra", width: 20, style: { numFmt: "dd/mm/yyyy" } },
+  { header: "Preço vem de", key: "origemPreco", width: 24 },
 ];
+
+const ORIGEM = { loja: "última compra da loja", rede: "última compra da rede" };
 
 /** Data (ou texto ISO) como dia local, sem hora, para a celula do Excel. */
 function soDia(valor) {
@@ -24,10 +27,19 @@ function soDia(valor) {
   return m ? new Date(Date.UTC(+m[1], +m[2] - 1, +m[3])) : null;
 }
 
-/** Linhas da planilha a partir dos itens do estoque e das ultimas compras (mapa "cliente|produto"). Funcao pura. */
-function montarLinhas(itens, compras) {
+/**
+ * Linhas da planilha a partir dos itens do estoque e das ultimas compras. Funcao pura.
+ * `compras`: mapa "cliente|produto" (compra da propria loja). `comprasRede`: mapa "rede|produto",
+ * usado quando a loja nao compra em nome proprio (compra pelo CD da rede ou tem outro codigo no ERP).
+ */
+function montarLinhas(itens, compras, comprasRede = new Map()) {
   return itens.map((it) => {
-    const c = compras.get(`${it.clienteCodigo}|${it.produtoCodigo}`) || null;
+    let origem = "loja";
+    let c = compras.get(`${it.clienteCodigo}|${it.produtoCodigo}`) || null;
+    if (!c && it.codigoRede) {
+      c = comprasRede.get(`${it.codigoRede}|${it.produtoCodigo}`) || null;
+      origem = "rede";
+    }
     return {
       clienteCodigo: it.clienteCodigo,
       cliente: it.cliente || "",
@@ -38,6 +50,7 @@ function montarLinhas(itens, compras) {
       diasParaVencer: it.diasParaVencer ?? null,
       precoCompra: c ? Number(c.precoUltimaCompra) || 0 : null,
       dataCompra: c ? soDia(c.dataUltimaCompra) : null,
+      origemPreco: c ? ORIGEM[origem] : "sem compra no ERP",
     };
   });
 }

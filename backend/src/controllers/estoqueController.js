@@ -1,7 +1,7 @@
 const Estoque = require("../models/Estoque");
 const Carteira = require("../models/Carteira");
 const { query, pgConfigurado } = require("../services/estoquePgDbService");
-const { buscarUltimasComprasLote } = require("../services/erpService");
+const { buscarUltimasComprasLote, buscarUltimaCompraRedeBatch } = require("../services/erpService");
 const { montarLinhas, gerarPlanilha } = require("../services/exportacaoVencimentosService");
 
 /**
@@ -179,14 +179,30 @@ async function exportar(req, res) {
     it.diasParaVencer = it.dataValidade ? Math.round((new Date(it.dataValidade) - hoje) / 864e5) : null;
   }
 
+  // Rede de cada loja (para o preco pela rede quando a loja nao compra em nome proprio)
+  const redePorCliente = new Map((await Carteira.find({ clienteCodigo: { $in: [...new Set(itens.map((it) => it.clienteCodigo))] } }, "clienteCodigo codigoRede").lean()).map((c) => [c.clienteCodigo, c.codigoRede]));
+  for (const it of itens) it.codigoRede = redePorCliente.get(it.clienteCodigo) || null;
+
   let compras = new Map();
+  const comprasRede = new Map();
   try {
     compras = await buscarUltimasComprasLote(itens.map((it) => ({ clienteCodigo: it.clienteCodigo, produtoCodigo: it.produtoCodigo })));
+    // Sem compra da loja: tenta a ultima compra da rede (qualquer loja ou o CD dela), uma consulta por rede
+    const porRede = new Map();
+    for (const it of itens) {
+      if (!it.codigoRede || compras.has(`${it.clienteCodigo}|${it.produtoCodigo}`)) continue;
+      if (!porRede.has(it.codigoRede)) porRede.set(it.codigoRede, new Set());
+      porRede.get(it.codigoRede).add(it.produtoCodigo);
+    }
+    for (const [codigoRede, produtos] of porRede) {
+      const r = await buscarUltimaCompraRedeBatch(codigoRede, [...produtos]);
+      for (const [produtoCodigo, c] of Object.entries(r)) comprasRede.set(`${codigoRede}|${produtoCodigo}`, { precoUltimaCompra: c.preco, dataUltimaCompra: c.data });
+    }
   } catch (err) {
     console.error("[estoque/exportar] ultima compra indisponivel:", err.message);
   }
 
-  const buffer = await gerarPlanilha(montarLinhas(itens, compras));
+  const buffer = await gerarPlanilha(montarLinhas(itens, compras, comprasRede));
   const nome = `vencimentos-${new Date().toISOString().slice(0, 10)}.xlsx`;
   res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
   res.setHeader("Content-Disposition", `attachment; filename="${nome}"`);

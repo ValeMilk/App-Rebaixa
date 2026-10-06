@@ -29,14 +29,22 @@ async function lerPlanilha(buffer) {
 test("planilha: colunas pedidas, uma linha por item, preco e data da ultima compra quando ha", async () => {
   const itens = [
     { clienteCodigo: "9634", cliente: "MEGA - PACAJUS", produtoCodigo: "152530", produto: "MANTEIGA GHEE 160G", quantidade: 5, dataValidade: "2026-11-03T00:00:00.000Z", diasParaVencer: 29 },
-    { clienteCodigo: "9487", cliente: "MEGA - MESSEJANA", produtoCodigo: "187201", produto: "NATA COM SAL 200G", quantidade: 9, dataValidade: new Date("2026-11-07T03:00:00.000Z"), diasParaVencer: 33 },
+    { clienteCodigo: "9487", cliente: "MEGA - MESSEJANA", produtoCodigo: "187201", produto: "NATA COM SAL 200G", quantidade: 9, dataValidade: new Date("2026-11-07T03:00:00.000Z"), diasParaVencer: 33, codigoRede: "125" },
+    { clienteCodigo: "8971165", cliente: "SUPER DO POVO - CAMBEBA", produtoCodigo: "187201", produto: "NATA COM SAL 200G", quantidade: 4, dataValidade: "2026-11-09", diasParaVencer: 35, codigoRede: "125" },
   ];
   const compras = new Map([["9634|152530", { precoUltimaCompra: 10.3, dataUltimaCompra: "2026-10-01T00:00:00.000Z" }]]);
-  const linhas = montarLinhas(itens, compras);
+  // a loja do Super do Povo nao compra em nome proprio: vale a ultima compra da rede (CD)
+  const comprasRede = new Map([["125|187201", { precoUltimaCompra: 2.65, dataUltimaCompra: "2026-10-01T00:00:00.000Z" }]]);
+  const linhas = montarLinhas(itens, compras, comprasRede);
   assert.equal(linhas[0].precoCompra, 10.3);
-  assert.equal(linhas[1].precoCompra, null);
+  assert.equal(linhas[0].origemPreco, "última compra da loja");
+  assert.equal(linhas[1].precoCompra, 2.65); // sem compra da loja, mas a rede 125 tem
+  assert.equal(linhas[1].origemPreco, "última compra da rede");
+  assert.equal(linhas[2].precoCompra, 2.65);
+  assert.equal(montarLinhas(itens, compras)[1].precoCompra, null);
+  assert.equal(montarLinhas(itens, compras)[1].origemPreco, "sem compra no ERP");
 
-  const [cabecalho, l1, l2] = await lerPlanilha(await gerarPlanilha(linhas));
+  const [cabecalho, l1, l2] = await lerPlanilha(await gerarPlanilha(montarLinhas(itens.slice(0, 2), compras)));
   assert.deepEqual(cabecalho, COLUNAS.map((c) => c.header));
   assert.deepEqual(cabecalho.slice(0, 6), ["ID loja", "Loja", "Código produto", "Nome produto", "Estoque", "Data de validade"]);
   assert.equal(cabecalho[7], "Preço de compra (ERP)");
@@ -46,6 +54,7 @@ test("planilha: colunas pedidas, uma linha por item, preco e data da ultima comp
   assert.equal(l1[8].toISOString().slice(0, 10), "2026-10-01");
   assert.equal(l2[5].toISOString().slice(0, 10), "2026-11-07"); // data com hora nao desloca o dia
   assert.equal(l2[7], undefined); // sem compra: celula vazia
+  assert.equal(l2[9], "sem compra no ERP");
 });
 
 // ── API ─────────────────────────────────────────────────────────────────────────
