@@ -132,6 +132,11 @@ async function buscarProdutosDoErp() {
 // Ultima compra (preco e data) de um produto por um cliente
 // ---------------------------------------------------------------------------
 
+/** Rede do Lacteus = codigo numerico. Rede criada no InfoVale ("IV1") nao existe no ERP. */
+function ehRedeDoErp(codigoRede) {
+  return /^\d+$/.test(String(codigoRede));
+}
+
 const SQL_ULTIMA_COMPRA = `
 -- Created by GitHub Copilot in SSMS - review carefully before executing
 WITH UltimaCompra AS (
@@ -190,7 +195,7 @@ async function buscarUltimaCompra(clienteCodigo, produtoCodigo) {
 async function buscarUltimaCompraRede(codigoRede, produtoCodigo) {
   if (!erpConfigurado()) return null;
   if (!codigoRede || !produtoCodigo) return null;
-  if (!/^d+$/.test(String(codigoRede))) return null; // rede criada no InfoVale: nao existe no ERP
+  if (!ehRedeDoErp(codigoRede)) return null; // rede criada no InfoVale: nao existe no ERP
   const { getPool } = require("./erpDbService");
   const sql = require("mssql");
   const pool = await getPool();
@@ -250,7 +255,7 @@ ORDER BY dataUltimaCompra DESC;
 async function buscarUltimaCompraRedeBatch(codigoRede, produtosCodigos) {
   if (!erpConfigurado()) return {};
   if (!codigoRede || !Array.isArray(produtosCodigos) || produtosCodigos.length === 0) return {};
-  if (!/^d+$/.test(String(codigoRede))) return {}; // rede criada no InfoVale: nao existe no ERP
+  if (!ehRedeDoErp(codigoRede)) return {}; // rede criada no InfoVale: nao existe no ERP
   
   const { getPool } = require("./erpDbService");
   const sql = require("mssql");
@@ -314,6 +319,7 @@ WHERE rn = 1;
 }
 
 module.exports = {
+  ehRedeDoErp,
   buscarCarteiraDoErp,
   sincronizarCarteira,
   buscarProdutosDoErp,
