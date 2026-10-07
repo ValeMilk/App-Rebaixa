@@ -1,6 +1,7 @@
 const Estoque = require("../models/Estoque");
 const Carteira = require("../models/Carteira");
 const { query, pgConfigurado } = require("../services/estoquePgDbService");
+const { carteiraDoUsuario, clientesDoUsuario, alcancaCliente } = require("../services/escopoService");
 const { buscarUltimasComprasLote, buscarUltimaCompraRedeBatch } = require("../services/erpService");
 const { montarLinhas, gerarPlanilha } = require("../services/exportacaoVencimentosService");
 
@@ -20,22 +21,13 @@ async function listar(req, res) {
   if (produto) match.produto = produto;
   if (q) match.produto = { $regex: q, $options: "i" };
 
-  // Restrigir por carteira conforme role + construir mapa rede por cliente
-  let redeMap = {}; // clienteCodigo → { codigoRede, redeSubrede, subrede }
-  if (req.user.role === "vendedor") {
-    const carteira = await Carteira.find({ vendedorCodigo: req.user.codigo }, "clienteCodigo codigoRede redeSubrede subrede");
-    const codigos = carteira.map((c) => c.clienteCodigo);
+  // Restringir ao alcance do usuario (carteira + redes de que e responsavel) e montar o mapa rede por cliente
+  const carteira = await carteiraDoUsuario(req.user);
+  const redeMap = {}; // clienteCodigo → { codigoRede, redeSubrede, subrede }
+  for (const c of carteira) redeMap[c.clienteCodigo] = { codigoRede: c.codigoRede || null, redeSubrede: c.redeSubrede || null, subrede: c.subrede || null };
+  if (req.user.role === "vendedor" || req.user.role === "supervisor") {
+    const codigos = Object.keys(redeMap);
     match.clienteCodigo = { $in: codigos.length ? codigos : ["__none__"] };
-    for (const c of carteira) redeMap[c.clienteCodigo] = { codigoRede: c.codigoRede || null, redeSubrede: c.redeSubrede || null, subrede: c.subrede || null };
-  } else if (req.user.role === "supervisor") {
-    const carteira = await Carteira.find({ supervisorCodigo: req.user.codigo }, "clienteCodigo codigoRede redeSubrede subrede");
-    const codigos = carteira.map((c) => c.clienteCodigo);
-    match.clienteCodigo = { $in: codigos.length ? codigos : ["__none__"] };
-    for (const c of carteira) redeMap[c.clienteCodigo] = { codigoRede: c.codigoRede || null, redeSubrede: c.redeSubrede || null, subrede: c.subrede || null };
-  } else {
-    // admin/diretoria: busca toda a carteira para montar o mapa de redes
-    const carteira = await Carteira.find({}, "clienteCodigo codigoRede redeSubrede subrede");
-    for (const c of carteira) redeMap[c.clienteCodigo] = { codigoRede: c.codigoRede || null, redeSubrede: c.redeSubrede || null, subrede: c.subrede || null };
   }
 
   const pipeline = [
@@ -99,12 +91,6 @@ ORDER BY event_dth DESC, data_validade
 LIMIT 300;
 `;
 
-/** O usuario pode ver este cliente? Mesmo escopo de carteira da listagem. */
-async function clienteNoEscopo(user, clienteCodigo) {
-  if (user.role === "vendedor") return !!(await Carteira.exists({ vendedorCodigo: user.codigo, clienteCodigo }));
-  if (user.role === "supervisor") return !!(await Carteira.exists({ supervisorCodigo: user.codigo, clienteCodigo }));
-  return true; // admin/diretoria
-}
 
 /**
  * Detalhe de um item do estoque: de onde veio a quantidade (lotes por validade, quem contou e
@@ -113,7 +99,7 @@ async function clienteNoEscopo(user, clienteCodigo) {
  */
 async function detalhes(req, res) {
   const item = await Estoque.findById(req.params.id).select("-raw").lean().catch(() => null);
-  if (!item || !(await clienteNoEscopo(req.user, item.clienteCodigo))) {
+  if (!item || !(await alcancaCliente(req.user, item.clienteCodigo))) {
     return res.status(404).json({ error: "Item de estoque nao encontrado" });
   }
 
@@ -148,13 +134,6 @@ async function detalhes(req, res) {
   });
 }
 
-/** Codigos de cliente que o usuario enxerga (null = todos). Mesmo escopo da listagem. */
-async function clientesNoEscopo(user) {
-  if (user.role === "vendedor") return Carteira.distinct("clienteCodigo", { vendedorCodigo: user.codigo });
-  if (user.role === "supervisor") return Carteira.distinct("clienteCodigo", { supervisorCodigo: user.codigo });
-  return null;
-}
-
 const MAX_EXPORTACAO = 2000;
 
 /**
@@ -165,7 +144,7 @@ async function exportar(req, res) {
   const ids = Array.isArray(req.body?.ids) ? req.body.ids.map(String).slice(0, MAX_EXPORTACAO) : [];
   if (!ids.length) return res.status(400).json({ error: "Selecione ao menos um item." });
 
-  const escopo = await clientesNoEscopo(req.user);
+  const escopo = await clientesDoUsuario(req.user);
   const match = { _id: { $in: ids } };
   if (escopo) match.clienteCodigo = { $in: escopo };
   const itens = await Estoque.find(match, "clienteCodigo cliente produtoCodigo produto quantidade dataValidade ultimaVisitaEm ultimaVisitaPor")

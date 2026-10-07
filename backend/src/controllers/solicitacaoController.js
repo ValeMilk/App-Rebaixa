@@ -2,6 +2,7 @@ const Solicitacao = require("../models/Solicitacao");
 const Carteira = require("../models/Carteira");
 const User = require("../models/User");
 const ResponsavelRede = require("../models/ResponsavelRede");
+const { entradaDaLoja } = require("../services/escopoService");
 
 // Status inicial conforme role de quem cria
 function statusInicial(role) {
@@ -46,7 +47,8 @@ async function criar(req, res) {
     supervisorId     = req.user.id;
     supervisorNome   = req.user.nome;
     supervisorCodigo = req.user.codigo;
-    const entrada = await Carteira.findOne({ clienteCodigo: String(clienteCodigo), supervisorCodigo: req.user.codigo });
+    // carteira dele ou loja de uma rede de que e responsavel
+    const entrada = await entradaDaLoja(req.user, clienteCodigo);
     if (entrada) {
       codigoRede  = entrada.codigoRede  || null;
       redeSubrede = entrada.redeSubrede || null;
