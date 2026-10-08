@@ -55,7 +55,8 @@ async function buscarCarteiraDoErp() {
  */
 function montarLinhaCarteira(l) {
   const subrede = l.subrede ? String(l.subrede).trim() : null;
-  const temRede = l.codigoRede != null && l.codigoRede !== "";
+  // No Lacteus, cliente sem rede vem com A00_ID_A16 = 0 (nao nulo)
+  const temRede = l.codigoRede != null && l.codigoRede !== "" && Number(l.codigoRede) !== 0;
   const subclasseComoRede = !temRede && l.subclasseId != null && subrede;
   return {
     clienteCodigo:    String(l.clienteCodigo),

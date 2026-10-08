@@ -20,11 +20,12 @@ test("carteira: cliente sem rede mas com subclasse entra com a subclasse como re
   assert.equal(comRede.codigoRede, "21");
   assert.equal(comRede.redeSubrede, "FRANGOLANDIA ");
   assert.equal(comRede.subrede, "FRANGO");
-  const semRede = montarLinhaCarteira({ ...base, codigoRede: null, redeSubrede: null, subrede: "SUPER CALEBE ", subclasseId: 77 });
+  // no Lacteus, "sem rede" e A00_ID_A16 = 0
+  const semRede = montarLinhaCarteira({ ...base, codigoRede: 0, redeSubrede: null, subrede: "SUPER CALEBE ", subclasseId: 77 });
   assert.equal(semRede.codigoRede, "S77");
   assert.equal(semRede.redeSubrede, "SUPER CALEBE");
   assert.equal(semRede.subrede, "SUPER CALEBE");
-  const semNada = montarLinhaCarteira({ ...base, codigoRede: null, subrede: null, subclasseId: null });
+  const semNada = montarLinhaCarteira({ ...base, codigoRede: 0, subrede: null, subclasseId: null });
   assert.equal(semNada.codigoRede, null);
   assert.equal(semNada.subrede, null);
 });
