@@ -587,6 +587,17 @@ export default function EncartesPage() {
   const [codigoRedeAtivo, subredeAtiva] = redeSel.includes("::") ? redeSel.split("::") : [redeSel, null];
   const grupoSel = grupos.find((g) => g.codigoRede === codigoRedeAtivo) || null;
 
+  // Subredes (subclasses do Lacteus) de todas as redes, para escolher a subrede direto, sem passar pela rede.
+  // Com uma rede escolhida, a lista se restringe a ela. Nome repetido em redes diferentes ganha a rede ao lado.
+  const opcoesSubrede = useMemo(() => {
+    const fonte = grupoSel ? [grupoSel] : grupos;
+    const lista = fonte.flatMap((g) => (g.subredes || []).map((s) => ({ valor: `${g.codigoRede}::${s}`, subrede: s, rede: (g.redeSubrede || g.codigoRede).trim() })));
+    const repetidos = new Set(lista.map((o) => o.subrede).filter((s, i, a) => a.indexOf(s) !== i));
+    return lista
+      .map((o) => ({ ...o, rotulo: repetidos.has(o.subrede) && !grupoSel ? `${o.subrede} — ${o.rede}` : o.subrede }))
+      .sort((a, b) => a.rotulo.localeCompare(b.rotulo, "pt-BR"));
+  }, [grupos, grupoSel]);
+
   async function abrirPreviewPdf(periodInicio, periodFim) {
     if (!grupoSel) return;
     try {
@@ -670,7 +681,7 @@ export default function EncartesPage() {
       </div>
 
       <div className="flex-1 space-y-4">
-        {/* Rede e Subrede em campos separados: a subrede so lista as da rede escolhida */}
+        {/* Rede e Subrede em campos separados: escolher a subrede (subclasse do Lacteus) preenche a rede sozinha */}
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <div>
             <label htmlFor="sel-rede" className="block text-xs font-semibold text-neutral-500 uppercase tracking-wide mb-1.5">Rede</label>
@@ -699,14 +710,14 @@ export default function EncartesPage() {
               <select
                 id="sel-subrede"
                 className="input disabled:bg-neutral-50 disabled:text-neutral-400"
-                value={subredeAtiva || ""}
-                disabled={!grupoSel || !(grupoSel.subredes?.length > 0)}
-                onChange={(e) => selecionarRede(e.target.value ? codigoRedeAtivo + "::" + e.target.value : codigoRedeAtivo)}>
+                value={subredeAtiva ? `${codigoRedeAtivo}::${subredeAtiva}` : ""}
+                disabled={opcoesSubrede.length === 0}
+                onChange={(e) => selecionarRede(e.target.value || codigoRedeAtivo)}>
                 <option value="">
-                  {!grupoSel ? "Selecione a rede primeiro" : grupoSel.subredes?.length > 0 ? "Todas as subredes" : "Rede sem subredes"}
+                  {!grupoSel ? "Escolha uma subrede..." : grupoSel.subredes?.length > 0 ? "Todas as subredes" : "Rede sem subredes"}
                 </option>
-                {(grupoSel?.subredes || []).map((s) => (
-                  <option key={s} value={s}>{s}</option>
+                {opcoesSubrede.map((o) => (
+                  <option key={o.valor} value={o.valor}>{o.rotulo}</option>
                 ))}
               </select>
             )}

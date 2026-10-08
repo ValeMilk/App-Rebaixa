@@ -20,7 +20,8 @@ SELECT
     s.A00_FANTASIA    AS supervisorNome,
     c.A00_ID_A16      AS codigoRede,
     seg.A16_DESC      AS redeSubrede,
-    y.A68_DESC        AS subrede
+    y.A68_DESC        AS subrede,
+    y.A68_ID          AS subclasseId
 FROM dbo.A00 c
 INNER JOIN dbo.A14 a   ON c.A00_ID_A14 = a.A14_ID
 INNER JOIN dbo.A02 b   ON c.A00_ID_A02 = b.A02_ID
@@ -47,6 +48,29 @@ async function buscarCarteiraDoErp() {
   return query(SQL_CARTEIRA);
 }
 
+/**
+ * Linha do ERP -> documento da Carteira. Funcao pura.
+ * Cliente sem rede (A16) mas com subclasse (A68): a subclasse faz o papel de rede, com o codigo
+ * "S<id da subclasse>", para que esses clientes aparecam nas telas por rede (Encartes, filtros).
+ */
+function montarLinhaCarteira(l) {
+  const subrede = l.subrede ? String(l.subrede).trim() : null;
+  const temRede = l.codigoRede != null && l.codigoRede !== "";
+  const subclasseComoRede = !temRede && l.subclasseId != null && subrede;
+  return {
+    clienteCodigo:    String(l.clienteCodigo),
+    clienteNome:      l.clienteNome     || "",
+    vendedorCodigo:   String(l.vendedorCodigo  || ""),
+    vendedorNome:     l.vendedorNome    || "",
+    supervisorCodigo: String(l.supervisorCodigo || ""),
+    supervisorNome:   l.supervisorNome  || "",
+    codigoRede:       temRede ? String(l.codigoRede) : subclasseComoRede ? `S${l.subclasseId}` : null,
+    redeSubrede:      temRede ? (l.redeSubrede || null) : subclasseComoRede ? subrede : null,
+    subrede:          subrede || null,
+    sincronizadoEm:   new Date(),
+  };
+}
+
 async function sincronizarCarteira() {
   if (!erpConfigurado()) {
     return { atualizados: 0, total: 0, observacao: "ERP nao configurado — preencha as variaveis ERP_* no .env" };
@@ -61,18 +85,7 @@ async function sincronizarCarteira() {
   await Carteira.deleteMany({});
 
   // Inserir todos os registros novos em uma única operação
-  const docs = linhas.map((l) => ({
-    clienteCodigo:    String(l.clienteCodigo),
-    clienteNome:      l.clienteNome     || "",
-    vendedorCodigo:   String(l.vendedorCodigo  || ""),
-    vendedorNome:     l.vendedorNome    || "",
-    supervisorCodigo: String(l.supervisorCodigo || ""),
-    supervisorNome:   l.supervisorNome  || "",
-    codigoRede:       l.codigoRede ? String(l.codigoRede) : null,
-    redeSubrede:      l.redeSubrede    || null,
-    subrede:          l.subrede        || null,
-    sincronizadoEm:   new Date(),
-  }));
+  const docs = linhas.map((l) => montarLinhaCarteira(l));
 
   const r = await Carteira.insertMany(docs);
 
@@ -132,9 +145,18 @@ async function buscarProdutosDoErp() {
 // Ultima compra (preco e data) de um produto por um cliente
 // ---------------------------------------------------------------------------
 
-/** Rede do Lacteus = codigo numerico. Rede criada no InfoVale ("IV1") nao existe no ERP. */
+/**
+ * Rede do Lacteus = codigo numerico (A16) ou "S<id>" (subclasse A68 fazendo o papel de rede para
+ * clientes sem rede). Rede criada no InfoVale ("IV1") nao existe no ERP.
+ */
 function ehRedeDoErp(codigoRede) {
-  return /^\d+$/.test(String(codigoRede));
+  return /^S?\d+$/.test(String(codigoRede));
+}
+
+/** Coluna do cliente (A00) e valor que identificam a rede no ERP. */
+function filtroRedeErp(codigoRede) {
+  const m = String(codigoRede).match(/^(S?)(\d+)$/);
+  return { coluna: m[1] ? "A00_ID_A68_SUBCLASSE" : "A00_ID_A16", valor: Number(m[2]) };
 }
 
 const SQL_ULTIMA_COMPRA = `
@@ -246,7 +268,8 @@ async function buscarUltimaCompraRede(codigoRede, produtoCodigo) {
   console.log(`[buscarUltimaCompraRede] codigoRede=${codigoRede} produtoCodigo=${produtoCodigo}`);
 
   const req = pool.request();
-  req.input("codigoRede",    sql.Int, Number(codigoRede));
+  const rede = filtroRedeErp(codigoRede);
+  req.input("codigoRede",    sql.Int, rede.valor);
   req.input("produtoCodigo", sql.VarChar(50), String(produtoCodigo));
 
   const query = `
@@ -271,7 +294,7 @@ WITH UltimaCompra AS (
     LEFT  JOIN dbo.A16 WITH (NOLOCK) ON a00.A00_ID_A16 = a16.A16_ID
     WHERE m00.M00_ENTSAI IS NOT NULL
       AND m00.M00_STATUS = 'N'
-      AND a00.A00_ID_A16 = @codigoRede
+      AND a00.${rede.coluna} = @codigoRede
       AND e02.E02_LIVRE  = @produtoCodigo
       AND m00.M00_ID_A76 IN (38, 39, 45, 46, 1134)
 )
@@ -310,7 +333,8 @@ async function buscarUltimaCompraRedeBatch(codigoRede, produtosCodigos) {
   console.log(`[buscarUltimaCompraRedeBatch] codigoRede=${codigoRede} produtos=${codigos.length}`);
 
   const req = pool.request();
-  req.input("codigoRede", sql.Int, Number(codigoRede));
+  const rede = filtroRedeErp(codigoRede);
+  req.input("codigoRede", sql.Int, rede.valor);
   
   // Monta placeholders para IN clause
   const placeholders = codigos.map((_, i) => `@prod${i}`).join(',');
@@ -334,7 +358,7 @@ WITH UltimaCompra AS (
     INNER JOIN dbo.A00 WITH (NOLOCK) ON m00.M00_ID_A00 = a00.A00_ID
     WHERE m00.M00_ENTSAI IS NOT NULL
       AND m00.M00_STATUS = 'N'
-      AND a00.A00_ID_A16 = @codigoRede
+      AND a00.${rede.coluna} = @codigoRede
       AND e02.E02_LIVRE IN (${placeholders})
       AND m00.M00_ID_A76 IN (38, 39, 45, 46, 1134)
 )
@@ -362,7 +386,9 @@ WHERE rn = 1;
 }
 
 module.exports = {
+  montarLinhaCarteira,
   ehRedeDoErp,
+  filtroRedeErp,
   buscarUltimasComprasLote,
   buscarCarteiraDoErp,
   sincronizarCarteira,
