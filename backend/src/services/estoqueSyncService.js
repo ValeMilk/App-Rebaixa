@@ -19,7 +19,7 @@ const { classificarPorValidade } = require("./classificadorService");
  * lotes, status = o pior. Item sem nenhum lote em giro/rebaixa nao entra (exceto sem shelf).
  * Cada linha traz `lotes` (todos os lotes do item, inclusive os "ok") com quem contou e quando.
  */
-const JANELA_DIAS = 15;
+const JANELA_DIAS = 30;
 const CODIGOS_LIMITE_2 = ["121035", "121135", "121235", "121835"];
 
 const SQL_ESTOQUE = `
