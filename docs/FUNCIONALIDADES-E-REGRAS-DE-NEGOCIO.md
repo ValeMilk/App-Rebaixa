@@ -519,8 +519,9 @@ Na mesma tela o administrador **renomeia** (nome e mês), **adiciona PDFs** e **
 
 **Onde ficam os botões (para quem tem a permissão de importar)**
 
-- Na tela **Relatórios Scanntech**: botão **Importar relatório** no alto da lista (leva para a tela de importação).
-- Dentro de um relatório aberto: **Renomear** e **Adicionar PDF** ao lado do nome. "Adicionar PDF" leva à importação já com esse relatório escolhido como destino, e a tela avisa qual relatório vai receber os PDFs.
+- Na tela **Relatórios Scanntech**: botão **Importar relatório** no alto da lista (leva para a tela de importação) e, em cada cartão, **Renomear**, **Adicionar PDF** e **Excluir**.
+- Dentro de um relatório aberto: **Renomear**, **Adicionar PDF** e **Excluir** ao lado do nome. "Adicionar PDF" leva à importação já com esse relatório escolhido como destino, e a tela avisa qual relatório vai receber os PDFs.
+- **Excluir** pede confirmação (mostrando o nome e o número de páginas), remove o relatório e todas as suas imagens para todos os usuários e **não pode ser desfeito**.
 - No menu lateral, em Administração: **Importar Relatório**, com a tabela de relatórios publicados (Ver, Adicionar PDF, Renomear, Excluir).
 
 **Ver (tela "Relatórios Scanntech")**

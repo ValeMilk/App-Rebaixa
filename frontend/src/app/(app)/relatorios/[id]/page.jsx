@@ -3,7 +3,7 @@ import { useTituloDaPagina } from "@/components/PageTitleContext";
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import api from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { pode } from "@/lib/permissoes";
@@ -163,7 +163,10 @@ export default function RelatorioPage() {
   const [erro, setErro] = useState("");
   const [ampliada, setAmpliada] = useState(null);
   const [renomeando, setRenomeando] = useState(false);
+  const [excluindo, setExcluindo] = useState(false);
+  const [erroAcao, setErroAcao] = useState("");
   const { user } = useAuth();
+  const router = useRouter();
 
   useTituloDaPagina(relatorio ? relatorio.titulo : "Relatório", relatorio ? rotuloReferencia(relatorio.referencia) || undefined : undefined);
 
@@ -178,6 +181,20 @@ export default function RelatorioPage() {
   }, [id]);
 
   useEffect(() => { carregar(); }, [carregar]);
+
+  async function excluir() {
+    const n = relatorio.paginas.length;
+    if (!confirm(`Excluir o relatório “${relatorio.titulo}” (${n} ${n === 1 ? "página" : "páginas"})?\n\nEle deixa de aparecer para todos os usuários e não dá para desfazer.`)) return;
+    setErroAcao("");
+    setExcluindo(true);
+    try {
+      await api.delete(`/relatorios/${relatorio.id}`);
+      router.replace("/relatorios");
+    } catch (err) {
+      setErroAcao(err?.response?.data?.error || "Não foi possível excluir o relatório.");
+      setExcluindo(false);
+    }
+  }
 
   const trocar = useCallback((n) => setAmpliada(n), []);
 
@@ -211,6 +228,9 @@ export default function RelatorioPage() {
               <>
                 <button type="button" onClick={() => setRenomeando(true)} className="shrink-0 text-xs text-secondary hover:underline" id="btn-renomear">Renomear</button>
                 <Link href={`/admin/relatorios?adicionar=${relatorio.id}`} className="shrink-0 text-xs text-secondary hover:underline" id="btn-adicionar-pdf">Adicionar PDF</Link>
+                <button type="button" onClick={excluir} disabled={excluindo} className="shrink-0 text-xs text-danger hover:underline disabled:opacity-50" id="btn-excluir-relatorio">
+                  {excluindo ? "Excluindo..." : "Excluir"}
+                </button>
               </>
             )}
           </div>
@@ -246,6 +266,8 @@ export default function RelatorioPage() {
           </nav>
         ) : null}
       </div>
+
+      {erroAcao && <p role="alert" className="rounded-lg border border-danger/30 bg-danger/10 px-3 py-2 text-sm text-danger">{erroAcao}</p>}
 
       <div className="space-y-6" id="paginas">
         {relatorio.paginas.map((p) => (

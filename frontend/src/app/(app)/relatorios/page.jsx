@@ -1,7 +1,7 @@
 "use client";
 import { useTituloDaPagina } from "@/components/PageTitleContext";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import api from "@/lib/api";
 import { useAuth } from "@/lib/auth";
@@ -9,6 +9,7 @@ import { pode } from "@/lib/permissoes";
 import { useImagem } from "@/lib/relatorios";
 import { rotuloReferencia } from "@/lib/pdfParaImagens";
 import { fmtDataHora } from "@/lib/utils";
+import EditarRelatorioDialog from "@/components/relatorios/EditarRelatorioDialog";
 import Surface from "@/components/ui/Surface";
 import EmptyState from "@/components/ui/EmptyState";
 import Skeleton from "@/components/ui/Skeleton";
@@ -35,18 +36,38 @@ export default function RelatoriosPage() {
   const { user } = useAuth();
   const [relatorios, setRelatorios] = useState(null);
   const [erro, setErro] = useState("");
+  const [aviso, setAviso] = useState("");
+  const [renomeando, setRenomeando] = useState(null);
+  const [excluindoId, setExcluindoId] = useState(null);
 
-  useEffect(() => {
-    (async () => {
-      try {
-        const { data } = await api.get("/relatorios");
-        setRelatorios(data.relatorios || []);
-      } catch (err) {
-        setErro(err?.response?.data?.error || "Não foi possível carregar os relatórios.");
-        setRelatorios([]);
-      }
-    })();
+  const carregar = useCallback(async () => {
+    try {
+      const { data } = await api.get("/relatorios");
+      setRelatorios(data.relatorios || []);
+    } catch (err) {
+      setErro(err?.response?.data?.error || "Não foi possível carregar os relatórios.");
+      setRelatorios([]);
+    }
   }, []);
+
+  useEffect(() => { carregar(); }, [carregar]);
+
+  async function excluir(r) {
+    const paginas = `${r.totalPaginas} ${r.totalPaginas === 1 ? "página" : "páginas"}`;
+    if (!confirm(`Excluir o relatório “${r.titulo}” (${paginas})?\n\nEle deixa de aparecer para todos os usuários e não dá para desfazer.`)) return;
+    setErro("");
+    setAviso("");
+    setExcluindoId(r.id);
+    try {
+      await api.delete(`/relatorios/${r.id}`);
+      setAviso(`Relatório “${r.titulo}” excluído.`);
+      await carregar();
+    } catch (err) {
+      setErro(err?.response?.data?.error || "Não foi possível excluir o relatório.");
+    } finally {
+      setExcluindoId(null);
+    }
+  }
 
   if (!relatorios) {
     return (
@@ -77,6 +98,7 @@ export default function RelatoriosPage() {
       )}
 
       {erro && <p role="alert" className="rounded-lg border border-danger/30 bg-danger/10 px-3 py-2 text-sm text-danger">{erro}</p>}
+      {aviso && <p role="status" className="rounded-lg border border-success/30 bg-success/10 px-3 py-2 text-sm text-success">{aviso}</p>}
 
       {relatorios.length === 0 ? (
         <Surface>
@@ -89,21 +111,40 @@ export default function RelatoriosPage() {
       ) : (
         <ul className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3" id="lista-relatorios">
           {relatorios.map((r) => (
-            <li key={r.id}>
-              <Link href={`/relatorios/${r.id}`} className="block overflow-hidden rounded-xl border border-neutral-200 bg-white transition hover:border-secondary/50 hover:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-400/40">
-                <Capa relatorio={r} />
-                <div className="p-3.5">
-                  <h2 className="truncate text-sm font-semibold text-neutral-900">{r.titulo}</h2>
-                  <p className="mt-0.5 text-xs text-neutral-500">
-                    {rotuloReferencia(r.referencia) ? <span className="capitalize">{rotuloReferencia(r.referencia)} · </span> : null}
-                    {r.totalPaginas} {r.totalPaginas === 1 ? "página" : "páginas"}
-                    {r.publicadoEm ? ` · publicado em ${fmtDataHora(r.publicadoEm).slice(0, 10)}` : ""}
-                  </p>
-                </div>
-              </Link>
+            <li key={r.id} data-relatorio={r.id}>
+              <div className="overflow-hidden rounded-xl border border-neutral-200 bg-white transition hover:border-secondary/50 hover:shadow-sm">
+                <Link href={`/relatorios/${r.id}`} className="block focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary-400/40">
+                  <Capa relatorio={r} />
+                  <div className="p-3.5">
+                    <h2 className="truncate text-sm font-semibold text-neutral-900">{r.titulo}</h2>
+                    <p className="mt-0.5 text-xs text-neutral-500">
+                      {rotuloReferencia(r.referencia) ? <span className="capitalize">{rotuloReferencia(r.referencia)} · </span> : null}
+                      {r.totalPaginas} {r.totalPaginas === 1 ? "página" : "páginas"}
+                      {r.publicadoEm ? ` · publicado em ${fmtDataHora(r.publicadoEm).slice(0, 10)}` : ""}
+                    </p>
+                  </div>
+                </Link>
+                {gerencia && (
+                  <div className="flex flex-wrap items-center gap-x-4 gap-y-1 border-t border-neutral-100 px-3.5 py-2 text-xs">
+                    <button type="button" onClick={() => setRenomeando(r)} className="text-secondary hover:underline" data-acao="renomear">Renomear</button>
+                    <Link href={`/admin/relatorios?adicionar=${r.id}`} className="text-secondary hover:underline" data-acao="adicionar">Adicionar PDF</Link>
+                    <button type="button" onClick={() => excluir(r)} className="ml-auto text-danger hover:underline disabled:opacity-50" disabled={excluindoId === r.id} data-acao="excluir">
+                      {excluindoId === r.id ? "Excluindo..." : "Excluir"}
+                    </button>
+                  </div>
+                )}
+              </div>
             </li>
           ))}
         </ul>
+      )}
+
+      {renomeando && (
+        <EditarRelatorioDialog
+          relatorio={renomeando}
+          onClose={() => setRenomeando(null)}
+          onSalvo={() => { setRenomeando(null); setAviso("Relatório renomeado."); carregar(); }}
+        />
       )}
     </div>
   );
