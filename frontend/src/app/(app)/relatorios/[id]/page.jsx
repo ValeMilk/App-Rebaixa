@@ -8,7 +8,6 @@ import api from "@/lib/api";
 import { useImagem } from "@/lib/relatorios";
 import { rotuloReferencia } from "@/lib/pdfParaImagens";
 import Button from "@/components/ui/Button";
-import Dialog from "@/components/ui/Dialog";
 import EmptyState from "@/components/ui/EmptyState";
 import Skeleton from "@/components/ui/Skeleton";
 import { IcoFileText, IcoX, IcoChevronRight } from "@/components/Icons";
@@ -56,60 +55,99 @@ function Pagina({ relatorioId, pagina, total, onAmpliar }) {
   );
 }
 
-// Ampliacao: tamanho real com rolagem, anterior/proxima e download
+// Ampliacao em TELA CHEIA: cobre a janela inteira (e pede a tela cheia do navegador, quando ha suporte).
+// Ajustada a tela por padrao; clicar na imagem alterna para o tamanho real, com rolagem.
 function Ampliacao({ relatorio, numero, onFechar, onTrocar }) {
   const total = relatorio.paginas.length;
   const pagina = relatorio.paginas.find((p) => p.numero === numero);
   const { url, erro } = useImagem(relatorio.id, numero);
   const [real, setReal] = useState(false);
+  const [cheia, setCheia] = useState(false);
+  const [suportaCheia, setSuportaCheia] = useState(false);
+  const raiz = useRef(null);
+
+  // Ao abrir: pede a tela cheia do navegador (iPhone nao suporta; entao so cobre a janela), trava a rolagem
+  // da pagina de tras e, ao fechar, sai da tela cheia.
+  useEffect(() => {
+    const el = raiz.current;
+    setSuportaCheia(!!document.fullscreenEnabled);
+    try { el?.requestFullscreen?.()?.catch?.(() => {}); } catch { /* sem tela cheia do navegador */ }
+    const aoMudar = () => setCheia(!!document.fullscreenElement);
+    document.addEventListener("fullscreenchange", aoMudar);
+    const overflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.removeEventListener("fullscreenchange", aoMudar);
+      document.body.style.overflow = overflow;
+      try { if (document.fullscreenElement) document.exitFullscreen?.()?.catch?.(() => {}); } catch { /* ja saiu */ }
+    };
+  }, []);
+
+  useEffect(() => { setReal(false); }, [numero]);
 
   useEffect(() => {
     function tecla(e) {
       if (e.key === "ArrowRight" && numero < total) onTrocar(numero + 1);
-      if (e.key === "ArrowLeft" && numero > 1) onTrocar(numero - 1);
+      else if (e.key === "ArrowLeft" && numero > 1) onTrocar(numero - 1);
+      else if (e.key === "Escape") onFechar();
     }
     document.addEventListener("keydown", tecla);
     return () => document.removeEventListener("keydown", tecla);
-  }, [numero, total, onTrocar]);
+  }, [numero, total, onTrocar, onFechar]);
+
+  function alternarTelaCheia() {
+    try {
+      if (document.fullscreenElement) document.exitFullscreen?.()?.catch?.(() => {});
+      else raiz.current?.requestFullscreen?.()?.catch?.(() => {});
+    } catch { /* sem suporte */ }
+  }
+
+  const botao = "inline-flex h-9 items-center justify-center rounded-lg px-3 text-sm font-medium text-white/90 transition hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/50 disabled:opacity-40 disabled:hover:bg-transparent";
 
   return (
-    <Dialog open onClose={onFechar} sheet size="xl" ariaLabel={`Página ${numero} de ${relatorio.titulo}`}>
-      <div className="flex shrink-0 flex-wrap items-center justify-between gap-2 border-b border-neutral-200 px-4 pb-3 pt-[max(0.75rem,env(safe-area-inset-top))]">
-        <div className="flex items-center gap-1">
-          <Button variant="ghost" size="icon-sm" onClick={() => onTrocar(numero - 1)} disabled={numero <= 1} aria-label="Página anterior">
+    <div ref={raiz} id="ampliacao" role="dialog" aria-modal="true" aria-label={`Página ${numero} de ${relatorio.titulo}`} className="fixed inset-0 z-[60] flex flex-col bg-neutral-900 animate-fade-in">
+      <div className="flex shrink-0 items-center justify-between gap-2 border-b border-white/10 px-3 pb-2 pt-[max(0.5rem,env(safe-area-inset-top))]">
+        <div className="flex min-w-0 items-center gap-1">
+          <button type="button" className={`${botao} w-9 px-0`} onClick={() => onTrocar(numero - 1)} disabled={numero <= 1} aria-label="Página anterior">
             <IcoChevronRight className="h-4 w-4 rotate-180" />
-          </Button>
-          <span className="min-w-[88px] text-center text-sm font-medium text-neutral-800" id="ampliacao-numero">Página {numero} de {total}</span>
-          <Button variant="ghost" size="icon-sm" onClick={() => onTrocar(numero + 1)} disabled={numero >= total} aria-label="Próxima página">
+          </button>
+          <span className="min-w-[92px] text-center text-sm font-medium text-white" id="ampliacao-numero">Página {numero} de {total}</span>
+          <button type="button" className={`${botao} w-9 px-0`} onClick={() => onTrocar(numero + 1)} disabled={numero >= total} aria-label="Próxima página">
             <IcoChevronRight className="h-4 w-4" />
-          </Button>
+          </button>
+          <span className="ml-2 hidden truncate text-sm text-white/60 md:inline">{relatorio.titulo}</span>
         </div>
-        <div className="flex items-center gap-1">
-          <Button variant="ghost" size="sm" onClick={() => setReal((v) => !v)} id="btn-tamanho">{real ? "Ajustar à tela" : "Tamanho real"}</Button>
+        <div className="flex shrink-0 items-center gap-1">
+          <button type="button" className={botao} onClick={() => setReal((v) => !v)} id="btn-tamanho">{real ? "Ajustar à tela" : "Tamanho real"}</button>
+          {suportaCheia && (
+            <button type="button" className={botao} onClick={alternarTelaCheia} id="btn-tela-cheia">{cheia ? "Sair da tela cheia" : "Tela cheia"}</button>
+          )}
           {url && (
-            <a href={url} download={`${relatorio.titulo.replace(/[\\/:*?"<>|]+/g, "-")} - pagina ${numero}.png`} className="inline-flex h-8 items-center rounded-lg px-3 text-xs font-medium text-neutral-700 hover:bg-accent hover:text-primary">
+            <a href={url} download={`${relatorio.titulo.replace(/[\\/:*?"<>|]+/g, "-")} - pagina ${numero}.png`} className={botao}>
               Baixar
             </a>
           )}
-          <Button variant="ghost" size="icon-sm" onClick={onFechar} aria-label="Fechar"><IcoX className="h-4 w-4" /></Button>
+          <button type="button" className={`${botao} w-9 px-0`} onClick={onFechar} aria-label="Fechar" id="btn-fechar-ampliacao"><IcoX className="h-4 w-4" /></button>
         </div>
       </div>
-      <div className="min-h-0 flex-1 overflow-auto bg-neutral-100 p-2" id="ampliacao-corpo">
+
+      <div className="min-h-0 flex-1 overflow-auto" id="ampliacao-corpo">
         {url ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img
             src={url}
             alt={`Página ${numero} de ${total}`}
-            className="mx-auto block bg-white"
-            style={real ? { maxWidth: "none", width: pagina?.largura || "auto" } : { maxWidth: "100%", height: "auto" }}
+            onClick={() => setReal((v) => !v)}
+            className={real ? "mx-auto block max-w-none bg-white cursor-zoom-out" : "block h-full w-full cursor-zoom-in object-contain"}
+            style={real ? { width: pagina?.largura || "auto" } : undefined}
           />
         ) : erro ? (
-          <p className="p-6 text-center text-sm text-neutral-500">Não foi possível carregar esta página.</p>
+          <p className="p-10 text-center text-sm text-white/70">Não foi possível carregar esta página.</p>
         ) : (
-          <Skeleton className="mx-auto h-[60vh] w-full max-w-3xl" />
+          <div className="flex h-full items-center justify-center"><div className="h-10 w-10 animate-spin rounded-full border-4 border-white/20 border-t-white" /></div>
         )}
       </div>
-    </Dialog>
+    </div>
   );
 }
 

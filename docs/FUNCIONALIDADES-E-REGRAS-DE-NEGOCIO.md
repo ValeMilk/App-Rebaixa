@@ -516,7 +516,7 @@ Na mesma tela o administrador **renomeia** (título e mês) e **exclui** relató
 **Ver (tela "Relatórios")**
 
 - A lista mostra os relatórios do mais recente (mês de referência) para o mais antigo, com a primeira página como capa.
-- Ao abrir, as páginas aparecem em sequência. Dá para **ampliar** uma página (tamanho real, com rolagem), navegar entre páginas com os botões ou as setas do teclado e **baixar a página** como imagem.
+- Ao abrir, as páginas aparecem em sequência. **Ampliar** abre a página em **tela cheia** (cobre toda a janela e ativa a tela cheia do navegador; Esc fecha). Na ampliação, clicar na imagem alterna entre ajustada à tela e tamanho real (com rolagem), as setas do teclado ou os botões trocam de página e **Baixar** salva a página como imagem.
 - Quem tem a permissão só visualiza: não edita nem exclui.
 
 **Regras**
