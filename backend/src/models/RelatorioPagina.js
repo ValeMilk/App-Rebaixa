@@ -5,6 +5,7 @@ const relatorioPaginaSchema = new mongoose.Schema(
   {
     relatorioId: { type: mongoose.Schema.Types.ObjectId, ref: "Relatorio", required: true },
     numero:      { type: Number, required: true },
+    origem:      { type: String, default: null }, // nome do PDF de que a pagina veio (um relatorio pode juntar varios)
     mime:        { type: String, required: true },
     largura:     { type: Number, default: null },
     altura:      { type: Number, default: null },

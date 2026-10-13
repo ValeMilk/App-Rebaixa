@@ -101,6 +101,16 @@ export function sugerirTitulo(nomeArquivo) {
   return { titulo, referencia };
 }
 
+/** Sugestao para um relatorio feito de varios PDFs: "Relatório de setembro/2026" se algum nome trouxer mes e ano. */
+export function sugerirParaVarios(nomes) {
+  const sugestoes = (nomes || []).map(sugerirTitulo);
+  if (sugestoes.length === 0) return { titulo: "", referencia: "" };
+  if (sugestoes.length === 1) return sugestoes[0];
+  const comMes = sugestoes.find((s) => s.referencia);
+  if (comMes) return { titulo: `Relatório de ${rotuloReferencia(comMes.referencia)}`, referencia: comMes.referencia };
+  return { titulo: sugestoes[0].titulo, referencia: "" };
+}
+
 /** "2026-09" -> "setembro/2026" */
 export function rotuloReferencia(ref) {
   const m = String(ref || "").match(/^(\d{4})-(\d{2})$/);

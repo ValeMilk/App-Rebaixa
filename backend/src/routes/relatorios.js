@@ -40,7 +40,16 @@ router.post("/", gerenciar, handler(async (req, res) => {
 }));
 
 router.put("/:id/paginas/:numero", gerenciar, imagemRaw, handler(async (req, res) => {
-  res.json(await svc.gravarPagina(req.params.id, req.params.numero, req.body, { largura: req.query.largura, altura: req.query.altura }));
+  res.json(await svc.gravarPagina(req.params.id, req.params.numero, req.body, { largura: req.query.largura, altura: req.query.altura, origem: req.query.origem }));
+}));
+
+// Adicionar PDFs a um relatorio ja publicado: iniciar -> enviar as paginas novas -> confirmar
+router.post("/:id/adicao", gerenciar, handler(async (req, res) => {
+  res.json(await svc.iniciarAdicao(req.params.id));
+}));
+
+router.post("/:id/adicao/confirmar", gerenciar, handler(async (req, res) => {
+  res.json({ relatorio: await svc.confirmarAdicao(req.params.id, (req.body || {}).quantidade) });
 }));
 
 router.post("/:id/publicar", gerenciar, handler(async (req, res) => {

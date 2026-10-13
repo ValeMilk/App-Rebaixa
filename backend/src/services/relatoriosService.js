@@ -6,7 +6,7 @@ const mongoose = require("mongoose");
 const Relatorio = require("../models/Relatorio");
 const RelatorioPagina = require("../models/RelatorioPagina");
 
-const MAX_PAGINAS = 60;
+const MAX_PAGINAS = 150; // por relatorio, somando todos os PDFs
 const MAX_BYTES_PAGINA = 6 * 1024 * 1024;
 const RASCUNHO_VALE_MS = 24 * 3600 * 1000;
 
@@ -72,8 +72,9 @@ async function listar() {
 
 async function detalhar(id) {
   const r = await buscar(id, { publicado: true });
-  const paginas = await RelatorioPagina.find({ relatorioId: r._id, numero: { $gte: 1 } }, "numero largura altura").sort({ numero: 1 }).lean();
-  return { ...resumo(r), paginas: paginas.map((p) => ({ numero: p.numero, largura: p.largura, altura: p.altura })) };
+  // so as paginas ja confirmadas (as de uma adicao em andamento ficam depois do fim e nao aparecem)
+  const paginas = await RelatorioPagina.find({ relatorioId: r._id, numero: { $gte: 1, $lte: r.totalPaginas } }, "numero largura altura origem").sort({ numero: 1 }).lean();
+  return { ...resumo(r), paginas: paginas.map((p) => ({ numero: p.numero, largura: p.largura, altura: p.altura, origem: p.origem || null })) };
 }
 
 /** Rascunhos abandonados (sem publicar ha mais de 1 dia) saem junto com as paginas. */
@@ -101,11 +102,22 @@ async function criar(dados, user) {
   return resumo(r);
 }
 
-/** Grava (ou regrava) a imagem de uma pagina do rascunho. numero 0 = miniatura. */
-async function gravarPagina(id, numero, dados, { largura, altura } = {}) {
-  const r = await buscar(id, { publicado: false });
+/**
+ * Grava (ou regrava) a imagem de uma pagina. numero 0 = miniatura.
+ * - rascunho: paginas 0..totalPaginas;
+ * - relatorio ja publicado (adicao de PDFs): so paginas NOVAS, depois do fim; elas so passam a
+ *   valer quando a adicao e confirmada (confirmarAdicao).
+ */
+async function gravarPagina(id, numero, dados, { largura, altura, origem } = {}) {
+  const r = await buscar(id);
   const n = Number(numero);
-  if (!Number.isInteger(n) || n < 0 || n > r.totalPaginas) throw erro(400, "Numero de pagina invalido.");
+  if (!Number.isInteger(n) || n < 0) throw erro(400, "Numero de pagina invalido.");
+  if (r.publicado) {
+    if (n <= r.totalPaginas) throw erro(400, "As paginas ja publicadas nao mudam; envie so as paginas novas.");
+    if (n > MAX_PAGINAS) throw erro(400, `O relatorio nao pode passar de ${MAX_PAGINAS} paginas.`);
+  } else if (n > r.totalPaginas) {
+    throw erro(400, "Numero de pagina invalido.");
+  }
   if (!Buffer.isBuffer(dados) || dados.length === 0) throw erro(400, "Envie a imagem da pagina.");
   if (dados.length > MAX_BYTES_PAGINA) throw erro(413, "Imagem grande demais (maximo de 6 MB por pagina).");
   const mime = tipoDaImagem(dados);
@@ -113,7 +125,7 @@ async function gravarPagina(id, numero, dados, { largura, altura } = {}) {
   const dim = (v) => (Number.isFinite(Number(v)) && Number(v) > 0 && Number(v) < 20000 ? Math.round(Number(v)) : null);
   await RelatorioPagina.updateOne(
     { relatorioId: r._id, numero: n },
-    { $set: { mime, largura: dim(largura), altura: dim(altura), dados } },
+    { $set: { mime, largura: dim(largura), altura: dim(altura), origem: normalizar(origem).slice(0, 200) || null, dados } },
     { upsert: true }
   );
   return { numero: n, bytes: dados.length };
@@ -129,6 +141,28 @@ async function publicar(id) {
   if (faltam.length) throw erro(400, `Faltam as paginas: ${faltam.slice(0, 10).join(", ")}${faltam.length > 10 ? "…" : ""}.`);
   await Relatorio.updateOne({ _id: r._id }, { $set: { publicado: true, publicadoEm: new Date() } });
   return resumo({ ...r, publicado: true, publicadoEm: new Date() });
+}
+
+/** Comeca uma adicao: descarta paginas "de preparo" sobrando de uma tentativa anterior. */
+async function iniciarAdicao(id) {
+  const r = await buscar(id, { publicado: true });
+  await RelatorioPagina.deleteMany({ relatorioId: r._id, numero: { $gt: r.totalPaginas } });
+  return { totalPaginas: r.totalPaginas, limite: MAX_PAGINAS };
+}
+
+/** Confirma a adicao de `quantidade` paginas (totalPaginas+1 ...): so entao elas aparecem para todos. */
+async function confirmarAdicao(id, quantidade) {
+  const r = await buscar(id, { publicado: true });
+  const q = Number(quantidade);
+  if (!Number.isInteger(q) || q < 1) throw erro(400, "Informe quantas paginas foram adicionadas.");
+  const novoTotal = r.totalPaginas + q;
+  if (novoTotal > MAX_PAGINAS) throw erro(400, `O relatorio nao pode passar de ${MAX_PAGINAS} paginas.`);
+  const presentes = await RelatorioPagina.countDocuments({ relatorioId: r._id, numero: { $gt: r.totalPaginas, $lte: novoTotal } });
+  if (presentes !== q) throw erro(400, "Algumas paginas novas nao chegaram. Tente adicionar de novo.");
+  const ok = await Relatorio.updateOne({ _id: r._id, totalPaginas: r.totalPaginas }, { $set: { totalPaginas: novoTotal } });
+  if (!ok.modifiedCount) throw erro(409, "O relatorio foi alterado por outra pessoa. Recarregue e tente de novo.");
+  await RelatorioPagina.deleteMany({ relatorioId: r._id, numero: { $gt: novoTotal } });
+  return resumo({ ...r, totalPaginas: novoTotal });
 }
 
 async function atualizar(id, dados) {
@@ -148,9 +182,9 @@ async function remover(id) {
 async function imagem(id, numero) {
   const r = await buscar(id, { publicado: true });
   const n = Number(numero);
-  const p = Number.isInteger(n) ? await RelatorioPagina.findOne({ relatorioId: r._id, numero: n }) : null;
+  const p = Number.isInteger(n) && n >= 0 && n <= r.totalPaginas ? await RelatorioPagina.findOne({ relatorioId: r._id, numero: n }) : null;
   if (!p) throw erro(404, "Pagina nao encontrada.");
   return { mime: p.mime, dados: Buffer.from(p.dados) };
 }
 
-module.exports = { MAX_PAGINAS, tipoDaImagem, validarCampos, listar, detalhar, criar, gravarPagina, publicar, atualizar, remover, imagem, limparRascunhos };
+module.exports = { MAX_PAGINAS, tipoDaImagem, validarCampos, listar, detalhar, criar, gravarPagina, publicar, iniciarAdicao, confirmarAdicao, atualizar, remover, imagem, limparRascunhos };

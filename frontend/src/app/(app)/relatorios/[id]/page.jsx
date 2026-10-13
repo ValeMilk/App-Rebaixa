@@ -5,15 +5,18 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import api from "@/lib/api";
+import { useAuth } from "@/lib/auth";
+import { pode } from "@/lib/permissoes";
 import { useImagem } from "@/lib/relatorios";
 import { rotuloReferencia } from "@/lib/pdfParaImagens";
+import EditarRelatorioDialog from "@/components/relatorios/EditarRelatorioDialog";
 import Button from "@/components/ui/Button";
 import EmptyState from "@/components/ui/EmptyState";
 import Skeleton from "@/components/ui/Skeleton";
 import { IcoFileText, IcoX, IcoChevronRight } from "@/components/Icons";
 
 // Uma pagina: baixa so quando chega perto da tela; o espaco ja vem na proporcao certa
-function Pagina({ relatorioId, pagina, total, onAmpliar }) {
+function Pagina({ relatorioId, pagina, total, mostrarOrigem, onAmpliar }) {
   const ref = useRef(null);
   const [perto, setPerto] = useState(false);
   const { url, erro } = useImagem(relatorioId, pagina.numero, perto);
@@ -32,7 +35,10 @@ function Pagina({ relatorioId, pagina, total, onAmpliar }) {
   return (
     <section ref={ref} id={`pagina-${pagina.numero}`} className="scroll-mt-20" data-pagina={pagina.numero}>
       <div className="mb-1.5 flex items-center justify-between text-xs text-neutral-500">
-        <span>Página {pagina.numero} de {total}</span>
+        <span>
+          Página {pagina.numero} de {total}
+          {mostrarOrigem && pagina.origem ? <span className="text-neutral-400"> · {pagina.origem.replace(/\.pdf$/i, "")}</span> : null}
+        </span>
         <button type="button" className="text-secondary hover:underline" onClick={() => onAmpliar(pagina.numero)}>Ampliar</button>
       </div>
       <button
@@ -115,7 +121,7 @@ function Ampliacao({ relatorio, numero, onFechar, onTrocar }) {
           <button type="button" className={`${botao} w-9 px-0`} onClick={() => onTrocar(numero + 1)} disabled={numero >= total} aria-label="Próxima página">
             <IcoChevronRight className="h-4 w-4" />
           </button>
-          <span className="ml-2 hidden truncate text-sm text-white/60 md:inline">{relatorio.titulo}</span>
+          <span className="ml-2 hidden truncate text-sm text-white/60 md:inline">{pagina?.origem ? pagina.origem.replace(/\.pdf$/i, "") : relatorio.titulo}</span>
         </div>
         <div className="flex shrink-0 items-center gap-1">
           <button type="button" className={botao} onClick={() => setReal((v) => !v)} id="btn-tamanho">{real ? "Ajustar à tela" : "Tamanho real"}</button>
@@ -156,20 +162,22 @@ export default function RelatorioPage() {
   const [relatorio, setRelatorio] = useState(null);
   const [erro, setErro] = useState("");
   const [ampliada, setAmpliada] = useState(null);
+  const [renomeando, setRenomeando] = useState(false);
+  const { user } = useAuth();
 
   useTituloDaPagina(relatorio ? relatorio.titulo : "Relatório", relatorio ? rotuloReferencia(relatorio.referencia) || undefined : undefined);
 
-  useEffect(() => {
+  const carregar = useCallback(async () => {
     if (!id) return;
-    (async () => {
-      try {
-        const { data } = await api.get(`/relatorios/${id}`);
-        setRelatorio(data.relatorio);
-      } catch (err) {
-        setErro(err?.response?.status === 404 ? "Relatório não encontrado." : err?.response?.data?.error || "Não foi possível carregar o relatório.");
-      }
-    })();
+    try {
+      const { data } = await api.get(`/relatorios/${id}`);
+      setRelatorio(data.relatorio);
+    } catch (err) {
+      setErro(err?.response?.status === 404 ? "Relatório não encontrado." : err?.response?.data?.error || "Não foi possível carregar o relatório.");
+    }
   }, [id]);
+
+  useEffect(() => { carregar(); }, [carregar]);
 
   const trocar = useCallback((n) => setAmpliada(n), []);
 
@@ -185,15 +193,43 @@ export default function RelatorioPage() {
   }
 
   const total = relatorio.paginas.length;
+  const origens = [...new Set(relatorio.paginas.map((p) => p.origem).filter(Boolean))];
+  const mostrarOrigem = origens.length > 1; // relatorio feito de varios PDFs: cada pagina diz de qual veio
+
+  function irPara(numero) {
+    document.getElementById(`pagina-${numero}`)?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
 
   return (
     <div className="mx-auto w-full max-w-5xl space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="min-w-0">
           <Link href="/relatorios" className="text-xs text-secondary hover:underline">← Todos os relatórios</Link>
-          <h2 className="truncate text-lg font-semibold text-neutral-900">{relatorio.titulo}</h2>
+          <div className="flex items-center gap-3">
+            <h2 className="truncate text-lg font-semibold text-neutral-900" id="titulo-relatorio">{relatorio.titulo}</h2>
+            {pode(user, "relatorios.gerenciar") && (
+              <button type="button" onClick={() => setRenomeando(true)} className="shrink-0 text-xs text-secondary hover:underline" id="btn-renomear">Renomear</button>
+            )}
+          </div>
+          {mostrarOrigem && (
+            <p className="mt-0.5 text-xs text-neutral-500">{origens.length} arquivos · {total} páginas</p>
+          )}
         </div>
-        {total > 1 && (
+        {total > 16 ? (
+          <select
+            className="input h-9 w-auto min-w-[200px] py-0 text-sm"
+            aria-label="Ir para a página"
+            value=""
+            onChange={(e) => { if (e.target.value) irPara(e.target.value); }}
+          >
+            <option value="">Ir para a página…</option>
+            {relatorio.paginas.map((p) => (
+              <option key={p.numero} value={p.numero}>
+                {p.numero}{mostrarOrigem && p.origem ? ` · ${p.origem.replace(/\.pdf$/i, "")}` : ""}
+              </option>
+            ))}
+          </select>
+        ) : total > 1 ? (
           <nav className="flex flex-wrap items-center gap-1" aria-label="Ir para a página">
             {relatorio.paginas.map((p) => (
               <a
@@ -205,16 +241,24 @@ export default function RelatorioPage() {
               </a>
             ))}
           </nav>
-        )}
+        ) : null}
       </div>
 
       <div className="space-y-6" id="paginas">
         {relatorio.paginas.map((p) => (
-          <Pagina key={p.numero} relatorioId={relatorio.id} pagina={p} total={total} onAmpliar={setAmpliada} />
+          <Pagina key={p.numero} relatorioId={relatorio.id} pagina={p} total={total} mostrarOrigem={mostrarOrigem} onAmpliar={setAmpliada} />
         ))}
       </div>
 
       {ampliada && <Ampliacao relatorio={relatorio} numero={ampliada} onFechar={() => setAmpliada(null)} onTrocar={trocar} />}
+
+      {renomeando && (
+        <EditarRelatorioDialog
+          relatorio={relatorio}
+          onClose={() => setRenomeando(false)}
+          onSalvo={() => { setRenomeando(false); carregar(); }}
+        />
+      )}
     </div>
   );
 }

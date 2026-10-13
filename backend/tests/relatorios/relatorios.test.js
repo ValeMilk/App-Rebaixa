@@ -122,8 +122,8 @@ test("fluxo: rascunho invisivel, paginas, publicar, ver e baixar a imagem", asyn
   assert.equal((await chamar("sup", "GET", `/${id}/paginas/9`)).status, 404);
   assert.equal((await chamar("vend", "GET", `/${id}/paginas/1`)).status, 403);
 
-  // publicado nao recebe mais paginas
-  assert.equal((await chamar("admin", "PUT", `/${id}/paginas/1`, undefined, { bruto: PNG })).status, 404);
+  // publicado: as paginas existentes nao mudam
+  assert.equal((await chamar("admin", "PUT", `/${id}/paginas/1`, undefined, { bruto: PNG })).status, 400);
 });
 
 test("ordem da lista, renomear e excluir", async (t) => {
@@ -156,4 +156,50 @@ test("rascunho abandonado ha mais de 1 dia some no proximo envio", async (t) => 
   await chamar("admin", "POST", "", { titulo: "Novo", totalPaginas: 1 });
   assert.equal(await Relatorio.countDocuments({ titulo: "Esquecido" }), 0);
   assert.equal(await Relatorio.countDocuments({ titulo: "Novo" }), 1);
+});
+
+test("juntar PDFs: origem por pagina e adicao a um relatorio publicado", async (t) => {
+  if (!pronto()) return t.skip("sem banco de teste");
+  const RelatorioPagina = require("../../src/models/RelatorioPagina");
+  const put = (rid, n, q = "") => chamar("admin", "PUT", `/${rid}/paginas/${n}${q}`, undefined, { bruto: PNG });
+  const origem = (nome) => "?origem=" + encodeURIComponent(nome);
+
+  // relatorio novo com 2 PDFs (3 paginas): a origem de cada pagina fica registrada
+  const c = await chamar("admin", "POST", "", { titulo: "Mensal Setembro", referencia: "2026-09", totalPaginas: 3 });
+  const rid = c.dados.relatorio.id;
+  await put(rid, 0);
+  await put(rid, 1, origem("Fechamento Scanntech.pdf"));
+  await put(rid, 2, origem("Fechamento Scanntech.pdf"));
+  await put(rid, 3, origem("Encartes.pdf"));
+  assert.equal((await chamar("admin", "POST", `/${rid}/publicar`)).status, 200);
+  const det = (await chamar("sup", "GET", `/${rid}`)).dados.relatorio;
+  assert.deepEqual(det.paginas.map((p) => [p.numero, p.origem]), [[1, "Fechamento Scanntech.pdf"], [2, "Fechamento Scanntech.pdf"], [3, "Encartes.pdf"]]);
+
+  // adicao: as paginas novas ficam invisiveis ate confirmar
+  assert.equal((await chamar("sup", "POST", `/${rid}/adicao`)).status, 403);
+  assert.deepEqual((await chamar("admin", "POST", `/${rid}/adicao`)).dados, { totalPaginas: 3, limite: 150 });
+  assert.equal((await put(rid, 3)).status, 400); // pagina ja publicada
+  assert.equal((await put(rid, 151)).status, 400); // alem do limite
+  assert.equal((await put(rid, 4, origem("Vendas.pdf"))).status, 200);
+  assert.equal((await chamar("sup", "GET", `/${rid}`)).dados.relatorio.paginas.length, 3);
+  assert.equal((await chamar("sup", "GET", `/${rid}/paginas/4`)).status, 404);
+  assert.equal((await chamar("admin", "POST", `/${rid}/adicao/confirmar`, { quantidade: 2 })).status, 400); // falta a pagina 5
+
+  // uma tentativa interrompida nao deixa pagina velha valer na proxima
+  await chamar("admin", "POST", `/${rid}/adicao`);
+  assert.equal(await RelatorioPagina.countDocuments({ relatorioId: rid, numero: { $gt: 3 } }), 0);
+  assert.equal((await put(rid, 4, origem("Vendas.pdf"))).status, 200);
+  assert.equal((await put(rid, 5, origem("Vendas.pdf"))).status, 200);
+  const ok = await chamar("admin", "POST", `/${rid}/adicao/confirmar`, { quantidade: 2 });
+  assert.equal(ok.status, 200);
+  assert.equal(ok.dados.relatorio.totalPaginas, 5);
+  const depois = (await chamar("sup", "GET", `/${rid}`)).dados.relatorio;
+  assert.deepEqual(depois.paginas.map((p) => p.origem), ["Fechamento Scanntech.pdf", "Fechamento Scanntech.pdf", "Encartes.pdf", "Vendas.pdf", "Vendas.pdf"]);
+  assert.equal((await chamar("sup", "GET", `/${rid}/paginas/5`)).status, 200);
+  assert.equal((await chamar("admin", "POST", `/${rid}/adicao/confirmar`, { quantidade: 1 })).status, 400); // nada novo para confirmar
+  assert.equal((await chamar("admin", "POST", `/${rid}/adicao/confirmar`, { quantidade: 0 })).status, 400);
+
+  // rascunho nao aceita "adicao"
+  const rasc = await chamar("admin", "POST", "", { titulo: "Rascunho", totalPaginas: 1 });
+  assert.equal((await chamar("admin", "POST", `/${rasc.dados.relatorio.id}/adicao`)).status, 404);
 });

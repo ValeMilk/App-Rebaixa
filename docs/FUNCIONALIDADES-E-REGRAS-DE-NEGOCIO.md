@@ -506,12 +506,16 @@ O acesso é controlado **por perfil**: cada usuário tem um perfil (Vendedor, Su
 
 **Importar (tela "Importar Relatório", só administrador por padrão)**
 
-1. Escolher o PDF (até 60 páginas e 60 MB). Cada página é convertida em imagem no próprio navegador.
-2. Conferir as miniaturas. É possível **desmarcar páginas** que não devem aparecer (capa, página em branco).
-3. Ajustar o **título** e o **mês de referência**; ambos vêm sugeridos pelo nome do arquivo (ex.: "Fechamento_Setembro_2026.pdf" → "Fechamento Setembro 2026", setembro/2026).
-4. **Publicar.** O relatório só aparece para os demais quando todas as páginas foram enviadas; se algo falhar no meio, nada é publicado.
+1. Escolher **um ou mais PDFs** (de uma vez ou aos poucos, até 60 MB cada). Cada página é convertida em imagem no próprio navegador. Um relatório pode juntar vários PDFs, como o fechamento mensal do mercado e outros documentos do mês, até **150 páginas no total**.
+2. Conferir as miniaturas, agrupadas por arquivo. É possível **desmarcar páginas** que não devem aparecer (capa, página em branco), **remover um arquivo** e **mudar a ordem dos arquivos**: as páginas entram nessa ordem.
+3. Escolher o destino:
+   - **Novo relatório**: dar o **nome** e o **mês de referência**. Vêm sugeridos pelo nome dos arquivos (ex.: "Fechamento_Setembro_2026.pdf" → setembro/2026; com vários arquivos, "Relatório de setembro/2026"), e podem ser trocados.
+   - **Adicionar a um relatório já publicado**: as páginas entram no fim dele, na ordem mostrada. Serve para completar o relatório do mês quando os PDFs chegam em momentos diferentes.
+4. **Publicar.** O relatório (ou as páginas adicionadas) só aparece para os demais quando tudo foi enviado; se algo falhar no meio, nada é publicado.
 
-Na mesma tela o administrador **renomeia** (título e mês) e **exclui** relatórios. Excluir remove também as imagens e o relatório some para todos.
+Cada página guarda de **qual PDF veio**; em relatórios feitos de vários arquivos, a tela de visualização mostra o nome do arquivo junto do número da página.
+
+Na mesma tela o administrador **renomeia** (nome e mês), **adiciona PDFs** e **exclui** relatórios. Renomear também é possível dentro do próprio relatório, no botão "Renomear" ao lado do nome. Excluir remove também as imagens e o relatório some para todos.
 
 **Ver (tela "Relatórios")**
 
@@ -522,7 +526,7 @@ Na mesma tela o administrador **renomeia** (título e mês) e **exclui** relató
 **Regras**
 
 - Todos os que têm a permissão "Relatórios" veem os mesmos relatórios; não há restrição por rede ou por carteira. Por padrão: supervisor, diretoria e administrador. O vendedor não vê, mas a permissão pode ser dada em Permissões.
-- O relatório é guardado como **imagens**; o PDF original não é guardado. Para atualizar um relatório, importe o PDF novo e exclua o antigo.
+- O relatório é guardado como **imagens**; os PDFs originais não são guardados. Não há como remover páginas de um relatório já publicado: para corrigir, exclua e importe de novo (ou desmarque as páginas antes de publicar).
 - A importação é manual: o InfoVale não busca o PDF sozinho nem lê os números das imagens.
 
 ---
