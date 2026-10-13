@@ -21,8 +21,8 @@ const { resolverPerfil, perfisDoUsuario } = require("../../src/services/permisso
 
 test("padrao: cada perfil comeca com o acesso que tinha antes do RBAC", () => {
   assert.deepEqual([...resolverPerfil("vendedor", null)].sort(), ["lojas.ver", "solicitacoes.criar", "solicitacoes.ver"]);
-  assert.deepEqual([...resolverPerfil("supervisor", null)].sort(), ["encartes.criar", "encartes.ver", "metricas_redes.ver", "solicitacoes.criar"]);
-  assert.deepEqual([...resolverPerfil("diretoria", null)].sort(), ["encartes.performance", "encartes.ver", "metricas_redes.ver", "solicitacoes.criar", "solicitacoes.decidir"]);
+  assert.deepEqual([...resolverPerfil("supervisor", null)].sort(), ["encartes.criar", "encartes.ver", "metricas_redes.ver", "relatorios.ver", "solicitacoes.criar"]);
+  assert.deepEqual([...resolverPerfil("diretoria", null)].sort(), ["encartes.performance", "encartes.ver", "metricas_redes.ver", "relatorios.ver", "solicitacoes.criar", "solicitacoes.decidir"]);
   assert.deepEqual([...resolverPerfil("admin", null)], CHAVES);
   for (const p of PERFIS) assert.ok(PADRAO[p].every((c) => CHAVES.includes(c)), `padrao de ${p} so usa chaves do catalogo`);
 });
@@ -144,7 +144,7 @@ test("matriz padrao: cada rota abre para os mesmos perfis de antes", async (t) =
 test("login/me devolvem as permissoes efetivas; perfis adicionais somam", async (t) => {
   if (!pronto()) return t.skip("sem banco de teste");
   const sup = await chamar("supervisor", "GET", "/auth/me");
-  assert.deepEqual(sup.dados.user.permissoes.slice().sort(), ["encartes.criar", "encartes.ver", "metricas_redes.ver", "solicitacoes.criar"]);
+  assert.deepEqual(sup.dados.user.permissoes.slice().sort(), ["encartes.criar", "encartes.ver", "metricas_redes.ver", "relatorios.ver", "solicitacoes.criar"]);
   assert.equal(sup.dados.user.senhaHash, undefined);
   const misto = await chamar("vendedorComDiretoria", "GET", "/auth/me");
   assert.ok(misto.dados.user.permissoes.includes("lojas.ver") && misto.dados.user.permissoes.includes("encartes.performance"));

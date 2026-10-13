@@ -1,0 +1,3 @@
+pdf.js 3.11.174 (Mozilla, Apache-2.0), build UMD minificado.
+Usado so na tela de importacao de relatorios (admin) para converter as paginas do PDF em imagens no navegador.
+Embutido aqui (e nao como dependencia npm) para nao puxar o pacote nativo "canvas" no build do Docker.

@@ -1,4 +1,4 @@
-import { IcoGrid, IcoStore, IcoClipboard, IcoTag, IcoCalendar, IcoChart, IcoUsers, IcoSync, IcoUpload, IcoPackage, IcoLock } from "@/components/Icons";
+import { IcoGrid, IcoStore, IcoClipboard, IcoTag, IcoCalendar, IcoChart, IcoUsers, IcoSync, IcoUpload, IcoPackage, IcoLock, IcoFileText } from "@/components/Icons";
 import { pode } from "@/lib/permissoes";
 
 // Lista UNICA de navegacao: sidebar, sheet mobile e barra inferior leem daqui.
@@ -11,11 +11,13 @@ export const NAV = [
   { href: "/encartes",             label: "Encartes",         short: "Encartes",  Icon: IcoTag,       perm: "encartes.ver", group: "principal" },
   { href: "/encartes/calendario",  label: "Calendário Geral", short: "Cal. Geral", Icon: IcoCalendar, perm: "encartes.ver", group: "principal" },
   { href: "/encartes/performance", label: "Performance",      short: "Performance", Icon: IcoChart,   perm: "encartes.performance", group: "principal" },
+  { href: "/relatorios",           label: "Relatórios",       short: "Relatórios", Icon: IcoFileText,  perm: "relatorios.ver", group: "principal" },
   { href: "/acompanhamento-estoque", label: "Acompanhamento Estoque", short: "Acomp. Estoque", Icon: IcoPackage, perm: "acompanhamento_estoque.ver", group: "principal" },
   { href: "/integracao-estoque",  label: "Integração Estoque", short: "Integração", Icon: IcoUpload,  perm: "integracao_estoque.usar", group: "principal" },
   { href: "/admin/usuarios",         label: "Usuários",       short: "Usuários",  Icon: IcoUsers,     perm: "usuarios.gerenciar", group: "admin" },
   { href: "/admin/responsabilidades", label: "Resp. Rede",    short: "Resp. Rede", Icon: IcoUsers,    perm: "responsaveis_rede.gerenciar", group: "admin" },
   { href: "/admin/redes",            label: "Redes InfoVale", short: "Redes",     Icon: IcoStore,     perm: "redes_infovale.gerenciar", group: "admin" },
+  { href: "/admin/relatorios",      label: "Importar Relatório", short: "Importar", Icon: IcoUpload,    perm: "relatorios.gerenciar", group: "admin" },
   { href: "/admin/sync",             label: "Sincronização",  short: "Sync",      Icon: IcoSync,      perm: "sincronizacao.executar", group: "admin" },
   { href: "/admin/permissoes",       label: "Permissões",     short: "Permissões", Icon: IcoLock,     perm: "permissoes.gerenciar", group: "admin" },
 ];

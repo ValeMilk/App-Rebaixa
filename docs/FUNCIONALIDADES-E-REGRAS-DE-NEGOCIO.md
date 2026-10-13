@@ -39,9 +39,9 @@ Funciona no computador e no celular (pode ser instalado como aplicativo).
 | Perfil | Papel | Telas que enxerga (padrão) |
 |---|---|---|
 | **Vendedor** | Atende as lojas da própria carteira. Solicita rebaixas e ofertas para elas. | Lojas, Pedidos |
-| **Supervisor** | Responde por um grupo de vendedores e por redes. Negocia encartes com as redes e faz a primeira aprovação das solicitações dos seus vendedores. | Métricas Redes, Encartes, Calendário Geral |
-| **Diretoria** | Dá a aprovação final das solicitações e acompanha encartes, performance e métricas. | Métricas Redes, Encartes, Calendário Geral, Performance |
-| **Administrador** | Tudo o que a diretoria faz, mais o Painel de Vencimentos, as telas Lojas e Pedidos, a Integração Estoque e o Acompanhamento de Estoque e a administração (usuários, responsáveis de rede, redes do InfoVale, sincronização, permissões). | Todas |
+| **Supervisor** | Responde por um grupo de vendedores e por redes. Negocia encartes com as redes e faz a primeira aprovação das solicitações dos seus vendedores. | Métricas Redes, Encartes, Calendário Geral, Relatórios |
+| **Diretoria** | Dá a aprovação final das solicitações e acompanha encartes, performance e métricas. | Métricas Redes, Encartes, Calendário Geral, Performance, Relatórios |
+| **Administrador** | Tudo o que a diretoria faz, mais o Painel de Vencimentos, as telas Lojas e Pedidos, a Integração Estoque e o Acompanhamento de Estoque e a administração (usuários, responsáveis de rede, redes do InfoVale, importação de relatórios, sincronização, permissões). | Todas |
 
 A tabela acima é o **padrão**. O administrador pode mudar o que cada perfil abre e faz na tela **Permissões** (seção 11.5): por exemplo, liberar o Painel de Vencimentos para os supervisores.
 
@@ -461,6 +461,8 @@ O acesso é controlado **por perfil**: cada usuário tem um perfil (Vendedor, Su
 | Estoque das redes | Integração Estoque | Admin |
 | Administração | Usuários | Admin |
 | Administração | Responsáveis de rede | Admin |
+| Relatórios | Relatórios (ver as imagens importadas) | Supervisor, Diretoria, Admin |
+| Relatórios | Importar relatórios | Admin |
 | Administração | Redes do InfoVale | Admin |
 | Administração | Sincronização manual | Admin |
 | Administração | Permissões | Somente Admin |
@@ -497,6 +499,31 @@ O acesso é controlado **por perfil**: cada usuário tem um perfil (Vendedor, Su
 - Essas lojas não têm vendedor (não existem na carteira de vendas) e a rede não tem histórico de compra no Lacteus: a análise de preço de ações por rede fica sem a última compra.
 - Uma rede com ações cadastradas em Encartes não pode ser excluída; dá para tirar lojas e supervisores dela.
 - Por padrão só o administrador usa a tela; pode ser liberada a outros perfis em Permissões.
+
+### 11.7 Relatórios (PDF importado e visto como imagens)
+
+**Para que serve.** Levar relatórios que hoje chegam em PDF, como o fechamento mensal do mercado (Scanntech), para dentro do InfoVale, de modo que os supervisores os vejam sem depender de arquivo recebido por outro canal.
+
+**Importar (tela "Importar Relatório", só administrador por padrão)**
+
+1. Escolher o PDF (até 60 páginas e 60 MB). Cada página é convertida em imagem no próprio navegador.
+2. Conferir as miniaturas. É possível **desmarcar páginas** que não devem aparecer (capa, página em branco).
+3. Ajustar o **título** e o **mês de referência**; ambos vêm sugeridos pelo nome do arquivo (ex.: "Fechamento_Setembro_2026.pdf" → "Fechamento Setembro 2026", setembro/2026).
+4. **Publicar.** O relatório só aparece para os demais quando todas as páginas foram enviadas; se algo falhar no meio, nada é publicado.
+
+Na mesma tela o administrador **renomeia** (título e mês) e **exclui** relatórios. Excluir remove também as imagens e o relatório some para todos.
+
+**Ver (tela "Relatórios")**
+
+- A lista mostra os relatórios do mais recente (mês de referência) para o mais antigo, com a primeira página como capa.
+- Ao abrir, as páginas aparecem em sequência. Dá para **ampliar** uma página (tamanho real, com rolagem), navegar entre páginas com os botões ou as setas do teclado e **baixar a página** como imagem.
+- Quem tem a permissão só visualiza: não edita nem exclui.
+
+**Regras**
+
+- Todos os que têm a permissão "Relatórios" veem os mesmos relatórios; não há restrição por rede ou por carteira. Por padrão: supervisor, diretoria e administrador. O vendedor não vê, mas a permissão pode ser dada em Permissões.
+- O relatório é guardado como **imagens**; o PDF original não é guardado. Para atualizar um relatório, importe o PDF novo e exclua o antigo.
+- A importação é manual: o InfoVale não busca o PDF sozinho nem lê os números das imagens.
 
 ---
 

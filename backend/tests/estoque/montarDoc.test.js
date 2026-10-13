@@ -109,10 +109,10 @@ test("o SQL mantem a regra do shelf (45% giro, 73% rebaixa) e a regra de quais l
   assert.match(SQL_ESTOQUE, /ROUND\(s\.shelf_dias \* 0\.73\)/);
   assert.match(SQL_ESTOQUE, /ROUND\(s\.shelf_dias \* 0\.45\)/);
   assert.match(SQL_ESTOQUE, /WHERE peso_max >= 2 OR peso_max = 0/);
-  // fonte: tabela de contagens, janela de 15 dias, ultima contagem DE CADA LOTE
+  // fonte: tabela de contagens, janela de 30 dias, ultima contagem DE CADA LOTE
   assert.match(SQL_ESTOQUE, /FROM public\.ativmob_estoque/);
   assert.doesNotMatch(SQL_ESTOQUE, /vw_ativmob_estoque_critico/);
-  assert.match(SQL_ESTOQUE, /BETWEEN CURRENT_DATE - 15 AND CURRENT_DATE/);
+  assert.match(SQL_ESTOQUE, /BETWEEN CURRENT_DATE - 30 AND CURRENT_DATE/);
   assert.match(SQL_ESTOQUE, /DISTINCT ON \(codigo_destino, produto_codigo, data_validade\)/);
   // saida do lote: vencido, zerado, ou visita posterior sem o produto
   assert.match(SQL_ESTOQUE, /u\.data_validade > CURRENT_DATE/);

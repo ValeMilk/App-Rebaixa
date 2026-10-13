@@ -42,6 +42,14 @@ const GRUPOS = [
     ],
   },
   {
+    id: "relatorios",
+    label: "Relatórios",
+    permissoes: [
+      { chave: "relatorios.ver", label: "Relatórios", descricao: "Ver os relatórios (imagens) importados pelo administrador, como o fechamento mensal de mercado." },
+      { chave: "relatorios.gerenciar", label: "Importar relatórios", descricao: "Enviar um PDF, publicar suas páginas como imagens e excluir relatórios." },
+    ],
+  },
+  {
     id: "integracao",
     label: "Estoque das redes",
     permissoes: [
@@ -70,8 +78,8 @@ const NAO_SE_APLICA = Object.fromEntries(PERFIS.map((perfil) => [perfil, new Set
 // Acesso de cada perfil ANTES da tela de permissoes (menu + rotas da API).
 const PADRAO = {
   vendedor: ["lojas.ver", "solicitacoes.ver", "solicitacoes.criar"],
-  supervisor: ["metricas_redes.ver", "encartes.ver", "encartes.criar", "solicitacoes.criar"],
-  diretoria: ["metricas_redes.ver", "encartes.ver", "encartes.performance", "solicitacoes.criar", "solicitacoes.decidir"],
+  supervisor: ["metricas_redes.ver", "encartes.ver", "encartes.criar", "solicitacoes.criar", "relatorios.ver"],
+  diretoria: ["metricas_redes.ver", "encartes.ver", "encartes.performance", "solicitacoes.criar", "solicitacoes.decidir", "relatorios.ver"],
   admin: CHAVES,
 };
 

@@ -23,6 +23,7 @@ const integracaoEstoqueRoutes = require("./routes/integracaoEstoque");
 const acompanhamentoEstoqueRoutes = require("./routes/acompanhamentoEstoque");
 const permissoesRoutes = require("./routes/permissoes");
 const redesInfovaleRoutes = require("./routes/redesInfovale");
+const relatoriosRoutes = require("./routes/relatorios");
 
 const app = express();
 const PORT = process.env.PORT || 4000;
@@ -62,6 +63,7 @@ app.use("/api/integracao-estoque", integracaoEstoqueRoutes);
 app.use("/api/acompanhamento-estoque", acompanhamentoEstoqueRoutes);
 app.use("/api/permissoes", permissoesRoutes);
 app.use("/api/redes-infovale", redesInfovaleRoutes);
+app.use("/api/relatorios", relatoriosRoutes);
 
 // Erro
 app.use(errorHandler);

@@ -182,3 +182,11 @@ export const IcoUpload = (p) => (
     <path d="M4 16v3a1 1 0 001 1h14a1 1 0 001-1v-3" />
   </Base>
 );
+
+export const IcoFileText = (p) => (
+  <Base {...p}>
+    <path d="M14 3H7a2 2 0 00-2 2v14a2 2 0 002 2h10a2 2 0 002-2V8l-5-5z" />
+    <path d="M14 3v5h5" />
+    <path d="M9 13h6M9 17h4" />
+  </Base>
+);
