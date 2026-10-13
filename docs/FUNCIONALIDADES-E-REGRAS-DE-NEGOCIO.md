@@ -515,7 +515,13 @@ O acesso é controlado **por perfil**: cada usuário tem um perfil (Vendedor, Su
 
 Cada página guarda de **qual PDF veio**; em relatórios feitos de vários arquivos, a tela de visualização mostra o nome do arquivo junto do número da página.
 
-Na mesma tela o administrador **renomeia** (nome e mês), **adiciona PDFs** e **exclui** relatórios. Renomear também é possível dentro do próprio relatório, no botão "Renomear" ao lado do nome. Excluir remove também as imagens e o relatório some para todos.
+Na mesma tela o administrador **renomeia** (nome e mês), **adiciona PDFs** e **exclui** relatórios. Excluir remove também as imagens e o relatório some para todos.
+
+**Onde ficam os botões (para quem tem a permissão de importar)**
+
+- Na tela **Relatórios**: botão **Importar relatório** no alto da lista (leva para a tela de importação).
+- Dentro de um relatório aberto: **Renomear** e **Adicionar PDF** ao lado do nome. "Adicionar PDF" leva à importação já com esse relatório escolhido como destino, e a tela avisa qual relatório vai receber os PDFs.
+- No menu lateral, em Administração: **Importar Relatório**, com a tabela de relatórios publicados (Ver, Adicionar PDF, Renomear, Excluir).
 
 **Ver (tela "Relatórios")**
 

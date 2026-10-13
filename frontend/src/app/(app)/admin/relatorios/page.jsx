@@ -41,6 +41,7 @@ export default function ImportarRelatorioPage() {
   const removidosRef = useRef(new Set());
   const tituloEditadoRef = useRef(false);
   const topoRef = useRef(null);
+  const queryAplicadaRef = useRef(false);
 
   const carregar = useCallback(async () => {
     try {
@@ -52,6 +53,17 @@ export default function ImportarRelatorioPage() {
     }
   }, []);
   useEffect(() => { carregar(); }, [carregar]);
+
+  // Link "Adicionar PDF" do relatorio aberto: /admin/relatorios?adicionar=<id> ja deixa o destino escolhido
+  useEffect(() => {
+    if (!relatorios || queryAplicadaRef.current) return;
+    queryAplicadaRef.current = true;
+    const id = new URLSearchParams(window.location.search).get("adicionar");
+    if (id && relatorios.some((r) => r.id === id)) {
+      setModo("existente");
+      setDestinoId(id);
+    }
+  }, [relatorios]);
 
   useEffect(() => () => { urlsRef.current.forEach((u) => URL.revokeObjectURL(u)); }, []);
 
@@ -229,6 +241,17 @@ export default function ImportarRelatorioPage() {
           Cada página vira uma imagem aqui no navegador; você confere, escolhe se é um relatório novo ou se as páginas entram num já publicado, e publica.
           Quem tem a permissão <strong className="font-semibold text-neutral-800">Relatórios</strong> (por padrão supervisores, diretoria e administrador) vê as imagens na tela Relatórios.
         </p>
+
+        {modo === "existente" && destino && (
+          <div className="mb-3 flex flex-wrap items-center justify-between gap-2 rounded-lg border border-secondary/30 bg-secondary/5 px-3 py-2 text-sm text-neutral-800" id="aviso-destino">
+            <span>
+              Os PDFs escolhidos serão <strong className="font-semibold">adicionados ao relatório “{destino.titulo}”</strong> ({destino.totalPaginas} {destino.totalPaginas === 1 ? "página" : "páginas"} hoje).
+            </span>
+            <button type="button" className="text-xs text-secondary hover:underline disabled:opacity-50" disabled={enviando} onClick={() => { setModo("novo"); setDestinoId(""); }}>
+              Criar um relatório novo
+            </button>
+          </div>
+        )}
 
         <label
           onDragOver={(e) => { e.preventDefault(); if (!enviando) setArrastando(true); }}

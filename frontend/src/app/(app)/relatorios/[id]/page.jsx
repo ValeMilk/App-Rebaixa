@@ -208,7 +208,10 @@ export default function RelatorioPage() {
           <div className="flex items-center gap-3">
             <h2 className="truncate text-lg font-semibold text-neutral-900" id="titulo-relatorio">{relatorio.titulo}</h2>
             {pode(user, "relatorios.gerenciar") && (
-              <button type="button" onClick={() => setRenomeando(true)} className="shrink-0 text-xs text-secondary hover:underline" id="btn-renomear">Renomear</button>
+              <>
+                <button type="button" onClick={() => setRenomeando(true)} className="shrink-0 text-xs text-secondary hover:underline" id="btn-renomear">Renomear</button>
+                <Link href={`/admin/relatorios?adicionar=${relatorio.id}`} className="shrink-0 text-xs text-secondary hover:underline" id="btn-adicionar-pdf">Adicionar PDF</Link>
+              </>
             )}
           </div>
           {mostrarOrigem && (

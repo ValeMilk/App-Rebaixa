@@ -10,10 +10,9 @@ import { useImagem } from "@/lib/relatorios";
 import { rotuloReferencia } from "@/lib/pdfParaImagens";
 import { fmtDataHora } from "@/lib/utils";
 import Surface from "@/components/ui/Surface";
-import Button from "@/components/ui/Button";
 import EmptyState from "@/components/ui/EmptyState";
 import Skeleton from "@/components/ui/Skeleton";
-import { IcoFileText } from "@/components/Icons";
+import { IcoFileText, IcoUpload } from "@/components/Icons";
 
 function Capa({ relatorio }) {
   const { url, erro } = useImagem(relatorio.id, 0);
@@ -57,8 +56,26 @@ export default function RelatoriosPage() {
     );
   }
 
+  const gerencia = pode(user, "relatorios.gerenciar");
+
   return (
     <div className="space-y-4">
+      {gerencia && (
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <p className="text-sm text-neutral-600">
+            {relatorios.length === 0 ? "Nenhum relatório publicado." : `${relatorios.length} ${relatorios.length === 1 ? "relatório publicado" : "relatórios publicados"}.`}
+          </p>
+          <Link
+            href="/admin/relatorios"
+            id="btn-importar-relatorio"
+            className="inline-flex h-10 shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-lg bg-secondary px-4 text-sm font-medium text-white transition hover:bg-secondary-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-400/40"
+          >
+            <IcoUpload className="h-4 w-4" aria-hidden />
+            Importar relatório
+          </Link>
+        </div>
+      )}
+
       {erro && <p role="alert" className="rounded-lg border border-danger/30 bg-danger/10 px-3 py-2 text-sm text-danger">{erro}</p>}
 
       {relatorios.length === 0 ? (
@@ -66,8 +83,7 @@ export default function RelatoriosPage() {
           <EmptyState
             icon={IcoFileText}
             titulo="Nenhum relatório publicado ainda"
-            descricao="Quando o administrador importar um relatório, ele aparece aqui."
-            acao={pode(user, "relatorios.gerenciar") ? <Link href="/admin/relatorios"><Button variant="outline" size="sm">Importar relatório</Button></Link> : null}
+            descricao={gerencia ? "Use o botão Importar relatório acima para enviar o primeiro PDF." : "Quando o administrador importar um relatório, ele aparece aqui."}
           />
         </Surface>
       ) : (
