@@ -39,8 +39,8 @@ Funciona no computador e no celular (pode ser instalado como aplicativo).
 | Perfil | Papel | Telas que enxerga (padrão) |
 |---|---|---|
 | **Vendedor** | Atende as lojas da própria carteira. Solicita rebaixas e ofertas para elas. | Lojas, Pedidos |
-| **Supervisor** | Responde por um grupo de vendedores e por redes. Negocia encartes com as redes e faz a primeira aprovação das solicitações dos seus vendedores. | Métricas Redes, Encartes, Calendário Geral, Relatórios |
-| **Diretoria** | Dá a aprovação final das solicitações e acompanha encartes, performance e métricas. | Métricas Redes, Encartes, Calendário Geral, Performance, Relatórios |
+| **Supervisor** | Responde por um grupo de vendedores e por redes. Negocia encartes com as redes e faz a primeira aprovação das solicitações dos seus vendedores. | Métricas Redes, Encartes, Calendário Geral, Relatórios Scanntech |
+| **Diretoria** | Dá a aprovação final das solicitações e acompanha encartes, performance e métricas. | Métricas Redes, Encartes, Calendário Geral, Performance, Relatórios Scanntech |
 | **Administrador** | Tudo o que a diretoria faz, mais o Painel de Vencimentos, as telas Lojas e Pedidos, a Integração Estoque e o Acompanhamento de Estoque e a administração (usuários, responsáveis de rede, redes do InfoVale, importação de relatórios, sincronização, permissões). | Todas |
 
 A tabela acima é o **padrão**. O administrador pode mudar o que cada perfil abre e faz na tela **Permissões** (seção 11.5): por exemplo, liberar o Painel de Vencimentos para os supervisores.
@@ -461,7 +461,7 @@ O acesso é controlado **por perfil**: cada usuário tem um perfil (Vendedor, Su
 | Estoque das redes | Integração Estoque | Admin |
 | Administração | Usuários | Admin |
 | Administração | Responsáveis de rede | Admin |
-| Relatórios | Relatórios (ver as imagens importadas) | Supervisor, Diretoria, Admin |
+| Relatórios | Relatórios Scanntech (ver as imagens importadas) | Supervisor, Diretoria, Admin |
 | Relatórios | Importar relatórios | Admin |
 | Administração | Redes do InfoVale | Admin |
 | Administração | Sincronização manual | Admin |
@@ -519,11 +519,11 @@ Na mesma tela o administrador **renomeia** (nome e mês), **adiciona PDFs** e **
 
 **Onde ficam os botões (para quem tem a permissão de importar)**
 
-- Na tela **Relatórios**: botão **Importar relatório** no alto da lista (leva para a tela de importação).
+- Na tela **Relatórios Scanntech**: botão **Importar relatório** no alto da lista (leva para a tela de importação).
 - Dentro de um relatório aberto: **Renomear** e **Adicionar PDF** ao lado do nome. "Adicionar PDF" leva à importação já com esse relatório escolhido como destino, e a tela avisa qual relatório vai receber os PDFs.
 - No menu lateral, em Administração: **Importar Relatório**, com a tabela de relatórios publicados (Ver, Adicionar PDF, Renomear, Excluir).
 
-**Ver (tela "Relatórios")**
+**Ver (tela "Relatórios Scanntech")**
 
 - A lista mostra os relatórios do mais recente (mês de referência) para o mais antigo, com a primeira página como capa.
 - Ao abrir, as páginas aparecem em sequência. **Ampliar** abre a página em **tela cheia** (cobre toda a janela e ativa a tela cheia do navegador; Esc fecha). Na ampliação, clicar na imagem alterna entre ajustada à tela e tamanho real (com rolagem), as setas do teclado ou os botões trocam de página e **Baixar** salva a página como imagem.
@@ -531,7 +531,7 @@ Na mesma tela o administrador **renomeia** (nome e mês), **adiciona PDFs** e **
 
 **Regras**
 
-- Todos os que têm a permissão "Relatórios" veem os mesmos relatórios; não há restrição por rede ou por carteira. Por padrão: supervisor, diretoria e administrador. O vendedor não vê, mas a permissão pode ser dada em Permissões.
+- Todos os que têm a permissão "Relatórios Scanntech" veem os mesmos relatórios; não há restrição por rede ou por carteira. Por padrão: supervisor, diretoria e administrador. O vendedor não vê, mas a permissão pode ser dada em Permissões.
 - O relatório é guardado como **imagens**; os PDFs originais não são guardados. Não há como remover páginas de um relatório já publicado: para corrigir, exclua e importe de novo (ou desmarque as páginas antes de publicar).
 - A importação é manual: o InfoVale não busca o PDF sozinho nem lê os números das imagens.
 

@@ -45,7 +45,7 @@ const GRUPOS = [
     id: "relatorios",
     label: "Relatórios",
     permissoes: [
-      { chave: "relatorios.ver", label: "Relatórios", descricao: "Ver os relatórios (imagens) importados pelo administrador, como o fechamento mensal de mercado." },
+      { chave: "relatorios.ver", label: "Relatórios Scanntech", descricao: "Ver os relatórios (imagens) importados pelo administrador, como o fechamento mensal de mercado." },
       { chave: "relatorios.gerenciar", label: "Importar relatórios", descricao: "Enviar um PDF, publicar suas páginas como imagens e excluir relatórios." },
     ],
   },

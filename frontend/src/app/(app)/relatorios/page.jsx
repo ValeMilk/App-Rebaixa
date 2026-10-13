@@ -31,7 +31,7 @@ function Capa({ relatorio }) {
 }
 
 export default function RelatoriosPage() {
-  useTituloDaPagina("Relatórios", "Fechamentos e análises importados pela equipe");
+  useTituloDaPagina("Relatórios Scanntech", "Fechamentos e análises importados pela equipe");
   const { user } = useAuth();
   const [relatorios, setRelatorios] = useState(null);
   const [erro, setErro] = useState("");

@@ -11,7 +11,7 @@ export const NAV = [
   { href: "/encartes",             label: "Encartes",         short: "Encartes",  Icon: IcoTag,       perm: "encartes.ver", group: "principal" },
   { href: "/encartes/calendario",  label: "Calendário Geral", short: "Cal. Geral", Icon: IcoCalendar, perm: "encartes.ver", group: "principal" },
   { href: "/encartes/performance", label: "Performance",      short: "Performance", Icon: IcoChart,   perm: "encartes.performance", group: "principal" },
-  { href: "/relatorios",           label: "Relatórios",       short: "Relatórios", Icon: IcoFileText,  perm: "relatorios.ver", group: "principal" },
+  { href: "/relatorios",           label: "Relatórios Scanntech", short: "Scanntech", Icon: IcoFileText,  perm: "relatorios.ver", group: "principal" },
   { href: "/acompanhamento-estoque", label: "Acompanhamento Estoque", short: "Acomp. Estoque", Icon: IcoPackage, perm: "acompanhamento_estoque.ver", group: "principal" },
   { href: "/integracao-estoque",  label: "Integração Estoque", short: "Integração", Icon: IcoUpload,  perm: "integracao_estoque.usar", group: "principal" },
   { href: "/admin/usuarios",         label: "Usuários",       short: "Usuários",  Icon: IcoUsers,     perm: "usuarios.gerenciar", group: "admin" },

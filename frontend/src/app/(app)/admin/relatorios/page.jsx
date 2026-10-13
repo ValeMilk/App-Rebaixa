@@ -239,7 +239,7 @@ export default function ImportarRelatorioPage() {
         <p className="mb-3 max-w-3xl text-sm text-neutral-600">
           Monte o relatório com <strong className="font-semibold text-neutral-800">um ou mais PDFs</strong> (por exemplo, o fechamento mensal do mercado e outros documentos do mês).
           Cada página vira uma imagem aqui no navegador; você confere, escolhe se é um relatório novo ou se as páginas entram num já publicado, e publica.
-          Quem tem a permissão <strong className="font-semibold text-neutral-800">Relatórios</strong> (por padrão supervisores, diretoria e administrador) vê as imagens na tela Relatórios.
+          Quem tem a permissão <strong className="font-semibold text-neutral-800">Relatórios Scanntech</strong> (por padrão supervisores, diretoria e administrador) vê as imagens na tela Relatórios Scanntech.
         </p>
 
         {modo === "existente" && destino && (
