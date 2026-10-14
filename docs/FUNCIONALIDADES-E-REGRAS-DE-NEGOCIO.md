@@ -527,8 +527,9 @@ Na mesma tela o administrador **renomeia** (nome e mês), **adiciona PDFs** e **
 **Ver (tela "Relatórios Scanntech")**
 
 - A lista mostra os relatórios do mais recente (mês de referência) para o mais antigo, com a primeira página como capa.
-- Ao abrir, as páginas aparecem em sequência. **Ampliar** abre a página em **tela cheia** (cobre toda a janela e ativa a tela cheia do navegador; Esc fecha). Na ampliação, clicar na imagem alterna entre ajustada à tela e tamanho real (com rolagem), as setas do teclado ou os botões trocam de página e **Baixar** salva a página como imagem.
-- Quem tem a permissão só visualiza: não edita nem exclui.
+- Ao abrir, as páginas aparecem em sequência. **Ampliar** abre a página em **tela cheia** (cobre toda a janela e ativa a tela cheia do navegador; Esc fecha). Na ampliação, clicar na imagem alterna entre ajustada à tela e tamanho real (com rolagem), as setas do teclado ou os botões trocam de página e **Baixar página** salva só aquela página como imagem (PNG).
+- **Baixar o relatório completo**: um único **PDF com todas as páginas, na ordem**. O botão fica no alto do relatório aberto ("Baixar relatório completo"), na ampliação ("Baixar relatório (PDF)") e em cada cartão da lista ("Baixar PDF"). O arquivo leva o nome do relatório e cada página do PDF é a imagem publicada (o texto não é selecionável, igual ao que se vê na tela).
+- Quem tem a permissão só visualiza e baixa: não edita nem exclui.
 
 **Regras**
 

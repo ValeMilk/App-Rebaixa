@@ -7,7 +7,7 @@ import { useParams, useRouter } from "next/navigation";
 import api from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { pode } from "@/lib/permissoes";
-import { useImagem } from "@/lib/relatorios";
+import { useImagem, baixarRelatorioPdf } from "@/lib/relatorios";
 import { rotuloReferencia } from "@/lib/pdfParaImagens";
 import EditarRelatorioDialog from "@/components/relatorios/EditarRelatorioDialog";
 import Button from "@/components/ui/Button";
@@ -63,7 +63,7 @@ function Pagina({ relatorioId, pagina, total, mostrarOrigem, onAmpliar }) {
 
 // Ampliacao em TELA CHEIA: cobre a janela inteira (e pede a tela cheia do navegador, quando ha suporte).
 // Ajustada a tela por padrao; clicar na imagem alterna para o tamanho real, com rolagem.
-function Ampliacao({ relatorio, numero, onFechar, onTrocar }) {
+function Ampliacao({ relatorio, numero, onFechar, onTrocar, onBaixarPdf, baixandoPdf }) {
   const total = relatorio.paginas.length;
   const pagina = relatorio.paginas.find((p) => p.numero === numero);
   const { url, erro } = useImagem(relatorio.id, numero);
@@ -112,7 +112,7 @@ function Ampliacao({ relatorio, numero, onFechar, onTrocar }) {
 
   return (
     <div ref={raiz} id="ampliacao" role="dialog" aria-modal="true" aria-label={`Página ${numero} de ${relatorio.titulo}`} className="fixed inset-0 z-[60] flex flex-col bg-neutral-900 animate-fade-in">
-      <div className="flex shrink-0 items-center justify-between gap-2 border-b border-white/10 px-3 pb-2 pt-[max(0.5rem,env(safe-area-inset-top))]">
+      <div className="flex shrink-0 flex-wrap items-center justify-between gap-x-2 gap-y-1 border-b border-white/10 px-3 pb-2 pt-[max(0.5rem,env(safe-area-inset-top))]">
         <div className="flex min-w-0 items-center gap-1">
           <button type="button" className={`${botao} w-9 px-0`} onClick={() => onTrocar(numero - 1)} disabled={numero <= 1} aria-label="Página anterior">
             <IcoChevronRight className="h-4 w-4 rotate-180" />
@@ -123,16 +123,19 @@ function Ampliacao({ relatorio, numero, onFechar, onTrocar }) {
           </button>
           <span className="ml-2 hidden truncate text-sm text-white/60 md:inline">{pagina?.origem ? pagina.origem.replace(/\.pdf$/i, "") : relatorio.titulo}</span>
         </div>
-        <div className="flex shrink-0 items-center gap-1">
+        <div className="flex flex-wrap items-center justify-end gap-1">
           <button type="button" className={botao} onClick={() => setReal((v) => !v)} id="btn-tamanho">{real ? "Ajustar à tela" : "Tamanho real"}</button>
           {suportaCheia && (
             <button type="button" className={botao} onClick={alternarTelaCheia} id="btn-tela-cheia">{cheia ? "Sair da tela cheia" : "Tela cheia"}</button>
           )}
           {url && (
-            <a href={url} download={`${relatorio.titulo.replace(/[\\/:*?"<>|]+/g, "-")} - pagina ${numero}.png`} className={botao}>
-              Baixar
+            <a href={url} download={`${relatorio.titulo.replace(/[\\/:*?"<>|]+/g, "-")} - pagina ${numero}.png`} className={botao} id="btn-baixar-pagina">
+              Baixar página
             </a>
           )}
+          <button type="button" className={`${botao} bg-white/10`} onClick={onBaixarPdf} disabled={baixandoPdf} id="btn-baixar-pdf-ampliacao">
+            {baixandoPdf ? "Gerando PDF…" : "Baixar relatório (PDF)"}
+          </button>
           <button type="button" className={`${botao} w-9 px-0`} onClick={onFechar} aria-label="Fechar" id="btn-fechar-ampliacao"><IcoX className="h-4 w-4" /></button>
         </div>
       </div>
@@ -164,6 +167,7 @@ export default function RelatorioPage() {
   const [ampliada, setAmpliada] = useState(null);
   const [renomeando, setRenomeando] = useState(false);
   const [excluindo, setExcluindo] = useState(false);
+  const [baixandoPdf, setBaixandoPdf] = useState(false);
   const [erroAcao, setErroAcao] = useState("");
   const { user } = useAuth();
   const router = useRouter();
@@ -181,6 +185,18 @@ export default function RelatorioPage() {
   }, [id]);
 
   useEffect(() => { carregar(); }, [carregar]);
+
+  async function baixarPdf() {
+    setErroAcao("");
+    setBaixandoPdf(true);
+    try {
+      await baixarRelatorioPdf(relatorio.id, relatorio.titulo);
+    } catch (err) {
+      setErroAcao(err.message);
+    } finally {
+      setBaixandoPdf(false);
+    }
+  }
 
   async function excluir() {
     const n = relatorio.paginas.length;
@@ -237,6 +253,9 @@ export default function RelatorioPage() {
           {mostrarOrigem && (
             <p className="mt-0.5 text-xs text-neutral-500">{origens.length} arquivos · {total} páginas</p>
           )}
+          <Button variant="outline" size="sm" className="mt-2" onClick={baixarPdf} disabled={baixandoPdf} id="btn-baixar-pdf">
+            {baixandoPdf ? "Gerando PDF…" : `Baixar relatório completo (PDF · ${total} ${total === 1 ? "página" : "páginas"})`}
+          </Button>
         </div>
         {total > 16 ? (
           <select
@@ -275,7 +294,7 @@ export default function RelatorioPage() {
         ))}
       </div>
 
-      {ampliada && <Ampliacao relatorio={relatorio} numero={ampliada} onFechar={() => setAmpliada(null)} onTrocar={trocar} />}
+      {ampliada && <Ampliacao relatorio={relatorio} numero={ampliada} onFechar={() => setAmpliada(null)} onTrocar={trocar} onBaixarPdf={baixarPdf} baixandoPdf={baixandoPdf} />}
 
       {renomeando && (
         <EditarRelatorioDialog

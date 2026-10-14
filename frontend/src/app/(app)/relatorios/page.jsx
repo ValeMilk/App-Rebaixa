@@ -6,7 +6,7 @@ import Link from "next/link";
 import api from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { pode } from "@/lib/permissoes";
-import { useImagem } from "@/lib/relatorios";
+import { useImagem, baixarRelatorioPdf } from "@/lib/relatorios";
 import { rotuloReferencia } from "@/lib/pdfParaImagens";
 import { fmtDataHora } from "@/lib/utils";
 import EditarRelatorioDialog from "@/components/relatorios/EditarRelatorioDialog";
@@ -39,6 +39,20 @@ export default function RelatoriosPage() {
   const [aviso, setAviso] = useState("");
   const [renomeando, setRenomeando] = useState(null);
   const [excluindoId, setExcluindoId] = useState(null);
+  const [baixandoId, setBaixandoId] = useState(null);
+
+  async function baixarPdf(r) {
+    setErro("");
+    setAviso("");
+    setBaixandoId(r.id);
+    try {
+      await baixarRelatorioPdf(r.id, r.titulo);
+    } catch (err) {
+      setErro(err.message);
+    } finally {
+      setBaixandoId(null);
+    }
+  }
 
   const carregar = useCallback(async () => {
     try {
@@ -124,15 +138,20 @@ export default function RelatoriosPage() {
                     </p>
                   </div>
                 </Link>
-                {gerencia && (
-                  <div className="flex flex-wrap items-center gap-x-4 gap-y-1 border-t border-neutral-100 px-3.5 py-2 text-xs">
-                    <button type="button" onClick={() => setRenomeando(r)} className="text-secondary hover:underline" data-acao="renomear">Renomear</button>
-                    <Link href={`/admin/relatorios?adicionar=${r.id}`} className="text-secondary hover:underline" data-acao="adicionar">Adicionar PDF</Link>
-                    <button type="button" onClick={() => excluir(r)} className="ml-auto text-danger hover:underline disabled:opacity-50" disabled={excluindoId === r.id} data-acao="excluir">
-                      {excluindoId === r.id ? "Excluindo..." : "Excluir"}
-                    </button>
-                  </div>
-                )}
+                <div className="flex flex-wrap items-center gap-x-4 gap-y-1 border-t border-neutral-100 px-3.5 py-2 text-xs">
+                  <button type="button" onClick={() => baixarPdf(r)} className="font-medium text-secondary hover:underline disabled:opacity-50" disabled={baixandoId === r.id} data-acao="baixar">
+                    {baixandoId === r.id ? "Gerando PDF…" : "Baixar PDF"}
+                  </button>
+                  {gerencia && (
+                    <>
+                      <button type="button" onClick={() => setRenomeando(r)} className="text-secondary hover:underline" data-acao="renomear">Renomear</button>
+                      <Link href={`/admin/relatorios?adicionar=${r.id}`} className="text-secondary hover:underline" data-acao="adicionar">Adicionar PDF</Link>
+                      <button type="button" onClick={() => excluir(r)} className="ml-auto text-danger hover:underline disabled:opacity-50" disabled={excluindoId === r.id} data-acao="excluir">
+                        {excluindoId === r.id ? "Excluindo..." : "Excluir"}
+                      </button>
+                    </>
+                  )}
+                </div>
               </div>
             </li>
           ))}

@@ -11,7 +11,7 @@ const mongoose = require("mongoose");
 const express = require("express");
 const jwt = require("jsonwebtoken");
 
-const { tipoDaImagem, validarCampos } = require("../../src/services/relatoriosService");
+const { tipoDaImagem, validarCampos, nomeArquivoPdf } = require("../../src/services/relatoriosService");
 
 // PNG 1x1 valido
 const PNG = Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==", "base64");
@@ -31,6 +31,13 @@ test("titulo e mes de referencia", () => {
   assert.throws(() => validarCampos({ titulo: "A" }), /titulo/);
   assert.throws(() => validarCampos({ titulo: "Abc", referencia: "2026-13" }), /referencia/);
   assert.throws(() => validarCampos({ titulo: "Abc", referencia: "setembro" }), /referencia/);
+});
+
+test("nome do arquivo PDF: sem acento nem simbolo", () => {
+  assert.equal(nomeArquivoPdf("Relatório de setembro/2026"), "Relatorio de setembro 2026.pdf");
+  assert.equal(nomeArquivoPdf("  Fechamento: Super do Povo (out/26)  "), "Fechamento Super do Povo (out 26).pdf");
+  assert.equal(nomeArquivoPdf("***"), "relatorio.pdf");
+  assert.equal(nomeArquivoPdf(""), "relatorio.pdf");
 });
 
 // ── API ─────────────────────────────────────────────────────────────────────────
@@ -202,4 +209,33 @@ test("juntar PDFs: origem por pagina e adicao a um relatorio publicado", async (
   // rascunho nao aceita "adicao"
   const rasc = await chamar("admin", "POST", "", { titulo: "Rascunho", totalPaginas: 1 });
   assert.equal((await chamar("admin", "POST", `/${rasc.dados.relatorio.id}/adicao`)).status, 404);
+});
+
+test("baixar o relatorio completo em PDF: todas as paginas, na ordem, so para quem pode ver", async (t) => {
+  if (!pronto()) return t.skip("sem banco de teste");
+  const c = await chamar("admin", "POST", "", { titulo: "Relatório PDF Completo", referencia: "2026-10", totalPaginas: 3 });
+  const rid = c.dados.relatorio.id;
+  const baixar = async (quem, id) => {
+    const r = await fetch(`${base}/api/relatorios/${id}/pdf`, { headers: { Authorization: `Bearer ${tokens[quem]}` } });
+    return { status: r.status, tipo: r.headers.get("content-type"), disp: r.headers.get("content-disposition"), corpo: Buffer.from(await r.arrayBuffer()) };
+  };
+
+  // rascunho: nao existe para quem so ve
+  assert.equal((await baixar("sup", rid)).status, 404);
+
+  for (const n of [1, 2, 3]) await chamar("admin", "PUT", `/${rid}/paginas/${n}`, undefined, { bruto: PNG });
+  await chamar("admin", "POST", `/${rid}/publicar`);
+
+  const ok = await baixar("sup", rid);
+  assert.equal(ok.status, 200);
+  assert.equal(ok.tipo, "application/pdf");
+  assert.match(ok.disp, /attachment; filename="Relatorio PDF Completo\.pdf"/);
+  assert.equal(ok.corpo.subarray(0, 5).toString("latin1"), "%PDF-");
+  const texto = ok.corpo.toString("latin1");
+  assert.equal((texto.match(/\/Type \/Page\b(?!s)/g) || []).length, 3, "uma pagina de PDF por imagem");
+  assert.match(texto, /%%EOF\s*$/);
+
+  assert.equal((await baixar("vend", rid)).status, 403); // sem a permissao de ver
+  assert.equal((await baixar("sup", "000000000000000000000000")).status, 404);
+  assert.equal((await baixar("sup", "abc")).status, 404);
 });

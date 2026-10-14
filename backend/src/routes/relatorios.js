@@ -34,6 +34,20 @@ router.get("/:id/paginas/:numero", ver, handler(async (req, res) => {
   res.send(dados);
 }));
 
+// Relatorio COMPLETO em um PDF (todas as paginas, na ordem)
+router.get("/:id/pdf", ver, handler(async (req, res) => {
+  const rel = await svc.paraPdf(req.params.id);
+  res.setHeader("Content-Type", "application/pdf");
+  res.setHeader("Content-Disposition", `attachment; filename="${rel.nomeArquivo}"`);
+  res.setHeader("Cache-Control", "private, no-store");
+  try {
+    await svc.escreverPdf(rel, res);
+  } catch (err) {
+    console.error("[relatorios] falha ao montar o PDF:", err);
+    res.destroy(err); // o cabecalho ja saiu: derruba a conexao em vez de entregar um PDF cortado como se fosse inteiro
+  }
+}));
+
 // ── Importacao e manutencao (quem tem "relatorios.gerenciar") ───────────────────
 router.post("/", gerenciar, handler(async (req, res) => {
   res.status(201).json({ relatorio: await svc.criar(req.body || {}, req.user) });

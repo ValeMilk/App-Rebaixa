@@ -66,7 +66,7 @@ export async function renderizarPagina(pdf, numero) {
     const canvas = document.createElement("canvas");
     canvas.width = largura;
     canvas.height = altura;
-    const ctx = canvas.getContext("2d");
+    const ctx = canvas.getContext("2d", { alpha: false }); // PNG opaco (RGB): menor e mais rapido para montar o PDF
     ctx.fillStyle = "#ffffff"; // PDF sem fundo vira branco, nao transparente
     ctx.fillRect(0, 0, largura, altura);
     await pagina.render({ canvasContext: ctx, viewport }).promise;

@@ -187,4 +187,46 @@ async function imagem(id, numero) {
   return { mime: p.mime, dados: Buffer.from(p.dados) };
 }
 
-module.exports = { MAX_PAGINAS, tipoDaImagem, validarCampos, listar, detalhar, criar, gravarPagina, publicar, iniciarAdicao, confirmarAdicao, atualizar, remover, imagem, limparRascunhos };
+/** Nome do arquivo para download: so ASCII (sem acento ou simbolo), com .pdf. Funcao pura. */
+function nomeArquivoPdf(titulo) {
+  const base = String(titulo || "relatorio")
+    .normalize("NFD").replace(/[̀-ͯ]/g, "")
+    .replace(/[^A-Za-z0-9 ._()-]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+    .slice(0, 100);
+  return `${base || "relatorio"}.pdf`;
+}
+
+/** Relatorio publicado para montar o PDF (404 se nao existir ou for rascunho). */
+async function paraPdf(id) {
+  const r = await buscar(id, { publicado: true });
+  return { id: r._id, titulo: r.titulo, totalPaginas: r.totalPaginas, nomeArquivo: nomeArquivoPdf(r.titulo) };
+}
+
+/**
+ * Escreve em `saida` um PDF com TODAS as paginas do relatorio, na ordem, uma imagem por pagina.
+ * Pagina por pagina (so uma imagem na memoria por vez). A pagina do PDF acompanha a proporcao da
+ * imagem: largura de A4 (paisagem 842 pt, retrato 595 pt).
+ */
+async function escreverPdf(rel, saida) {
+  const PDFDocument = require("pdfkit");
+  const doc = new PDFDocument({ autoFirstPage: false, margin: 0, info: { Title: rel.titulo, Author: "InfoVale" } });
+  doc.pipe(saida);
+  try {
+    for (let n = 1; n <= rel.totalPaginas; n++) {
+      const p = await RelatorioPagina.findOne({ relatorioId: rel.id, numero: n });
+      if (!p) continue;
+      const img = doc.openImage(Buffer.from(p.dados));
+      const largura = img.width >= img.height ? 842 : 595;
+      const altura = (largura * img.height) / img.width;
+      doc.addPage({ size: [largura, altura], margin: 0 });
+      doc.image(img, 0, 0, { width: largura, height: altura });
+    }
+    if (doc.bufferedPageRange().count === 0) doc.addPage({ size: "A4", margin: 0 }); // nunca devolve PDF sem paginas
+  } finally {
+    doc.end();
+  }
+}
+
+module.exports = { MAX_PAGINAS, tipoDaImagem, validarCampos, nomeArquivoPdf, listar, detalhar, criar, gravarPagina, publicar, iniciarAdicao, confirmarAdicao, atualizar, remover, imagem, paraPdf, escreverPdf, limparRascunhos };
