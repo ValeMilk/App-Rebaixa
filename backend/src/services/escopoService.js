@@ -8,7 +8,7 @@
 const Carteira = require("../models/Carteira");
 const ResponsavelRede = require("../models/ResponsavelRede");
 
-const CAMPOS = "clienteCodigo codigoRede redeSubrede subrede supervisorCodigo supervisorNome";
+const CAMPOS = "clienteCodigo clienteNome codigoRede redeSubrede subrede cidade supervisorCodigo supervisorNome";
 
 /** Filtro da Carteira para o usuario, ou null quando ve tudo. */
 async function filtroCarteira(user) {

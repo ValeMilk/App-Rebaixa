@@ -21,7 +21,8 @@ SELECT
     c.A00_ID_A16      AS codigoRede,
     seg.A16_DESC      AS redeSubrede,
     y.A68_DESC        AS subrede,
-    y.A68_ID          AS subclasseId
+    y.A68_ID          AS subclasseId,
+    RTRIM(c.A00_END_MUN) AS cidade
 FROM dbo.A00 c
 INNER JOIN dbo.A14 a   ON c.A00_ID_A14 = a.A14_ID
 INNER JOIN dbo.A02 b   ON c.A00_ID_A02 = b.A02_ID
@@ -68,6 +69,7 @@ function montarLinhaCarteira(l) {
     codigoRede:       temRede ? String(l.codigoRede) : subclasseComoRede ? `S${l.subclasseId}` : null,
     redeSubrede:      temRede ? (l.redeSubrede || null) : subclasseComoRede ? subrede : null,
     subrede:          subrede || null,
+    cidade:           l.cidade ? String(l.cidade).trim() || null : null,
     sincronizadoEm:   new Date(),
   };
 }

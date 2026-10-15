@@ -39,8 +39,8 @@ Funciona no computador e no celular (pode ser instalado como aplicativo).
 | Perfil | Papel | Telas que enxerga (padrão) |
 |---|---|---|
 | **Vendedor** | Atende as lojas da própria carteira. Solicita rebaixas e ofertas para elas. | Lojas, Pedidos |
-| **Supervisor** | Responde por um grupo de vendedores e por redes. Negocia encartes com as redes e faz a primeira aprovação das solicitações dos seus vendedores. | Métricas Redes, Encartes, Calendário Geral, Relatórios Scanntech |
-| **Diretoria** | Dá a aprovação final das solicitações e acompanha encartes, performance e métricas. | Métricas Redes, Encartes, Calendário Geral, Performance, Relatórios Scanntech |
+| **Supervisor** | Responde por um grupo de vendedores e por redes. Negocia encartes com as redes e faz a primeira aprovação das solicitações dos seus vendedores. | Métricas Redes, Encartes, Calendário Geral, Relatórios Scanntech, Agenda de Visitas (monta a própria) |
+| **Diretoria** | Dá a aprovação final das solicitações e acompanha encartes, performance e métricas. | Métricas Redes, Encartes, Calendário Geral, Performance, Relatórios Scanntech, Agenda de Visitas (consulta a de todos) |
 | **Administrador** | Tudo o que a diretoria faz, mais o Painel de Vencimentos, as telas Lojas e Pedidos, a Integração Estoque e o Acompanhamento de Estoque e a administração (usuários, responsáveis de rede, redes do InfoVale, importação de relatórios, sincronização, permissões). | Todas |
 
 A tabela acima é o **padrão**. O administrador pode mudar o que cada perfil abre e faz na tela **Permissões** (seção 11.5): por exemplo, liberar o Painel de Vencimentos para os supervisores.
@@ -380,6 +380,27 @@ Painel construído sobre os **retratos de estoque** gravados pela Integração E
 - Os números não são arredondados; só a exibição é formatada.
 - Os limites das faixas (7, 30 e 60 dias) valem para todas as redes.
 
+### 9.5 Agenda de Visitas (supervisores)
+
+**Para que serve.** Substituir a agenda semanal de visitas por cidade que cada supervisor manda no WhatsApp: ela passa a ser montada no InfoVale, num calendário semanal parecido com o Google Agenda, e a diretoria consulta sem depender de mensagem.
+
+**Como o supervisor monta a semana**
+
+- A tela mostra a semana de segunda a sábado (domingo aparece só se houver visita). Setas e "Hoje" navegam entre as semanas.
+- **Clicar num horário** do dia cria uma visita naquele horário; **clicar na faixa "dia inteiro"** cria uma visita de dia inteiro. O botão "+ Nova visita" também cria.
+- Cada visita tem: **cidade** (obrigatória, escolhida na lista ou digitada), **dia**, **horário** (início e fim) ou **dia inteiro**, **lojas** a visitar (opcional) e **observação** (opcional).
+- Visitas no mesmo horário aparecem lado a lado. Cada cidade tem sempre a mesma cor.
+- **Copiar semana anterior** traz para a semana aberta todas as visitas da semana de antes (mesmo dia da semana e horário), sem duplicar o que já existe.
+- **Copiar para WhatsApp** gera o texto da semana, por dia, pronto para colar na conversa.
+- No celular a agenda aparece como lista por dia.
+
+**Regras**
+
+- Cada usuário mexe **só na própria agenda**. A diretoria (e quem tiver a permissão "Ver a agenda de todos os supervisores") consulta a agenda de qualquer supervisor ou de todos juntos, **sem alterar**. O administrador também pode marcar visitas na agenda de um supervisor escolhido.
+- A lista de cidades vem do cadastro dos clientes no Lacteus (município). **Só cerca de metade dos clientes tem a cidade preenchida** no Lacteus; por isso a cidade pode ser digitada, e a escolha das lojas pode mostrar "todas as lojas" quando a cidade não está cadastrada nelas.
+- A mesma cidade escrita de formas diferentes ("Maracanau", "MARACANAÚ") é tratada como uma só; vale a grafia com acento.
+- A agenda é um **planejamento**: não registra se a visita aconteceu e não altera o estoque, as solicitações nem os encartes.
+
 ---
 
 ## 10. Regras de visibilidade e responsabilidade
@@ -463,6 +484,8 @@ O acesso é controlado **por perfil**: cada usuário tem um perfil (Vendedor, Su
 | Administração | Responsáveis de rede | Admin |
 | Relatórios | Relatórios Scanntech (ver as imagens importadas) | Supervisor, Diretoria, Admin |
 | Relatórios | Importar relatórios | Admin |
+| Agenda de visitas | Montar a própria agenda de visitas | Supervisor, Admin |
+| Agenda de visitas | Ver a agenda de todos os supervisores | Diretoria, Admin |
 | Administração | Redes do InfoVale | Admin |
 | Administração | Sincronização manual | Admin |
 | Administração | Permissões | Somente Admin |

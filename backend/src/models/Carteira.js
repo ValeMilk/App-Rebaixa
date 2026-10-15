@@ -17,6 +17,7 @@ const carteiraSchema = new mongoose.Schema(
     codigoRede:       { type: String, default: null, index: true },
     redeSubrede:      { type: String, default: null },
     subrede:          { type: String, default: null },
+    cidade:           { type: String, default: null, index: true }, // municipio do cliente no Lacteus (A00_END_MUN); so ~55% preenchido
     // "lacteus" (ERP) ou "infovale" (rede criada no InfoVale: ver RedeInfovale)
     origem:           { type: String, default: "lacteus", index: true },
     sincronizadoEm:   { type: Date, default: Date.now },

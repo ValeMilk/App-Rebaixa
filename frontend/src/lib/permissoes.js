@@ -4,7 +4,7 @@
 /** O usuario tem ao menos uma das permissoes? */
 export function pode(user, ...chaves) {
   const lista = user?.permissoes || [];
-  return chaves.some((c) => lista.includes(c));
+  return chaves.flat().some((c) => lista.includes(c)); // aceita uma chave, varias ou uma lista (qualquer uma libera)
 }
 
 export const PERFIL_LABEL = { vendedor: "Vendedor", supervisor: "Supervisor", diretoria: "Diretoria", admin: "Admin" };

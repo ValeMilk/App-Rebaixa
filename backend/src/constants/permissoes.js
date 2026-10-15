@@ -50,6 +50,14 @@ const GRUPOS = [
     ],
   },
   {
+    id: "agenda",
+    label: "Agenda de visitas",
+    permissoes: [
+      { chave: "agenda_visitas.gerenciar", label: "Montar a própria agenda de visitas", descricao: "Criar, mudar e excluir as visitas da semana (cidade, dia, horário e lojas). Cada usuário só mexe na própria agenda." },
+      { chave: "agenda_visitas.ver_todas", label: "Ver a agenda de todos os supervisores", descricao: "Consultar a agenda de visitas de qualquer supervisor, sem poder alterá-la." },
+    ],
+  },
+  {
     id: "integracao",
     label: "Estoque das redes",
     permissoes: [
@@ -78,8 +86,8 @@ const NAO_SE_APLICA = Object.fromEntries(PERFIS.map((perfil) => [perfil, new Set
 // Acesso de cada perfil ANTES da tela de permissoes (menu + rotas da API).
 const PADRAO = {
   vendedor: ["lojas.ver", "solicitacoes.ver", "solicitacoes.criar"],
-  supervisor: ["metricas_redes.ver", "encartes.ver", "encartes.criar", "solicitacoes.criar", "relatorios.ver"],
-  diretoria: ["metricas_redes.ver", "encartes.ver", "encartes.performance", "solicitacoes.criar", "solicitacoes.decidir", "relatorios.ver"],
+  supervisor: ["metricas_redes.ver", "encartes.ver", "encartes.criar", "solicitacoes.criar", "relatorios.ver", "agenda_visitas.gerenciar"],
+  diretoria: ["metricas_redes.ver", "encartes.ver", "encartes.performance", "solicitacoes.criar", "solicitacoes.decidir", "relatorios.ver", "agenda_visitas.ver_todas"],
   admin: CHAVES,
 };
 
