@@ -7,7 +7,7 @@ import { useAuth } from "@/lib/auth";
 import { pode } from "@/lib/permissoes";
 import {
   DIAS_CURTOS, hojeStr, somarDias, segundaDe, indiceDoDia, diaDoMes, dm, rotuloSemana, minutos, hhmm,
-  corDaCidade, distribuirColunas, textoParaWhatsapp,
+  corDaVisita, tituloVisita, nomesRedes, distribuirColunas, textoParaWhatsapp,
 } from "@/lib/agenda";
 import Button from "@/components/ui/Button";
 import Skeleton from "@/components/ui/Skeleton";
@@ -139,7 +139,7 @@ export default function AgendaPage() {
 
   async function excluir() {
     const v = dialogo.valor;
-    if (!confirm(`Excluir a visita a ${v.cidade}?`)) return;
+    if (!confirm(`Excluir a visita: ${tituloVisita(v)}?`)) return;
     try {
       await api.delete(`/agenda/${v.id}`);
       setDialogo(null);
@@ -199,7 +199,9 @@ export default function AgendaPage() {
   const semVisitas = visitas && visitas.length === 0;
 
   // Botao/etiqueta de uma visita (grade e lista usam o mesmo conteudo)
-  const rotuloVisita = (v) => (mostrarDono ? `${primeiroNome(v.donoNome)} · ${v.cidade}` : v.cidade);
+  const rotuloVisita = (v) => (mostrarDono ? `${primeiroNome(v.donoNome)} · ${tituloVisita(v)}` : tituloVisita(v));
+  // linha de baixo: as redes/subredes da visita (quando a visita tem cidade, que e o titulo)
+  const complemento = (v) => (v.cidade ? nomesRedes(v) : "");
 
   return (
     <div className="space-y-3">
@@ -262,15 +264,18 @@ export default function AgendaPage() {
                   className={`min-h-[44px] space-y-1 border-l border-neutral-100 p-1 ${podeCriar ? "cursor-pointer hover:bg-neutral-50" : ""}`}
                 >
                   {porDia.get(d).inteiro.map((v) => {
-                    const cor = corDaCidade(v.cidade);
+                    const cor = corDaVisita(v);
                     return (
                       <button
                         key={v.id} type="button" data-visita={v.id} onClick={() => abrirVisita(v)}
-                        className={`block w-full truncate rounded-md px-2 py-1 text-left text-xs font-medium ${cor.bg} ${cor.text} hover:opacity-90`}
-                        title={`${v.cidade}${v.lojas.length ? ` · ${v.lojas.length} lojas` : ""}`}
+                        className={`block w-full rounded-md px-2 py-1 text-left text-xs font-medium ${cor.bg} ${cor.text} hover:opacity-90`}
+                        title={[tituloVisita(v), complemento(v), v.lojas.length ? `${v.lojas.length} lojas` : ""].filter(Boolean).join(" · ")}
                       >
-                        {rotuloVisita(v)}
-                        {v.lojas.length > 0 && <span className="ml-1 opacity-80">· {v.lojas.length}</span>}
+                        <span className="block truncate">
+                          {rotuloVisita(v)}
+                          {v.lojas.length > 0 && <span className="ml-1 opacity-80">· {v.lojas.length}</span>}
+                        </span>
+                        {complemento(v) && <span className="block truncate text-[10px] font-normal opacity-90">{complemento(v)}</span>}
                       </button>
                     );
                   })}
@@ -300,7 +305,7 @@ export default function AgendaPage() {
                       <div key={i} className="pointer-events-none absolute inset-x-0 border-t border-neutral-100" style={{ top: i * PX_HORA }} />
                     ))}
                     {porDia.get(d).horario.map((v) => {
-                      const cor = corDaCidade(v.cidade);
+                      const cor = corDaVisita(v);
                       const top = ((v.iniMin - horaIni * 60) / 60) * PX_HORA;
                       const altura = Math.max(((v.fimMin - v.iniMin) / 60) * PX_HORA, 24);
                       return (
@@ -308,9 +313,10 @@ export default function AgendaPage() {
                           key={v.id} type="button" data-visita={v.id} onClick={() => abrirVisita(v)}
                           className={`absolute overflow-hidden rounded-md px-1.5 py-1 text-left text-xs leading-tight shadow-sm ring-1 ring-white ${cor.bg} ${cor.text} hover:opacity-90`}
                           style={{ top, height: altura - 2, left: `calc(${(v.col / v.cols) * 100}% + 2px)`, width: `calc(${100 / v.cols}% - 4px)` }}
-                          title={`${v.inicio} às ${v.fim} · ${v.cidade}`}
+                          title={[`${v.inicio} às ${v.fim}`, tituloVisita(v), complemento(v)].filter(Boolean).join(" · ")}
                         >
                           <span className="block truncate font-semibold">{rotuloVisita(v)}</span>
+                          {complemento(v) && <span className="block truncate text-[10px] opacity-90">{complemento(v)}</span>}
                           <span className="block truncate opacity-90">{v.inicio} – {v.fim}{v.lojas.length ? ` · ${v.lojas.length} ${v.lojas.length === 1 ? "loja" : "lojas"}` : ""}</span>
                         </button>
                       );
@@ -339,7 +345,7 @@ export default function AgendaPage() {
                   ) : (
                     <ul className="divide-y divide-neutral-100">
                       {todas.map((v) => {
-                        const cor = corDaCidade(v.cidade);
+                        const cor = corDaVisita(v);
                         return (
                           <li key={v.id}>
                             <button type="button" data-visita-lista={v.id} onClick={() => abrirVisita(v)} className="flex w-full items-start gap-3 px-3 py-2.5 text-left hover:bg-neutral-50">
@@ -350,6 +356,7 @@ export default function AgendaPage() {
                                   {v.diaInteiro ? "Dia inteiro" : `${v.inicio} às ${v.fim}`}
                                   {v.lojas.length ? ` · ${v.lojas.length} ${v.lojas.length === 1 ? "loja" : "lojas"}` : ""}
                                 </span>
+                                {complemento(v) && <span className="mt-0.5 block text-xs text-neutral-500">{complemento(v)}</span>}
                                 {v.observacao && <span className="mt-0.5 block truncate text-xs text-neutral-400">{v.observacao}</span>}
                               </span>
                             </button>
@@ -376,6 +383,7 @@ export default function AgendaPage() {
           valor={dialogo.valor}
           cidades={cidades}
           donoNome={donoNomeAlvo}
+          donoCodigo={ehAdmin && donoSel && donoSel !== "todos" ? donoSel : undefined}
           somenteLeitura={!!dialogo.somenteLeitura}
           podeExcluir={!dialogo.somenteLeitura && !!dialogo.valor.id}
           onSalvar={salvar}

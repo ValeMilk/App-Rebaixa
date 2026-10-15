@@ -2,17 +2,19 @@
 
 import { useEffect, useMemo, useState } from "react";
 import api from "@/lib/api";
-import { chaveCidade, DIAS_LONGOS, indiceDoDia, dm } from "@/lib/agenda";
+import { chaveCidade, DIAS_LONGOS, indiceDoDia, dm, tituloVisita } from "@/lib/agenda";
 import Button from "@/components/ui/Button";
 import Dialog from "@/components/ui/Dialog";
 
 const semAcento = (s) => String(s || "").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
+const chaveSub = (s) => `${s.codigoRede || ""}::${semAcento(s.nome)}`;
 
 /**
  * Criar, editar ou (somente leitura) ver uma visita da agenda.
- * `valor`: { id?, data, diaInteiro, inicio, fim, cidade, lojas[], observacao }.
+ * `valor`: { id?, data, diaInteiro, inicio, fim, cidade, redes[], subredes[], lojas[], observacao }.
+ * A visita pode ser descrita pela cidade, por redes (classes) e subredes (subclasses), ou pelas tres coisas.
  */
-export default function VisitaDialog({ valor, cidades, donoNome, somenteLeitura, podeExcluir, onSalvar, onExcluir, onClose }) {
+export default function VisitaDialog({ valor, cidades, donoNome, donoCodigo, somenteLeitura, podeExcluir, onSalvar, onExcluir, onClose }) {
   const editando = !!valor.id;
   const [data, setData] = useState(valor.data);
   const [diaInteiro, setDiaInteiro] = useState(valor.diaInteiro);
@@ -20,6 +22,11 @@ export default function VisitaDialog({ valor, cidades, donoNome, somenteLeitura,
   const [fim, setFim] = useState(valor.fim || "12:00");
   const [cidade, setCidade] = useState(valor.cidade || "");
   const [observacao, setObservacao] = useState(valor.observacao || "");
+  const [redesSel, setRedesSel] = useState(() => new Map((valor.redes || []).map((r) => [r.codigoRede, r])));
+  const [subSel, setSubSel] = useState(() => new Map((valor.subredes || []).map((s) => [chaveSub(s), s])));
+  const [mostrarRedes, setMostrarRedes] = useState((valor.redes || []).length + (valor.subredes || []).length > 0);
+  const [opcoes, setOpcoes] = useState(null); // { redes[], subredes[] } da carteira do usuario
+  const [buscaRede, setBuscaRede] = useState("");
   const [escolhidas, setEscolhidas] = useState(() => new Map((valor.lojas || []).map((l) => [l.clienteCodigo, l.clienteNome])));
   const [mostrarLojas, setMostrarLojas] = useState((valor.lojas || []).length > 0);
   const [soDaCidade, setSoDaCidade] = useState(true);
@@ -33,30 +40,45 @@ export default function VisitaDialog({ valor, cidades, donoNome, somenteLeitura,
     return k ? cidades.find((c) => chaveCidade(c) === k) || null : null;
   }, [cidade, cidades]);
 
+  // Redes e subredes: carrega ao abrir a secao e de novo quando a cidade conhecida muda (para a contagem na cidade)
+  useEffect(() => {
+    if (!mostrarRedes || somenteLeitura) return;
+    let vivo = true;
+    api
+      .get("/agenda/redes", { params: { ...(cidadeConhecida ? { cidade: cidadeConhecida } : {}), ...(donoCodigo ? { dono: donoCodigo } : {}) } })
+      .then(({ data: d }) => vivo && setOpcoes({ redes: d.redes || [], subredes: d.subredes || [] }))
+      .catch(() => vivo && setOpcoes((o) => o || { redes: [], subredes: [] }));
+    return () => { vivo = false; };
+  }, [mostrarRedes, cidadeConhecida, somenteLeitura, donoCodigo]);
+
   // Lojas: carrega uma vez, quando a pessoa abre a lista
   useEffect(() => {
     if (!mostrarLojas || catalogo || somenteLeitura) return;
     let vivo = true;
-    api.get("/agenda/lojas").then(({ data: d }) => vivo && setCatalogo(d.lojas || [])).catch(() => vivo && setCatalogo([]));
+    api.get("/agenda/lojas", { params: donoCodigo ? { dono: donoCodigo } : {} }).then(({ data: d }) => vivo && setCatalogo(d.lojas || [])).catch(() => vivo && setCatalogo([]));
     return () => { vivo = false; };
-  }, [mostrarLojas, catalogo, somenteLeitura]);
+  }, [mostrarLojas, catalogo, somenteLeitura, donoCodigo]);
+
+  const q = semAcento(buscaRede.trim());
+  const redesVisiveis = useMemo(() => (opcoes?.redes || []).filter((r) => !q || semAcento(r.nome).includes(q)), [opcoes, q]);
+  const subVisiveis = useMemo(() => (opcoes?.subredes || []).filter((s) => !q || semAcento(s.nome).includes(q) || semAcento(s.redeNome).includes(q)), [opcoes, q]);
 
   const visiveis = useMemo(() => {
     if (!catalogo) return [];
-    const q = semAcento(busca.trim());
+    const qb = semAcento(busca.trim());
     return catalogo.filter((l) => {
       if (soDaCidade && cidadeConhecida && chaveCidade(l.cidade) !== chaveCidade(cidadeConhecida)) return false;
-      return !q || semAcento(l.clienteNome).includes(q) || l.clienteCodigo.includes(q);
+      return !qb || semAcento(l.clienteNome).includes(qb) || l.clienteCodigo.includes(qb);
     });
   }, [catalogo, busca, soDaCidade, cidadeConhecida]);
 
-  function alternar(l) {
-    setEscolhidas((m) => {
-      const n = new Map(m);
-      n.has(l.clienteCodigo) ? n.delete(l.clienteCodigo) : n.set(l.clienteCodigo, l.clienteNome);
-      return n;
-    });
-  }
+  const alternarMapa = (setter, k, valorItem) => setter((m) => {
+    const n = new Map(m);
+    n.has(k) ? n.delete(k) : n.set(k, valorItem);
+    return n;
+  });
+
+  const temAlgo = cidade.trim().length >= 2 || redesSel.size > 0 || subSel.size > 0;
 
   async function salvar(e) {
     e.preventDefault();
@@ -70,6 +92,8 @@ export default function VisitaDialog({ valor, cidades, donoNome, somenteLeitura,
         fim: diaInteiro ? null : fim,
         cidade,
         observacao,
+        redes: [...redesSel.values()].map((r) => ({ codigoRede: r.codigoRede, nome: r.nome })),
+        subredes: [...subSel.values()].map((s) => ({ codigoRede: s.codigoRede, redeNome: s.redeNome, nome: s.nome })),
         lojas: [...escolhidas].map(([clienteCodigo, clienteNome]) => ({ clienteCodigo, clienteNome })),
       });
     } catch (err) {
@@ -84,11 +108,23 @@ export default function VisitaDialog({ valor, cidades, donoNome, somenteLeitura,
     return (
       <Dialog open onClose={onClose} size="md" ariaLabel="Visita">
         <div className="space-y-3 p-5" id="visita-leitura">
-          <h2 className="text-base font-semibold text-neutral-900">{valor.cidade}</h2>
+          <h2 className="text-base font-semibold text-neutral-900">{tituloVisita(valor)}</h2>
           <p className="text-sm text-neutral-600">
             {tituloDia} · {valor.diaInteiro ? "dia inteiro" : `${valor.inicio} às ${valor.fim}`}
             {valor.donoNome ? ` · ${valor.donoNome}` : ""}
           </p>
+          {valor.cidade && (valor.redes || []).length > 0 && (
+            <div>
+              <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-neutral-500">Redes (classes)</p>
+              <p className="text-sm text-neutral-700">{valor.redes.map((r) => r.nome || r.codigoRede).join(", ")}</p>
+            </div>
+          )}
+          {(valor.subredes || []).length > 0 && (
+            <div>
+              <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-neutral-500">Subredes (subclasses)</p>
+              <p className="text-sm text-neutral-700">{valor.subredes.map((s) => s.nome).join(", ")}</p>
+            </div>
+          )}
           {(valor.lojas || []).length > 0 && (
             <div>
               <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-neutral-500">Lojas</p>
@@ -103,6 +139,9 @@ export default function VisitaDialog({ valor, cidades, donoNome, somenteLeitura,
       </Dialog>
     );
   }
+
+  const totalRedes = redesSel.size + subSel.size;
+  const infoLojas = (o) => `${o.lojas} ${o.lojas === 1 ? "loja" : "lojas"}${cidadeConhecida ? ` · ${o.lojasNaCidade} em ${cidadeConhecida}` : ""}`;
 
   return (
     <Dialog open onClose={onClose} sheet size="lg" ariaLabel={editando ? "Editar visita" : "Nova visita"}>
@@ -119,9 +158,10 @@ export default function VisitaDialog({ valor, cidades, donoNome, somenteLeitura,
             <label htmlFor="v-cidade" className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-neutral-500">Cidade</label>
             <input
               id="v-cidade" className="input" list="v-cidades" value={cidade} onChange={(e) => setCidade(e.target.value)}
-              placeholder="Escolha ou digite a cidade" maxLength={80} required autoFocus={!editando} autoComplete="off"
+              placeholder="Escolha ou digite a cidade" maxLength={80} autoFocus={!editando} autoComplete="off"
             />
             <datalist id="v-cidades">{cidades.map((c) => <option key={c} value={c} />)}</datalist>
+            <p className="mt-1 text-xs text-neutral-500">Pode ficar em branco se a visita for só por rede ou subrede.</p>
           </div>
 
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
@@ -143,9 +183,65 @@ export default function VisitaDialog({ valor, cidades, donoNome, somenteLeitura,
             Dia inteiro
           </label>
 
+          {/* Redes (classes) e subredes (subclasses) */}
+          <div>
+            <button type="button" onClick={() => setMostrarRedes((v) => !v)} className="text-sm font-medium text-secondary hover:underline" id="v-toggle-redes">
+              {mostrarRedes ? "Esconder as redes e subredes" : "Escolher redes ou subredes (opcional)"}
+              {totalRedes > 0 ? ` · ${totalRedes} ${totalRedes === 1 ? "selecionada" : "selecionadas"}` : ""}
+            </button>
+            {mostrarRedes && (
+              <div className="mt-2 space-y-3" id="v-redes">
+                <input className="input" placeholder="Buscar rede ou subrede" value={buscaRede} onChange={(e) => setBuscaRede(e.target.value)} aria-label="Buscar rede ou subrede" />
+                {!opcoes && <p className="py-2 text-center text-sm text-neutral-500">Carregando redes…</p>}
+                {opcoes && (
+                  <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+                    <div>
+                      <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-neutral-500">Redes (classe)</p>
+                      <ul className="max-h-52 divide-y divide-neutral-100 overflow-y-auto rounded-lg border border-neutral-200" id="v-lista-redes">
+                        {redesVisiveis.length === 0 && <li className="px-3 py-3 text-center text-sm text-neutral-500">Nenhuma rede.</li>}
+                        {redesVisiveis.map((r) => (
+                          <li key={r.codigoRede}>
+                            <label className="flex cursor-pointer items-center gap-3 px-3 py-2 hover:bg-neutral-50">
+                              <input type="checkbox" className="h-4 w-4 shrink-0 rounded border-neutral-300 accent-secondary" checked={redesSel.has(r.codigoRede)} onChange={() => alternarMapa(setRedesSel, r.codigoRede, { codigoRede: r.codigoRede, nome: r.nome })} />
+                              <span className="min-w-0 flex-1">
+                                <span className="block truncate text-sm text-neutral-800">{r.nome}</span>
+                                <span className="block text-[11px] text-neutral-500">{infoLojas(r)}</span>
+                              </span>
+                            </label>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                    <div>
+                      <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-neutral-500">Subredes (subclasse)</p>
+                      <ul className="max-h-52 divide-y divide-neutral-100 overflow-y-auto rounded-lg border border-neutral-200" id="v-lista-subredes">
+                        {subVisiveis.length === 0 && <li className="px-3 py-3 text-center text-sm text-neutral-500">Nenhuma subrede.</li>}
+                        {subVisiveis.map((s) => {
+                          const k = chaveSub(s);
+                          return (
+                            <li key={k}>
+                              <label className="flex cursor-pointer items-center gap-3 px-3 py-2 hover:bg-neutral-50">
+                                <input type="checkbox" className="h-4 w-4 shrink-0 rounded border-neutral-300 accent-secondary" checked={subSel.has(k)} onChange={() => alternarMapa(setSubSel, k, { codigoRede: s.codigoRede, redeNome: s.redeNome, nome: s.nome })} />
+                                <span className="min-w-0 flex-1">
+                                  <span className="block truncate text-sm text-neutral-800">{s.nome}</span>
+                                  <span className="block truncate text-[11px] text-neutral-500">{s.redeNome} · {infoLojas(s)}</span>
+                                </span>
+                              </label>
+                            </li>
+                          );
+                        })}
+                      </ul>
+                    </div>
+                  </div>
+                )}
+                {cidadeConhecida && opcoes && <p className="text-xs text-neutral-500">As opções com lojas em {cidadeConhecida} aparecem primeiro.</p>}
+              </div>
+            )}
+          </div>
+
           <div>
             <button type="button" onClick={() => setMostrarLojas((v) => !v)} className="text-sm font-medium text-secondary hover:underline" id="v-toggle-lojas">
-              {mostrarLojas ? "Esconder as lojas" : "Escolher as lojas (opcional)"}
+              {mostrarLojas ? "Esconder as lojas" : "Escolher lojas específicas (opcional)"}
               {escolhidas.size > 0 ? ` · ${escolhidas.size} ${escolhidas.size === 1 ? "selecionada" : "selecionadas"}` : ""}
             </button>
             {mostrarLojas && (
@@ -164,7 +260,7 @@ export default function VisitaDialog({ valor, cidades, donoNome, somenteLeitura,
                   {visiveis.map((l) => (
                     <li key={l.clienteCodigo}>
                       <label className="flex cursor-pointer items-center gap-3 px-3 py-2 hover:bg-neutral-50">
-                        <input type="checkbox" className="h-4 w-4 shrink-0 rounded border-neutral-300 accent-secondary" checked={escolhidas.has(l.clienteCodigo)} onChange={() => alternar(l)} />
+                        <input type="checkbox" className="h-4 w-4 shrink-0 rounded border-neutral-300 accent-secondary" checked={escolhidas.has(l.clienteCodigo)} onChange={() => alternarMapa(setEscolhidas, l.clienteCodigo, l.clienteNome)} />
                         <span className="min-w-0 flex-1">
                           <span className="block truncate text-sm text-neutral-800">{l.clienteNome}</span>
                           <span className="block text-[11px] text-neutral-500">Cód. {l.clienteCodigo}{l.cidade ? ` · ${l.cidade}` : " · sem cidade cadastrada"}</span>
@@ -191,7 +287,7 @@ export default function VisitaDialog({ valor, cidades, donoNome, somenteLeitura,
           </div>
           <div className="flex items-center gap-2">
             <Button variant="ghost" onClick={onClose} disabled={salvando}>Cancelar</Button>
-            <Button type="submit" disabled={salvando || cidade.trim().length < 2} id="v-salvar">{salvando ? "Salvando..." : "Salvar"}</Button>
+            <Button type="submit" disabled={salvando || !temAlgo} id="v-salvar">{salvando ? "Salvando..." : "Salvar"}</Button>
           </div>
         </div>
       </form>

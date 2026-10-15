@@ -63,7 +63,7 @@ test.before(async () => {
   }
   await Carteira.create([
     { clienteCodigo: "10", clienteNome: "MERCADINHO A", supervisorCodigo: "S1", cidade: "FORTALEZA", codigoRede: "1", redeSubrede: "R1" },
-    { clienteCodigo: "11", clienteNome: "MERCADINHO B", supervisorCodigo: "S1", cidade: "CAUCAIA", codigoRede: "1", redeSubrede: "R1" },
+    { clienteCodigo: "11", clienteNome: "MERCADINHO B", supervisorCodigo: "S1", cidade: "CAUCAIA", codigoRede: "1", redeSubrede: "R1", subrede: "SUBCLASSE CAUCAIA" },
     { clienteCodigo: "12", clienteNome: "MERCADINHO C", supervisorCodigo: "S1", cidade: null, codigoRede: "1", redeSubrede: "R1" },
     { clienteCodigo: "20", clienteNome: "OUTRO SUP", supervisorCodigo: "S2", cidade: "FORTALEZA", codigoRede: "2", redeSubrede: "R2" },
     { clienteCodigo: "21", clienteNome: "LOJA MARACANAU", supervisorCodigo: "S2", cidade: "MARACANAU", codigoRede: "2", redeSubrede: "R2" }, // Lacteus guarda sem acento
@@ -178,4 +178,50 @@ test("cidades e lojas para escolher na visita", async (t) => {
   assert.deepEqual(todas.map((l) => l.clienteCodigo), ["10", "11", "12"]); // so a carteira dele
   const fort = (await chamar("sup1", "GET", "/lojas?cidade=fortaleza")).dados.lojas;
   assert.deepEqual(fort.map((l) => [l.clienteCodigo, l.cidade]), [["10", "Fortaleza"]]);
+});
+
+test("redes e subredes: a visita pode ser por classe/subclasse, com ou sem cidade", async (t) => {
+  if (!pronto()) return t.skip("sem banco de teste");
+  // opcoes do supervisor 1: redes da carteira dele, com a contagem de lojas na cidade escolhida
+  const op = (await chamar("sup1", "GET", "/redes?cidade=caucaia")).dados;
+  assert.deepEqual(op.redes.map((r) => [r.codigoRede, r.nome, r.lojas, r.lojasNaCidade]), [["1", "R1", 3, 1]]);
+  assert.deepEqual(op.subredes.map((s) => [s.codigoRede, s.redeNome, s.nome, s.lojas, s.lojasNaCidade]), [["1", "R1", "SUBCLASSE CAUCAIA", 1, 1]]);
+  const outro = (await chamar("sup2", "GET", "/redes")).dados;
+  assert.deepEqual(outro.redes.map((r) => r.codigoRede), ["2"]); // so a carteira dele
+  // admin marcando na agenda de um supervisor ve as opcoes da carteira DELE; supervisor nao consegue olhar a do outro
+  assert.deepEqual((await chamar("admin", "GET", "/redes?dono=S2")).dados.redes.map((r) => r.codigoRede), ["2"]);
+  assert.deepEqual((await chamar("admin", "GET", "/lojas?dono=S2")).dados.lojas.map((l) => l.clienteCodigo).sort(), ["20", "21"]);
+  assert.deepEqual((await chamar("sup1", "GET", "/redes?dono=S2")).dados.redes.map((r) => r.codigoRede), ["1"]);
+
+  // cidade + varias redes/subredes (supervisor que atende uma cidade so e visita varias redes)
+  const a = await chamar("sup1", "POST", "", {
+    data: "2026-10-20", diaInteiro: true, cidade: "fortaleza",
+    redes: [{ codigoRede: "1", nome: "R1" }, { codigoRede: "1", nome: "R1" }, { codigoRede: "7", nome: "REDE SETE" }],
+    subredes: [{ codigoRede: "1", redeNome: "R1", nome: "SUBCLASSE CAUCAIA" }],
+  });
+  assert.equal(a.status, 201);
+  assert.deepEqual(a.dados.visita.redes.map((r) => r.codigoRede), ["1", "7"]); // repetida some
+  assert.deepEqual(a.dados.visita.subredes.map((s) => s.nome), ["SUBCLASSE CAUCAIA"]);
+  assert.equal(a.dados.visita.cidade, "Fortaleza");
+
+  // so a rede, sem cidade; sem nada e recusado
+  const b = await chamar("sup1", "POST", "", { data: "2026-10-21", diaInteiro: true, redes: [{ codigoRede: "1", nome: "R1" }] });
+  assert.equal(b.status, 201);
+  assert.equal(b.dados.visita.cidade, "");
+  const vazia = await chamar("sup1", "POST", "", { data: "2026-10-21", diaInteiro: true });
+  assert.equal(vazia.status, 400);
+  assert.match(vazia.dados.error, /cidade ou escolha/);
+
+  // editar tirando a cidade e as redes e recusado; trocar so a rede vale
+  assert.equal((await chamar("sup1", "PUT", `/${b.dados.visita.id}`, { data: "2026-10-21", diaInteiro: true, cidade: "", redes: [] })).status, 400);
+  const ed = await chamar("sup1", "PUT", `/${b.dados.visita.id}`, { data: "2026-10-21", diaInteiro: true, subredes: [{ codigoRede: "1", redeNome: "R1", nome: "SUBCLASSE CAUCAIA" }] });
+  assert.equal(ed.status, 200);
+  assert.deepEqual([ed.dados.visita.redes.length, ed.dados.visita.subredes.length], [0, 1]);
+
+  // a semana copiada leva as redes e subredes, e nao confunde visitas parecidas
+  const cp = await chamar("sup1", "POST", "/copiar-semana", { de: "2026-10-19", para: "2026-10-26" });
+  assert.deepEqual([cp.dados.copiadas, cp.dados.ignoradas], [5, 0]); // as 3 da semana copiada antes + as 2 novas
+  const copia = (await chamar("sup1", "GET", "?de=2026-10-26&ate=2026-11-01")).dados.visitas.find((v) => v.data === "2026-10-27" && v.redes.length);
+  assert.deepEqual(copia.redes.map((r) => r.nome), ["R1", "REDE SETE"]);
+  assert.deepEqual((await chamar("sup1", "POST", "/copiar-semana", { de: "2026-10-19", para: "2026-10-26" })).dados.ignoradas, 5);
 });

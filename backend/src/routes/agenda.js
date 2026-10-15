@@ -31,7 +31,9 @@ router.get("/donos", verTodas, handler(async (_req, res) => res.json({ donos: aw
 
 router.get("/cidades", gerenciar, handler(async (_req, res) => res.json({ cidades: await svc.cidades() })));
 
-router.get("/lojas", gerenciar, handler(async (req, res) => res.json({ lojas: await svc.lojas(req.user, req.query.cidade) })));
+router.get("/redes", gerenciar, handler(async (req, res) => res.json(await svc.redes(req.user, req.query.cidade, req.query.dono))));
+
+router.get("/lojas", gerenciar, handler(async (req, res) => res.json({ lojas: await svc.lojas(req.user, req.query.cidade, req.query.dono) })));
 
 router.post("/", gerenciar, handler(async (req, res) => {
   res.status(201).json({ visita: await svc.criar(req.user, req.body || {}) });

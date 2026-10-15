@@ -13,6 +13,7 @@ const { usuarioPode } = require("./permissoesService");
 
 const MAX_DIAS_CONSULTA = 62;
 const MAX_LOJAS = 80;
+const MAX_REDES = 40;
 const MAX_LOJAS_LISTA = 500;
 const MINUSCULAS = new Set(["de", "da", "do", "das", "dos", "e"]);
 
@@ -74,7 +75,31 @@ function validarEvento(dados) {
     fim = String(d.fim);
   }
   const cidade = normalizar(d.cidade);
-  if (cidade.length < 2 || cidade.length > 80) throw erro(400, "Informe a cidade da visita.");
+  if (cidade && (cidade.length < 2 || cidade.length > 80)) throw erro(400, "Informe a cidade da visita (de 2 a 80 letras).");
+
+  // Redes (classes) e subredes (subclasses) a visitar
+  if ((d.redes != null && !Array.isArray(d.redes)) || (d.subredes != null && !Array.isArray(d.subredes))) throw erro(400, "Lista de redes invalida.");
+  const redes = [];
+  const redesVistas = new Set();
+  for (const r of d.redes || []) {
+    const codigoRede = String(r?.codigoRede || "").trim();
+    if (!codigoRede || redesVistas.has(codigoRede)) continue;
+    redesVistas.add(codigoRede);
+    redes.push({ codigoRede, nome: normalizar(r.nome).slice(0, 120) });
+  }
+  const subredes = [];
+  const subredesVistas = new Set();
+  for (const s of d.subredes || []) {
+    const nome = normalizar(s?.nome).slice(0, 120);
+    const codigoRede = String(s?.codigoRede || "").trim();
+    const k = `${codigoRede}::${chave(nome)}`;
+    if (!nome || subredesVistas.has(k)) continue;
+    subredesVistas.add(k);
+    subredes.push({ codigoRede, redeNome: normalizar(s.redeNome).slice(0, 120), nome });
+  }
+  if (redes.length > MAX_REDES || subredes.length > MAX_REDES) throw erro(400, `Escolha no máximo ${MAX_REDES} redes e ${MAX_REDES} subredes por visita.`);
+  if (!cidade && !redes.length && !subredes.length) throw erro(400, "Informe a cidade ou escolha ao menos uma rede ou subrede.");
+
   const lojas = [];
   const vistas = new Set();
   if (d.lojas != null && !Array.isArray(d.lojas)) throw erro(400, "Lista de lojas invalida.");
@@ -87,7 +112,7 @@ function validarEvento(dados) {
   if (lojas.length > MAX_LOJAS) throw erro(400, `Escolha no máximo ${MAX_LOJAS} lojas por visita.`);
   const observacao = String(d.observacao || "").trim();
   if (observacao.length > 500) throw erro(400, "A observação pode ter até 500 caracteres.");
-  return { data: d.data, diaInteiro, inicio, fim, cidade, lojas, observacao };
+  return { data: d.data, diaInteiro, inicio, fim, cidade, redes, subredes, lojas, observacao };
 }
 
 /** Cidades que o sistema ja conhece (carteira do Lacteus + ja usadas em agendas): chave -> nome. */
@@ -122,7 +147,9 @@ function paraJson(ev) {
     diaInteiro: !!ev.diaInteiro,
     inicio: ev.inicio || null,
     fim: ev.fim || null,
-    cidade: ev.cidade,
+    cidade: ev.cidade || "",
+    redes: (ev.redes || []).map((r) => ({ codigoRede: r.codigoRede, nome: r.nome || "" })),
+    subredes: (ev.subredes || []).map((s) => ({ codigoRede: s.codigoRede || "", redeNome: s.redeNome || "", nome: s.nome })),
     lojas: (ev.lojas || []).map((l) => ({ clienteCodigo: l.clienteCodigo, clienteNome: l.clienteNome || "" })),
     observacao: ev.observacao || "",
   };
@@ -175,7 +202,7 @@ async function buscarDoDono(user, id) {
 async function criar(user, dados) {
   const campos = validarEvento(dados);
   const dono = await resolverDono(user, dados?.donoCodigo);
-  const cidade = await cidadeCanonica(campos.cidade);
+  const cidade = campos.cidade ? await cidadeCanonica(campos.cidade) : "";
   const ev = await AgendaVisita.create({ ...campos, cidade, cidadeChave: chave(cidade), ...dono, criadoPorNome: user.nome });
   return paraJson(ev);
 }
@@ -183,7 +210,7 @@ async function criar(user, dados) {
 async function atualizar(user, id, dados) {
   const ev = await buscarDoDono(user, id);
   const campos = validarEvento(dados);
-  const cidade = await cidadeCanonica(campos.cidade);
+  const cidade = campos.cidade ? await cidadeCanonica(campos.cidade) : "";
   Object.assign(ev, campos, { cidade, cidadeChave: chave(cidade) });
   await ev.save();
   return paraJson(ev);
@@ -204,8 +231,12 @@ async function copiarSemana(user, { de, para, donoCodigo } = {}) {
   const dono = await resolverDono(user, donoCodigo);
   const origem = await AgendaVisita.find({ donoCodigo: dono.donoCodigo, data: { $gte: de, $lte: somarDias(de, 6) } }).lean();
   const deslocamento = diasEntre(de, para);
-  const existentes = await AgendaVisita.find({ donoCodigo: dono.donoCodigo, data: { $gte: para, $lte: somarDias(para, 6) } }, "data cidadeChave diaInteiro inicio fim").lean();
-  const sig = (e) => `${e.data}|${e.cidadeChave}|${e.diaInteiro ? 1 : 0}|${e.inicio || ""}|${e.fim || ""}`;
+  const existentes = await AgendaVisita.find({ donoCodigo: dono.donoCodigo, data: { $gte: para, $lte: somarDias(para, 6) } }, "data cidadeChave redes subredes diaInteiro inicio fim").lean();
+  const sig = (e) => {
+    const r = (e.redes || []).map((x) => x.codigoRede).sort().join(",");
+    const s = (e.subredes || []).map((x) => `${x.codigoRede}:${chave(x.nome)}`).sort().join(",");
+    return `${e.data}|${e.cidadeChave || ""}|${r}|${s}|${e.diaInteiro ? 1 : 0}|${e.inicio || ""}|${e.fim || ""}`;
+  };
   const ja = new Set(existentes.map(sig));
   const novas = [];
   let ignoradas = 0;
@@ -216,7 +247,8 @@ async function copiarSemana(user, { de, para, donoCodigo } = {}) {
     novas.push({
       donoId: dono.donoId, donoCodigo: dono.donoCodigo, donoNome: dono.donoNome,
       data: copia.data, diaInteiro: !!e.diaInteiro, inicio: e.inicio || null, fim: e.fim || null,
-      cidade: e.cidade, cidadeChave: e.cidadeChave, lojas: e.lojas || [], observacao: e.observacao || "",
+      cidade: e.cidade || "", cidadeChave: e.cidadeChave || "", redes: e.redes || [], subredes: e.subredes || [],
+      lojas: e.lojas || [], observacao: e.observacao || "",
       criadoPorNome: user.nome,
     });
   }
@@ -224,9 +256,48 @@ async function copiarSemana(user, { de, para, donoCodigo } = {}) {
   return { copiadas: novas.length, ignoradas, deOrigem: origem.length };
 }
 
+/** Carteira a usar nas opcoes da visita: a do proprio usuario; o admin que marca na agenda de um supervisor usa a dele. */
+function alvoDaCarteira(user, dono) {
+  return user.role === "admin" && dono && dono !== "todos" ? { role: "supervisor", codigo: String(dono) } : user;
+}
+
+/**
+ * Redes (classes) e subredes (subclasses) da carteira que o usuario alcanca, para escolher na visita.
+ * Com `cidade`, cada opcao diz quantas lojas tem naquela cidade e as que tem la vem primeiro.
+ */
+async function redes(user, cidade, dono) {
+  const carteira = await carteiraDoUsuario(alvoDaCarteira(user, dono));
+  const k = cidade ? chave(cidade) : null;
+  const porRede = new Map();
+  const porSub = new Map();
+  for (const c of carteira) {
+    const codigo = String(c.codigoRede || "").trim();
+    const nomeRede = normalizar(c.redeSubrede);
+    if (!codigo || codigo === "0" || !nomeRede || /inativ/i.test(nomeRede)) continue;
+    const naCidade = !!k && chave(c.cidade) === k;
+    if (!porRede.has(codigo)) porRede.set(codigo, { codigoRede: codigo, nome: nomeRede, lojas: new Set(), naCidade: new Set() });
+    const r = porRede.get(codigo);
+    r.lojas.add(c.clienteCodigo);
+    if (naCidade) r.naCidade.add(c.clienteCodigo);
+    const nomeSub = normalizar(c.subrede);
+    if (nomeSub && chave(nomeSub) !== chave(nomeRede)) {
+      const sk = `${codigo}::${chave(nomeSub)}`;
+      if (!porSub.has(sk)) porSub.set(sk, { codigoRede: codigo, redeNome: nomeRede, nome: nomeSub, lojas: new Set(), naCidade: new Set() });
+      const s = porSub.get(sk);
+      s.lojas.add(c.clienteCodigo);
+      if (naCidade) s.naCidade.add(c.clienteCodigo);
+    }
+  }
+  const saida = (m) =>
+    [...m.values()]
+      .map((x) => ({ ...x, lojas: x.lojas.size, lojasNaCidade: x.naCidade.size, naCidade: undefined }))
+      .sort((a, b) => b.lojasNaCidade - a.lojasNaCidade || a.nome.localeCompare(b.nome, "pt-BR"));
+  return { redes: saida(porRede), subredes: saida(porSub) };
+}
+
 /** Lojas que o usuario alcanca, opcionalmente so as da cidade (para escolher na visita). */
-async function lojas(user, cidade) {
-  const carteira = await carteiraDoUsuario(user);
+async function lojas(user, cidade, dono) {
+  const carteira = await carteiraDoUsuario(alvoDaCarteira(user, dono));
   const k = cidade ? chave(cidade) : null;
   const vistos = new Set();
   const saida = [];
@@ -242,5 +313,5 @@ async function lojas(user, cidade) {
 
 module.exports = {
   formatarCidade, dataValida, somarDias, validarEvento,
-  cidades, listar, donosDisponiveis, criar, atualizar, remover, copiarSemana, lojas,
+  cidades, listar, donosDisponiveis, criar, atualizar, remover, copiarSemana, redes, lojas,
 };

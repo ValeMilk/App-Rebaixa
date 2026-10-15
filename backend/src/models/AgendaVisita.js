@@ -14,8 +14,24 @@ const agendaVisitaSchema = new mongoose.Schema(
     diaInteiro:  { type: Boolean, default: false },
     inicio:      { type: String, default: null },
     fim:         { type: String, default: null },
-    cidade:      { type: String, required: true, trim: true },
-    cidadeChave: { type: String, required: true }, // minusculas e sem acento: agrupa grafias iguais
+    // A visita precisa de cidade OU de redes/subredes (um supervisor pode atender uma cidade so e visitar varias redes)
+    cidade:      { type: String, default: "", trim: true },
+    cidadeChave: { type: String, default: "" }, // minusculas e sem acento: agrupa grafias iguais
+    redes: [
+      {
+        _id: false,
+        codigoRede: { type: String, required: true }, // classe (rede) da carteira
+        nome:       { type: String },
+      },
+    ],
+    subredes: [
+      {
+        _id: false,
+        codigoRede: { type: String },                 // rede a que a subrede (subclasse) pertence
+        redeNome:   { type: String },
+        nome:       { type: String, required: true },
+      },
+    ],
     lojas: [
       {
         _id: false,

@@ -51,6 +51,21 @@ export const hhmm = (min) => `${String(Math.floor(min / 60)).padStart(2, "0")}:$
 
 export const chaveCidade = (s) => String(s || "").trim().normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
 
+/** Nomes das redes (classes) e subredes (subclasses) da visita, em uma linha. */
+export function nomesRedes(v) {
+  return [...(v.redes || []).map((r) => r.nome || r.codigoRede), ...(v.subredes || []).map((s) => s.nome)].join(", ");
+}
+
+/** Titulo da visita: a cidade; sem cidade, as redes/subredes escolhidas. */
+export function tituloVisita(v) {
+  return v.cidade || nomesRedes(v) || "Visita";
+}
+
+/** Uma cor da paleta por cidade (ou, sem cidade, pela primeira rede), sempre a mesma. */
+export function corDaVisita(v) {
+  return corDaCidade(v.cidade || v.redes?.[0]?.nome || v.subredes?.[0]?.nome || "");
+}
+
 /** Uma cor da paleta por cidade, sempre a mesma para a mesma cidade. */
 export function corDaCidade(cidade) {
   const k = chaveCidade(cidade);
@@ -111,7 +126,11 @@ export function textoParaWhatsapp({ segunda, visitas, dias = 6 }) {
       for (const v of ordem) {
         const quando = v.diaInteiro ? "dia inteiro" : `${v.inicio} às ${v.fim}`;
         const lojas = v.lojas?.length ? ` (${v.lojas.length} ${v.lojas.length === 1 ? "loja" : "lojas"})` : "";
-        linhas.push(`• ${v.cidade} — ${quando}${lojas}`);
+        linhas.push(`• ${tituloVisita(v)} — ${quando}${lojas}`);
+        if (v.cidade && (v.redes?.length || v.subredes?.length)) {
+          if (v.redes?.length) linhas.push(`   Redes: ${v.redes.map((r) => r.nome || r.codigoRede).join(", ")}`);
+          if (v.subredes?.length) linhas.push(`   Subredes: ${v.subredes.map((s) => s.nome).join(", ")}`);
+        }
         if (v.lojas?.length) linhas.push(`   ${v.lojas.map((l) => l.clienteNome || l.clienteCodigo).join(", ")}`);
         if (v.observacao) linhas.push(`   Obs.: ${v.observacao}`);
       }

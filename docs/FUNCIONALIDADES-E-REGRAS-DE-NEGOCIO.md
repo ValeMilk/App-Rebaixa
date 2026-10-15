@@ -388,7 +388,9 @@ Painel construído sobre os **retratos de estoque** gravados pela Integração E
 
 - A tela mostra a semana de segunda a sábado (domingo aparece só se houver visita). Setas e "Hoje" navegam entre as semanas.
 - **Clicar num horário** do dia cria uma visita naquele horário; **clicar na faixa "dia inteiro"** cria uma visita de dia inteiro. O botão "+ Nova visita" também cria.
-- Cada visita tem: **cidade** (obrigatória, escolhida na lista ou digitada), **dia**, **horário** (início e fim) ou **dia inteiro**, **lojas** a visitar (opcional) e **observação** (opcional).
+- Cada visita tem: **cidade** (escolhida na lista ou digitada), **dia**, **horário** (início e fim) ou **dia inteiro**, **redes (classes)** e **subredes (subclasses)** a visitar, **lojas** específicas (opcional) e **observação** (opcional).
+- A visita pode ser descrita pela **cidade**, pelas **redes e subredes** ou pelas duas coisas. Exemplo: o supervisor que atende só Fortaleza marca "Fortaleza" e escolhe as várias redes que vai visitar naquele dia; ou marca só a rede, sem cidade. É obrigatório ter ao menos a cidade ou uma rede/subrede.
+- As redes e subredes oferecidas são as da **carteira do próprio supervisor**. Escolhida a cidade, aparece quantas lojas cada rede ou subrede tem naquela cidade, e as que têm lojas lá vêm primeiro.
 - Visitas no mesmo horário aparecem lado a lado. Cada cidade tem sempre a mesma cor.
 - **Copiar semana anterior** traz para a semana aberta todas as visitas da semana de antes (mesmo dia da semana e horário), sem duplicar o que já existe.
 - **Copiar para WhatsApp** gera o texto da semana, por dia, pronto para colar na conversa.
@@ -399,6 +401,7 @@ Painel construído sobre os **retratos de estoque** gravados pela Integração E
 - Cada usuário mexe **só na própria agenda**. A diretoria (e quem tiver a permissão "Ver a agenda de todos os supervisores") consulta a agenda de qualquer supervisor ou de todos juntos, **sem alterar**. O administrador também pode marcar visitas na agenda de um supervisor escolhido.
 - A lista de cidades vem do cadastro dos clientes no Lacteus (município). **Só cerca de metade dos clientes tem a cidade preenchida** no Lacteus; por isso a cidade pode ser digitada, e a escolha das lojas pode mostrar "todas as lojas" quando a cidade não está cadastrada nelas.
 - A mesma cidade escrita de formas diferentes ("Maracanau", "MARACANAÚ") é tratada como uma só; vale a grafia com acento.
+- No texto para o WhatsApp, cada visita lista a cidade, o horário e, abaixo, as redes e subredes escolhidas.
 - A agenda é um **planejamento**: não registra se a visita aconteceu e não altera o estoque, as solicitações nem os encartes.
 
 ---
