@@ -46,6 +46,7 @@ const GRUPOS = [
     label: "Relatórios",
     permissoes: [
       { chave: "relatorios.ver", label: "Relatórios Scanntech", descricao: "Ver os relatórios (imagens) importados pelo administrador, como o fechamento mensal de mercado." },
+      { chave: "relatorios.ver_todos", label: "Ver os relatórios de cada supervisor", descricao: "Além dos relatórios do comercial, ver os que foram importados para um supervisor específico." },
       { chave: "relatorios.gerenciar", label: "Importar relatórios", descricao: "Enviar um PDF, publicar suas páginas como imagens e excluir relatórios." },
     ],
   },
@@ -87,7 +88,7 @@ const NAO_SE_APLICA = Object.fromEntries(PERFIS.map((perfil) => [perfil, new Set
 const PADRAO = {
   vendedor: ["lojas.ver", "solicitacoes.ver", "solicitacoes.criar"],
   supervisor: ["metricas_redes.ver", "encartes.ver", "encartes.criar", "solicitacoes.criar", "relatorios.ver", "agenda_visitas.gerenciar"],
-  diretoria: ["metricas_redes.ver", "encartes.ver", "encartes.performance", "solicitacoes.criar", "solicitacoes.decidir", "relatorios.ver", "agenda_visitas.ver_todas"],
+  diretoria: ["metricas_redes.ver", "encartes.ver", "encartes.performance", "solicitacoes.criar", "solicitacoes.decidir", "relatorios.ver", "relatorios.ver_todos", "agenda_visitas.ver_todas"],
   admin: CHAVES,
 };
 

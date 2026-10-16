@@ -10,6 +10,7 @@ import { pode } from "@/lib/permissoes";
 import { useImagem, baixarRelatorioPdf } from "@/lib/relatorios";
 import { rotuloReferencia } from "@/lib/pdfParaImagens";
 import EditarRelatorioDialog from "@/components/relatorios/EditarRelatorioDialog";
+import { EtiquetaDestino } from "@/components/relatorios/DestinoRelatorio";
 import Button from "@/components/ui/Button";
 import EmptyState from "@/components/ui/EmptyState";
 import Skeleton from "@/components/ui/Skeleton";
@@ -250,9 +251,10 @@ export default function RelatorioPage() {
               </>
             )}
           </div>
-          {mostrarOrigem && (
-            <p className="mt-0.5 text-xs text-neutral-500">{origens.length} arquivos · {total} páginas</p>
-          )}
+          <div className="mt-1 flex flex-wrap items-center gap-2">
+            <EtiquetaDestino relatorio={relatorio} />
+            {mostrarOrigem && <span className="text-xs text-neutral-500">{origens.length} arquivos · {total} páginas</span>}
+          </div>
           <Button variant="outline" size="sm" className="mt-2" onClick={baixarPdf} disabled={baixandoPdf} id="btn-baixar-pdf">
             {baixandoPdf ? "Gerando PDF…" : `Baixar relatório completo (PDF · ${total} ${total === 1 ? "página" : "páginas"})`}
           </Button>

@@ -5,8 +5,11 @@
 const mongoose = require("mongoose");
 const Relatorio = require("../models/Relatorio");
 const RelatorioPagina = require("../models/RelatorioPagina");
+const User = require("../models/User");
+const { usuarioPode } = require("./permissoesService");
 
 const MAX_PAGINAS = 150; // por relatorio, somando todos os PDFs
+const MAX_SUPERVISORES = 20;
 const MAX_BYTES_PAGINA = 6 * 1024 * 1024;
 const RASCUNHO_VALE_MS = 24 * 3600 * 1000;
 
@@ -40,6 +43,45 @@ function validarCampos({ titulo, referencia }) {
   return { titulo: t, referencia: ref };
 }
 
+/**
+ * Para quem e o relatorio: "comercial" (todo o time) ou "supervisor" (so os supervisores escolhidos).
+ * `supervisores` aceita codigos ou objetos { codigo }. Para "comercial" a lista e descartada.
+ */
+async function validarDestino({ tipo, supervisores } = {}) {
+  const t = tipo == null || tipo === "" ? "comercial" : String(tipo);
+  if (t !== "comercial" && t !== "supervisor") throw erro(400, "Tipo de relatorio invalido (comercial ou supervisor).");
+  if (t === "comercial") return { tipo: "comercial", supervisores: [] };
+  if (!Array.isArray(supervisores)) throw erro(400, "Escolha o supervisor responsavel pelo relatorio.");
+  const codigos = [...new Set(supervisores.map((s) => String(s?.codigo ?? s ?? "").trim()).filter(Boolean))];
+  if (!codigos.length) throw erro(400, "Escolha ao menos um supervisor responsavel pelo relatorio.");
+  if (codigos.length > MAX_SUPERVISORES) throw erro(400, `Escolha no maximo ${MAX_SUPERVISORES} supervisores.`);
+  const users = await User.find({ codigo: { $in: codigos }, ativo: true, $or: [{ role: "supervisor" }, { roles: "supervisor" }] }, "nome codigo").lean();
+  if (users.length !== codigos.length) throw erro(400, "Supervisor invalido: escolha usuarios ativos com perfil de supervisor.");
+  users.sort((a, b) => a.nome.localeCompare(b.nome, "pt-BR"));
+  return { tipo: "supervisor", supervisores: users.map((u) => ({ codigo: u.codigo, nome: u.nome })) };
+}
+
+/** Supervisores ativos, para escolher o responsavel pelo relatorio. */
+async function supervisoresDisponiveis() {
+  const users = await User.find({ ativo: true, $or: [{ role: "supervisor" }, { roles: "supervisor" }] }, "nome codigo").sort({ nome: 1 }).lean();
+  return users.map((u) => ({ codigo: u.codigo, nome: u.nome }));
+}
+
+/** Quem enxerga os relatorios de todos os supervisores (alem do proprio). */
+const veTodos = (user) => usuarioPode(user, "relatorios.ver_todos", "relatorios.gerenciar");
+
+/** O relatorio e visivel para o usuario? Comercial: todos; de supervisor: so os responsaveis e quem ve todos. Funcao pura. */
+function visivelPara(r, user, todos) {
+  if (todos || (r.tipo || "comercial") !== "supervisor") return true;
+  return (r.supervisores || []).some((s) => s.codigo === user?.codigo);
+}
+
+async function buscarVisivel(user, id) {
+  const r = await buscar(id, { publicado: true });
+  if (!visivelPara(r, user, await veTodos(user))) throw erro(404, "Relatorio nao encontrado.");
+  return r;
+}
+
 function idValido(id) {
   return mongoose.Types.ObjectId.isValid(id) ? String(id) : null;
 }
@@ -60,18 +102,21 @@ function resumo(r) {
     arquivoNome: r.arquivoNome || null,
     publicadoEm: r.publicadoEm || null,
     criadoPorNome: r.criadoPorNome || null,
+    tipo: r.tipo || "comercial",
+    supervisores: (r.supervisores || []).map((s) => ({ codigo: s.codigo, nome: s.nome || "" })),
   };
 }
 
-/** Relatorios publicados, do mais recente (mes de referencia, depois publicacao) para o mais antigo. */
-async function listar() {
-  const rs = await Relatorio.find({ publicado: true }).lean();
+/** Relatorios publicados que o usuario pode ver, do mais recente (mes de referencia, depois publicacao) para o mais antigo. */
+async function listar(user) {
+  const todos = await veTodos(user);
+  const rs = (await Relatorio.find({ publicado: true }).lean()).filter((r) => visivelPara(r, user, todos));
   rs.sort((a, b) => String(b.referencia || "").localeCompare(String(a.referencia || "")) || new Date(b.publicadoEm) - new Date(a.publicadoEm));
   return rs.map(resumo);
 }
 
-async function detalhar(id) {
-  const r = await buscar(id, { publicado: true });
+async function detalhar(user, id) {
+  const r = await buscarVisivel(user, id);
   // so as paginas ja confirmadas (as de uma adicao em andamento ficam depois do fim e nao aparecem)
   const paginas = await RelatorioPagina.find({ relatorioId: r._id, numero: { $gte: 1, $lte: r.totalPaginas } }, "numero largura altura origem").sort({ numero: 1 }).lean();
   return { ...resumo(r), paginas: paginas.map((p) => ({ numero: p.numero, largura: p.largura, altura: p.altura, origem: p.origem || null })) };
@@ -89,11 +134,13 @@ async function limparRascunhos() {
 
 async function criar(dados, user) {
   const campos = validarCampos(dados || {});
+  const destino = await validarDestino(dados || {});
   const total = Number(dados?.totalPaginas);
   if (!Number.isInteger(total) || total < 1 || total > MAX_PAGINAS) throw erro(400, `O relatorio precisa ter de 1 a ${MAX_PAGINAS} paginas.`);
   await limparRascunhos();
   const r = await Relatorio.create({
     ...campos,
+    ...destino,
     arquivoNome: normalizar(dados.arquivoNome).slice(0, 200) || null,
     totalPaginas: total,
     criadoPorId: user?.id,
@@ -168,8 +215,13 @@ async function confirmarAdicao(id, quantidade) {
 async function atualizar(id, dados) {
   const r = await buscar(id, { publicado: true });
   const campos = validarCampos({ titulo: dados?.titulo ?? r.titulo, referencia: dados && "referencia" in dados ? dados.referencia : r.referencia });
-  await Relatorio.updateOne({ _id: r._id }, { $set: campos });
-  return resumo({ ...r, ...campos });
+  // para quem e: so muda se vier no pedido (trocar para comercial limpa os supervisores)
+  const mudaDestino = dados && ("tipo" in dados || "supervisores" in dados);
+  const destino = mudaDestino
+    ? await validarDestino({ tipo: dados.tipo ?? r.tipo ?? "comercial", supervisores: "supervisores" in dados ? dados.supervisores : r.supervisores })
+    : {};
+  await Relatorio.updateOne({ _id: r._id }, { $set: { ...campos, ...destino } });
+  return resumo({ ...r, ...campos, ...destino });
 }
 
 async function remover(id) {
@@ -179,8 +231,8 @@ async function remover(id) {
 }
 
 /** Imagem de uma pagina (ou da miniatura) de um relatorio publicado. */
-async function imagem(id, numero) {
-  const r = await buscar(id, { publicado: true });
+async function imagem(user, id, numero) {
+  const r = await buscarVisivel(user, id);
   const n = Number(numero);
   const p = Number.isInteger(n) && n >= 0 && n <= r.totalPaginas ? await RelatorioPagina.findOne({ relatorioId: r._id, numero: n }) : null;
   if (!p) throw erro(404, "Pagina nao encontrada.");
@@ -199,8 +251,8 @@ function nomeArquivoPdf(titulo) {
 }
 
 /** Relatorio publicado para montar o PDF (404 se nao existir ou for rascunho). */
-async function paraPdf(id) {
-  const r = await buscar(id, { publicado: true });
+async function paraPdf(user, id) {
+  const r = await buscarVisivel(user, id);
   return { id: r._id, titulo: r.titulo, totalPaginas: r.totalPaginas, nomeArquivo: nomeArquivoPdf(r.titulo) };
 }
 
@@ -229,4 +281,4 @@ async function escreverPdf(rel, saida) {
   }
 }
 
-module.exports = { MAX_PAGINAS, tipoDaImagem, validarCampos, nomeArquivoPdf, listar, detalhar, criar, gravarPagina, publicar, iniciarAdicao, confirmarAdicao, atualizar, remover, imagem, paraPdf, escreverPdf, limparRascunhos };
+module.exports = { MAX_PAGINAS, tipoDaImagem, validarCampos, validarDestino, visivelPara, supervisoresDisponiveis, nomeArquivoPdf, listar, detalhar, criar, gravarPagina, publicar, iniciarAdicao, confirmarAdicao, atualizar, remover, imagem, paraPdf, escreverPdf, limparRascunhos };

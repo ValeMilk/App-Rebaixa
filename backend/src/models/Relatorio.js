@@ -11,6 +11,16 @@ const relatorioSchema = new mongoose.Schema(
     referencia:      { type: String, default: null }, // mes de referencia "AAAA-MM" (opcional)
     arquivoNome:     { type: String, default: null }, // nome do PDF de origem
     totalPaginas:    { type: Number, required: true },
+    // Para quem e: "comercial" = todo o time comercial (quem tem a permissao de ver relatorios);
+    // "supervisor" = so os supervisores listados (mais quem ve os relatorios de todos). Antigos sem o campo = comercial.
+    tipo:            { type: String, enum: ["comercial", "supervisor"], default: "comercial" },
+    supervisores: [
+      {
+        _id: false,
+        codigo: { type: String, required: true },
+        nome:   { type: String },
+      },
+    ],
     publicado:       { type: Boolean, default: false, index: true },
     criadoPorId:     { type: mongoose.Schema.Types.ObjectId, ref: "User" },
     criadoPorNome:   { type: String },

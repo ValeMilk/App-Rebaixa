@@ -12,6 +12,7 @@ import Button from "@/components/ui/Button";
 import EmptyState from "@/components/ui/EmptyState";
 import Skeleton from "@/components/ui/Skeleton";
 import EditarRelatorioDialog, { CamposRelatorio } from "@/components/relatorios/EditarRelatorioDialog";
+import DestinoRelatorio, { EtiquetaDestino } from "@/components/relatorios/DestinoRelatorio";
 import { IcoUpload, IcoFileText, IcoX, IcoChevronDown } from "@/components/Icons";
 
 const TAMANHO_MAXIMO = 60 * 1024 * 1024; // por PDF
@@ -30,6 +31,9 @@ export default function ImportarRelatorioPage() {
   const [destinoId, setDestinoId] = useState("");
   const [titulo, setTitulo] = useState("");
   const [referencia, setReferencia] = useState("");
+  const [tipo, setTipo] = useState("comercial"); // para quem: comercial | supervisor
+  const [supervisoresSel, setSupervisoresSel] = useState([]);
+  const [supervisoresOpcoes, setSupervisoresOpcoes] = useState(null);
   const [enviando, setEnviando] = useState(false);
   const [progresso, setProgresso] = useState({ atual: 0, total: 0 });
   const [erro, setErro] = useState("");
@@ -53,6 +57,10 @@ export default function ImportarRelatorioPage() {
     }
   }, []);
   useEffect(() => { carregar(); }, [carregar]);
+
+  useEffect(() => {
+    api.get("/relatorios/supervisores").then(({ data }) => setSupervisoresOpcoes(data.supervisores || [])).catch(() => setSupervisoresOpcoes([]));
+  }, []);
 
   // Link "Adicionar PDF" do relatorio aberto: /admin/relatorios?adicionar=<id> ja deixa o destino escolhido
   useEffect(() => {
@@ -151,6 +159,8 @@ export default function ImportarRelatorioPage() {
     setArquivos([]);
     setTitulo("");
     setReferencia("");
+    setTipo("comercial");
+    setSupervisoresSel([]);
     setProgresso({ atual: 0, total: 0 });
   }
 
@@ -179,6 +189,8 @@ export default function ImportarRelatorioPage() {
           titulo,
           referencia: referencia || null,
           arquivoNome: arquivos.map((a) => a.nome).join(", ").slice(0, 200),
+          tipo,
+          supervisores: tipo === "supervisor" ? supervisoresSel : [],
           totalPaginas: incluidas.length,
         });
         rascunhoId = data.relatorio.id;
@@ -230,7 +242,8 @@ export default function ImportarRelatorioPage() {
 
   const temArquivos = arquivos.length > 0;
   const excede = modo === "novo" ? incluidas.length > MAX_PAGINAS : destino ? destino.totalPaginas + incluidas.length > MAX_PAGINAS : false;
-  const podePublicar = !enviando && !convertendo && !excede && incluidas.length > 0 && (modo === "novo" ? titulo.trim().length >= 2 : !!destino);
+  const destinoOk = modo === "novo" ? titulo.trim().length >= 2 && (tipo !== "supervisor" || supervisoresSel.length > 0) : !!destino;
+  const podePublicar = !enviando && !convertendo && !excede && incluidas.length > 0 && destinoOk;
 
   return (
     <div className="space-y-4">
@@ -324,13 +337,24 @@ export default function ImportarRelatorioPage() {
             </fieldset>
 
             {modo === "novo" && (
-              <CamposRelatorio
-                idPrefixo="novo"
-                titulo={titulo}
-                referencia={referencia}
-                onTitulo={(v) => { tituloEditadoRef.current = true; setTitulo(v); }}
-                onReferencia={(v) => { tituloEditadoRef.current = true; setReferencia(v); }}
-              />
+              <>
+                <CamposRelatorio
+                  idPrefixo="novo"
+                  titulo={titulo}
+                  referencia={referencia}
+                  onTitulo={(v) => { tituloEditadoRef.current = true; setTitulo(v); }}
+                  onReferencia={(v) => { tituloEditadoRef.current = true; setReferencia(v); }}
+                />
+                <DestinoRelatorio
+                  idPrefixo="novo"
+                  tipo={tipo}
+                  supervisores={supervisoresSel}
+                  opcoes={supervisoresOpcoes}
+                  onTipo={setTipo}
+                  onSupervisores={setSupervisoresSel}
+                  desabilitado={enviando}
+                />
+              </>
             )}
           </Surface>
 
@@ -429,11 +453,12 @@ export default function ImportarRelatorioPage() {
         ) : relatorios.length === 0 ? (
           <EmptyState icon={IcoFileText} titulo="Nenhum relatório publicado" descricao="Importe um ou mais PDFs acima para começar." />
         ) : (
-          <table className="w-full min-w-[720px] text-sm" id="tabela-relatorios">
+          <table className="w-full min-w-[860px] text-sm" id="tabela-relatorios">
             <thead className="bg-neutral-50 text-left text-xs text-neutral-600">
               <tr>
                 <th className="px-4 py-2 font-semibold">Relatório</th>
                 <th className="px-3 py-2 font-semibold">Referência</th>
+                <th className="px-3 py-2 font-semibold">Para quem</th>
                 <th className="px-3 py-2 text-right font-semibold">Páginas</th>
                 <th className="px-3 py-2 font-semibold">Publicado</th>
                 <th className="px-4 py-2" />
@@ -444,6 +469,7 @@ export default function ImportarRelatorioPage() {
                 <tr key={r.id} className="border-t border-neutral-100" data-relatorio={r.id}>
                   <td className="px-4 py-2 font-medium text-neutral-800">{r.titulo}</td>
                   <td className="px-3 py-2 capitalize text-neutral-600">{rotuloReferencia(r.referencia) || "—"}</td>
+                  <td className="px-3 py-2"><EtiquetaDestino relatorio={r} onClick={() => setEditando(r)} /></td>
                   <td className="px-3 py-2 text-right tabular-nums text-neutral-700">{r.totalPaginas}</td>
                   <td className="whitespace-nowrap px-3 py-2 text-xs text-neutral-500">
                     {fmtDataHora(r.publicadoEm)}{r.criadoPorNome ? ` · ${r.criadoPorNome}` : ""}

@@ -53,8 +53,13 @@ test.before(async () => {
   if (!podeRodar) return;
   dns.setServers(["8.8.8.8", "8.8.4.4"]);
   try { await mongoose.connect(uri, { serverSelectionTimeoutMS: 20000 }); } catch { return; }
-  for (const [k, role] of [["admin", "admin"], ["sup", "supervisor"], ["dir", "diretoria"], ["vend", "vendedor"]]) {
+  for (const [k, role] of [["admin", "admin"], ["sup", "supervisor"], ["sup2", "supervisor"], ["dir", "diretoria"], ["vend", "vendedor"]]) {
     tokens[k] = jwt.sign({ id: "0000000000000000000000" + (k === "admin" ? "01" : "02"), role, roles: [], nome: `Teste ${k}`, codigo: k }, process.env.JWT_SECRET);
+  }
+  // usuarios de verdade: o relatorio de supervisor so aceita supervisores ativos que existem
+  const User = require("../../src/models/User");
+  for (const [codigo, role, ativo] of [["sup", "supervisor", true], ["sup2", "supervisor", true], ["dir", "diretoria", true], ["supinativo", "supervisor", false]]) {
+    await User.create({ nome: `Teste ${codigo}`, email: `${codigo}@teste.com`, codigo, senhaHash: "x", role, ativo });
   }
   const app = express();
   app.use(express.json());
@@ -238,4 +243,73 @@ test("baixar o relatorio completo em PDF: todas as paginas, na ordem, so para qu
   assert.equal((await baixar("vend", rid)).status, 403); // sem a permissao de ver
   assert.equal((await baixar("sup", "000000000000000000000000")).status, 404);
   assert.equal((await baixar("sup", "abc")).status, 404);
+});
+
+test("para quem e o relatorio: comercial (todos) ou de um supervisor (so ele e quem ve tudo)", async (t) => {
+  if (!pronto()) return t.skip("sem banco de teste");
+  const Relatorio = require("../../src/models/Relatorio");
+  const publicar = async (corpo) => {
+    const c = await chamar("admin", "POST", "", { totalPaginas: 1, ...corpo });
+    if (c.status !== 201) return c;
+    await chamar("admin", "PUT", `/${c.dados.relatorio.id}/paginas/1`, undefined, { bruto: PNG });
+    await chamar("admin", "POST", `/${c.dados.relatorio.id}/publicar`);
+    return c;
+  };
+
+  // sem tipo = comercial; de supervisor exige supervisor ativo que exista
+  const com = await publicar({ titulo: "Para o comercial" });
+  assert.equal(com.dados.relatorio.tipo, "comercial");
+  assert.equal((await chamar("admin", "POST", "", { titulo: "Sem responsavel", totalPaginas: 1, tipo: "supervisor" })).status, 400);
+  assert.equal((await chamar("admin", "POST", "", { titulo: "Lista vazia", totalPaginas: 1, tipo: "supervisor", supervisores: [] })).status, 400);
+  assert.equal((await chamar("admin", "POST", "", { titulo: "Inexistente", totalPaginas: 1, tipo: "supervisor", supervisores: ["nao-existe"] })).status, 400);
+  assert.equal((await chamar("admin", "POST", "", { titulo: "Inativo", totalPaginas: 1, tipo: "supervisor", supervisores: ["supinativo"] })).status, 400);
+  assert.equal((await chamar("admin", "POST", "", { titulo: "Nao e supervisor", totalPaginas: 1, tipo: "supervisor", supervisores: ["dir"] })).status, 400);
+  assert.equal((await chamar("admin", "POST", "", { titulo: "Tipo estranho", totalPaginas: 1, tipo: "todos" })).status, 400);
+
+  const so1 = await publicar({ titulo: "So do supervisor 1", tipo: "supervisor", supervisores: ["sup"] });
+  assert.equal(so1.status, 201);
+  assert.deepEqual(so1.dados.relatorio.supervisores, [{ codigo: "sup", nome: "Teste sup" }]);
+  const id1 = so1.dados.relatorio.id;
+
+  // lista: o supervisor 1 ve os dois; o supervisor 2 so o comercial; diretoria e admin veem tudo
+  const titulos = async (quem) => (await chamar(quem, "GET", "")).dados.relatorios.map((r) => r.titulo);
+  assert.ok((await titulos("sup")).includes("So do supervisor 1") && (await titulos("sup")).includes("Para o comercial"));
+  assert.ok(!(await titulos("sup2")).includes("So do supervisor 1") && (await titulos("sup2")).includes("Para o comercial"));
+  for (const q of ["dir", "admin"]) assert.ok((await titulos(q)).includes("So do supervisor 1"), q);
+
+  // abrir, imagem e PDF seguem a mesma regra (o outro supervisor recebe "nao encontrado")
+  for (const rota of [`/${id1}`, `/${id1}/paginas/1`, `/${id1}/pdf`]) {
+    assert.equal((await chamar("sup", "GET", rota)).status, 200, `sup ${rota}`);
+    assert.equal((await chamar("dir", "GET", rota)).status, 200, `dir ${rota}`);
+    assert.equal((await chamar("sup2", "GET", rota)).status, 404, `sup2 ${rota}`);
+  }
+
+  // mais de um supervisor responsavel
+  const dois = await publicar({ titulo: "Dos dois supervisores", tipo: "supervisor", supervisores: ["sup2", "sup"] });
+  assert.deepEqual(dois.dados.relatorio.supervisores.map((s) => s.codigo), ["sup", "sup2"]);
+  assert.equal((await chamar("sup2", "GET", `/${dois.dados.relatorio.id}`)).status, 200);
+
+  // mudar o tipo: para o outro supervisor, para comercial (limpa a lista) e de volta; so envia o que mudou
+  const troca = await chamar("admin", "PUT", `/${id1}`, { titulo: "So do supervisor 1", tipo: "supervisor", supervisores: ["sup2"] });
+  assert.equal(troca.status, 200);
+  assert.equal((await chamar("sup", "GET", `/${id1}`)).status, 404);
+  assert.equal((await chamar("sup2", "GET", `/${id1}`)).status, 200);
+  const renomear = await chamar("admin", "PUT", `/${id1}`, { titulo: "Renomeado" }); // sem tipo: mantem o destino
+  assert.deepEqual([renomear.dados.relatorio.tipo, renomear.dados.relatorio.supervisores.map((s) => s.codigo)], ["supervisor", ["sup2"]]);
+  const virouComercial = await chamar("admin", "PUT", `/${id1}`, { titulo: "Renomeado", tipo: "comercial" });
+  assert.deepEqual([virouComercial.dados.relatorio.tipo, virouComercial.dados.relatorio.supervisores], ["comercial", []]);
+  assert.equal((await chamar("sup", "GET", `/${id1}`)).status, 200);
+  assert.equal((await chamar("admin", "PUT", `/${id1}`, { titulo: "Renomeado", tipo: "supervisor" })).status, 400); // sem supervisor
+  assert.equal((await chamar("sup", "PUT", `/${id1}`, { tipo: "comercial" })).status, 403); // so quem importa muda o destino
+
+  // relatorio antigo, sem o campo "tipo", continua comercial
+  const antigo = await publicar({ titulo: "Antigo sem tipo" });
+  await Relatorio.collection.updateOne({ _id: new mongoose.Types.ObjectId(antigo.dados.relatorio.id) }, { $unset: { tipo: "", supervisores: "" } });
+  assert.ok((await titulos("sup2")).includes("Antigo sem tipo"));
+  assert.equal((await chamar("sup2", "GET", `/${antigo.dados.relatorio.id}`)).dados.relatorio.tipo, "comercial");
+
+  // lista de supervisores para escolher: so quem importa; so ativos
+  assert.equal((await chamar("sup", "GET", "/supervisores")).status, 403);
+  const sups = (await chamar("admin", "GET", "/supervisores")).dados.supervisores.map((s) => s.codigo);
+  assert.deepEqual(sups.sort(), ["sup", "sup2"]);
 });

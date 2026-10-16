@@ -23,12 +23,15 @@ const ver = requirePermission("relatorios.ver");
 const gerenciar = requirePermission("relatorios.gerenciar");
 
 // ── Leitura (quem tem "relatorios.ver") ─────────────────────────────────────────
-router.get("/", ver, handler(async (_req, res) => res.json({ relatorios: await svc.listar() })));
+router.get("/", ver, handler(async (req, res) => res.json({ relatorios: await svc.listar(req.user) })));
 
-router.get("/:id", ver, handler(async (req, res) => res.json({ relatorio: await svc.detalhar(req.params.id) })));
+// Supervisores para escolher o responsavel ao importar (antes de "/:id", que casaria com esta rota)
+router.get("/supervisores", gerenciar, handler(async (_req, res) => res.json({ supervisores: await svc.supervisoresDisponiveis() })));
+
+router.get("/:id", ver, handler(async (req, res) => res.json({ relatorio: await svc.detalhar(req.user, req.params.id) })));
 
 router.get("/:id/paginas/:numero", ver, handler(async (req, res) => {
-  const { mime, dados } = await svc.imagem(req.params.id, req.params.numero);
+  const { mime, dados } = await svc.imagem(req.user, req.params.id, req.params.numero);
   res.setHeader("Content-Type", mime);
   res.setHeader("Cache-Control", "private, max-age=3600");
   res.send(dados);
@@ -36,7 +39,7 @@ router.get("/:id/paginas/:numero", ver, handler(async (req, res) => {
 
 // Relatorio COMPLETO em um PDF (todas as paginas, na ordem)
 router.get("/:id/pdf", ver, handler(async (req, res) => {
-  const rel = await svc.paraPdf(req.params.id);
+  const rel = await svc.paraPdf(req.user, req.params.id);
   res.setHeader("Content-Type", "application/pdf");
   res.setHeader("Content-Disposition", `attachment; filename="${rel.nomeArquivo}"`);
   res.setHeader("Cache-Control", "private, no-store");

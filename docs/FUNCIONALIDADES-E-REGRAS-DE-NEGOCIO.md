@@ -485,7 +485,8 @@ O acesso é controlado **por perfil**: cada usuário tem um perfil (Vendedor, Su
 | Estoque das redes | Integração Estoque | Admin |
 | Administração | Usuários | Admin |
 | Administração | Responsáveis de rede | Admin |
-| Relatórios | Relatórios Scanntech (ver as imagens importadas) | Supervisor, Diretoria, Admin |
+| Relatórios | Relatórios Scanntech (ver os relatórios do comercial e os do próprio supervisor) | Supervisor, Diretoria, Admin |
+| Relatórios | Ver os relatórios de cada supervisor | Diretoria, Admin |
 | Relatórios | Importar relatórios | Admin |
 | Agenda de visitas | Montar a própria agenda de visitas | Supervisor, Admin |
 | Agenda de visitas | Ver a agenda de todos os supervisores | Diretoria, Admin |
@@ -535,7 +536,7 @@ O acesso é controlado **por perfil**: cada usuário tem um perfil (Vendedor, Su
 1. Escolher **um ou mais PDFs** (de uma vez ou aos poucos, até 60 MB cada). Cada página é convertida em imagem no próprio navegador. Um relatório pode juntar vários PDFs, como o fechamento mensal do mercado e outros documentos do mês, até **150 páginas no total**.
 2. Conferir as miniaturas, agrupadas por arquivo. É possível **desmarcar páginas** que não devem aparecer (capa, página em branco), **remover um arquivo** e **mudar a ordem dos arquivos**: as páginas entram nessa ordem.
 3. Escolher o destino:
-   - **Novo relatório**: dar o **nome** e o **mês de referência**. Vêm sugeridos pelo nome dos arquivos (ex.: "Fechamento_Setembro_2026.pdf" → setembro/2026; com vários arquivos, "Relatório de setembro/2026"), e podem ser trocados.
+   - **Novo relatório**: dar o **nome**, o **mês de referência** e **para quem é o relatório** (veja abaixo). Nome e mês vêm sugeridos pelo nome dos arquivos (ex.: "Fechamento_Setembro_2026.pdf" → setembro/2026; com vários arquivos, "Relatório de setembro/2026"), e podem ser trocados.
    - **Adicionar a um relatório já publicado**: as páginas entram no fim dele, na ordem mostrada. Serve para completar o relatório do mês quando os PDFs chegam em momentos diferentes.
 4. **Publicar.** O relatório (ou as páginas adicionadas) só aparece para os demais quando tudo foi enviado; se algo falhar no meio, nada é publicado.
 
@@ -559,7 +560,12 @@ Na mesma tela o administrador **renomeia** (nome e mês), **adiciona PDFs** e **
 
 **Regras**
 
-- Todos os que têm a permissão "Relatórios Scanntech" veem os mesmos relatórios; não há restrição por rede ou por carteira. Por padrão: supervisor, diretoria e administrador. O vendedor não vê, mas a permissão pode ser dada em Permissões.
+- **Para quem é o relatório.** Ao importar, o administrador escolhe um de dois tipos:
+  - **Comercial**: todo o time comercial vê (quem tem a permissão "Relatórios Scanntech": por padrão supervisores, diretoria e administrador).
+  - **De um supervisor**: só o(s) **supervisor(es) responsável(is)** escolhido(s) vê(em), além de quem enxerga os relatórios de todos os supervisores (por padrão diretoria e administrador). Os demais supervisores não veem o relatório na lista, não conseguem abrir pelo endereço nem baixar o PDF. Dá para escolher mais de um supervisor; o supervisor precisa estar ativo.
+  - Relatórios importados antes dessa regra ficaram como **Comercial**.
+- Cada relatório mostra uma **etiqueta** com o tipo ("Comercial" ou "Supervisor: Nome"). Quem importa clica na etiqueta (ou em "Renomear") para **mudar o tipo ou o supervisor**; passar para Comercial libera o relatório ao time todo. Na lista há um filtro **Todos / Comercial / De supervisores** (para o supervisor, "Meus"), e a busca também acha pelo nome do supervisor.
+- Fora isso, não há restrição por rede ou por carteira. O vendedor não vê relatórios, mas a permissão pode ser dada em Permissões.
 - O relatório é guardado como **imagens**; os PDFs originais não são guardados. Não há como remover páginas de um relatório já publicado: para corrigir, exclua e importe de novo (ou desmarque as páginas antes de publicar).
 - A importação é manual: o InfoVale não busca o PDF sozinho nem lê os números das imagens.
 

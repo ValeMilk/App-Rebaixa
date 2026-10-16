@@ -22,7 +22,7 @@ const { resolverPerfil, perfisDoUsuario } = require("../../src/services/permisso
 test("padrao: cada perfil comeca com o acesso que tinha antes do RBAC", () => {
   assert.deepEqual([...resolverPerfil("vendedor", null)].sort(), ["lojas.ver", "solicitacoes.criar", "solicitacoes.ver"]);
   assert.deepEqual([...resolverPerfil("supervisor", null)].sort(), ["agenda_visitas.gerenciar", "encartes.criar", "encartes.ver", "metricas_redes.ver", "relatorios.ver", "solicitacoes.criar"]);
-  assert.deepEqual([...resolverPerfil("diretoria", null)].sort(), ["agenda_visitas.ver_todas", "encartes.performance", "encartes.ver", "metricas_redes.ver", "relatorios.ver", "solicitacoes.criar", "solicitacoes.decidir"]);
+  assert.deepEqual([...resolverPerfil("diretoria", null)].sort(), ["agenda_visitas.ver_todas", "encartes.performance", "encartes.ver", "metricas_redes.ver", "relatorios.ver", "relatorios.ver_todos", "solicitacoes.criar", "solicitacoes.decidir"]);
   assert.deepEqual([...resolverPerfil("admin", null)], CHAVES);
   for (const p of PERFIS) assert.ok(PADRAO[p].every((c) => CHAVES.includes(c)), `padrao de ${p} so usa chaves do catalogo`);
 });

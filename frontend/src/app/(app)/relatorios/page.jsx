@@ -10,6 +10,7 @@ import { useImagem, baixarRelatorioPdf } from "@/lib/relatorios";
 import { rotuloReferencia } from "@/lib/pdfParaImagens";
 import { fmtDataHora } from "@/lib/utils";
 import EditarRelatorioDialog from "@/components/relatorios/EditarRelatorioDialog";
+import { EtiquetaDestino } from "@/components/relatorios/DestinoRelatorio";
 import Surface from "@/components/ui/Surface";
 import EmptyState from "@/components/ui/EmptyState";
 import Skeleton from "@/components/ui/Skeleton";
@@ -51,6 +52,7 @@ export default function RelatoriosPage() {
   const { user } = useAuth();
   const [relatorios, setRelatorios] = useState(null);
   const [busca, setBusca] = useState("");
+  const [filtroTipo, setFiltroTipo] = useState("todos"); // todos | comercial | supervisor
   const [erro, setErro] = useState("");
   const [aviso, setAviso] = useState("");
   const [renomeando, setRenomeando] = useState(null);
@@ -104,13 +106,16 @@ export default function RelatoriosPage() {
     const q = semAcento(busca.trim());
     const mapa = new Map();
     for (const r of relatorios || []) {
-      if (q && !semAcento(`${r.titulo} ${rotuloReferencia(r.referencia)}`).includes(q)) continue;
+      const ehSupervisor = (r.tipo || "comercial") === "supervisor";
+      if (filtroTipo === "comercial" && ehSupervisor) continue;
+      if (filtroTipo === "supervisor" && !ehSupervisor) continue;
+      if (q && !semAcento(`${r.titulo} ${rotuloReferencia(r.referencia)} ${(r.supervisores || []).map((s) => s.nome).join(" ")}`).includes(q)) continue;
       const chave = r.referencia || "";
       if (!mapa.has(chave)) mapa.set(chave, []);
       mapa.get(chave).push(r);
     }
     return [...mapa.entries()].map(([chave, itens]) => ({ chave, rotulo: rotuloReferencia(chave) || "Sem mês de referência", itens }));
-  }, [relatorios, busca]);
+  }, [relatorios, busca, filtroTipo]);
 
   if (!relatorios) {
     return (
@@ -121,8 +126,12 @@ export default function RelatoriosPage() {
   }
 
   const gerencia = pode(user, "relatorios.gerenciar");
+  const verTodos = pode(user, "relatorios.ver_todos");
   const total = relatorios.length;
   const exibidos = grupos.reduce((n, g) => n + g.itens.length, 0);
+  const qtdSupervisor = relatorios.filter((r) => (r.tipo || "comercial") === "supervisor").length;
+  const qtdComercial = total - qtdSupervisor;
+  const filtrando = !!busca.trim() || filtroTipo !== "todos";
 
   return (
     <div className="space-y-4">
@@ -136,10 +145,22 @@ export default function RelatoriosPage() {
         <p className="text-sm text-neutral-600" id="contagem-relatorios">
           {total === 0
             ? "Nenhum relatório publicado."
-            : busca.trim()
+            : filtrando
               ? `${exibidos} de ${total} ${total === 1 ? "relatório" : "relatórios"}`
               : `${total} ${total === 1 ? "relatório publicado" : "relatórios publicados"}`}
         </p>
+        {qtdSupervisor > 0 && qtdComercial > 0 && (
+          <div className="flex items-center gap-1" role="group" aria-label="Filtrar por tipo" id="filtro-tipo">
+            {[["todos", "Todos", total], ["comercial", "Comercial", qtdComercial], ["supervisor", gerencia || verTodos ? "De supervisores" : "Meus", qtdSupervisor]].map(([valor, rotulo, n]) => (
+              <button
+                key={valor} type="button" aria-pressed={filtroTipo === valor} data-filtro={valor} onClick={() => setFiltroTipo(valor)}
+                className={`rounded-full border px-3 py-1 text-xs font-medium transition ${filtroTipo === valor ? "border-secondary bg-secondary text-white" : "border-neutral-200 bg-white text-neutral-600 hover:border-secondary/50"}`}
+              >
+                {rotulo} <span className="opacity-70">{n}</span>
+              </button>
+            ))}
+          </div>
+        )}
         {gerencia && (
           <Link
             href="/admin/relatorios"
@@ -167,8 +188,8 @@ export default function RelatoriosPage() {
         <Surface>
           <EmptyState
             icon={IcoSearch}
-            titulo={`Nenhum relatório encontrado para “${busca.trim()}”`}
-            acao={<button type="button" className="text-sm text-secondary hover:underline" onClick={() => setBusca("")}>Limpar a busca</button>}
+            titulo={busca.trim() ? `Nenhum relatório encontrado para “${busca.trim()}”` : "Nenhum relatório neste filtro"}
+            acao={<button type="button" className="text-sm text-secondary hover:underline" onClick={() => { setBusca(""); setFiltroTipo("todos"); }}>Limpar a busca e o filtro</button>}
           />
         </Surface>
       ) : (
@@ -198,6 +219,8 @@ export default function RelatoriosPage() {
                         </span>
                       </Link>
                       <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs">
+                        {/* para quem e: quem importa clica na etiqueta para mudar */}
+                        <EtiquetaDestino relatorio={r} onClick={gerencia ? () => setRenomeando(r) : undefined} />
                         <button type="button" onClick={() => baixarPdf(r)} className="font-medium text-secondary hover:underline disabled:opacity-50" disabled={baixandoId === r.id} data-acao="baixar">
                           {baixandoId === r.id ? "Gerando PDF…" : "Baixar PDF"}
                         </button>

@@ -1,11 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import api from "@/lib/api";
 import Button from "@/components/ui/Button";
 import Dialog from "@/components/ui/Dialog";
+import DestinoRelatorio from "@/components/relatorios/DestinoRelatorio";
 
-// Titulo e mes de referencia (importacao e renomeacao)
+// Titulo e mes de referencia (importacao e edicao)
 export function CamposRelatorio({ titulo, referencia, onTitulo, onReferencia, idPrefixo }) {
   return (
     <div className="grid grid-cols-1 gap-3 sm:grid-cols-[1fr_200px]">
@@ -21,19 +22,37 @@ export function CamposRelatorio({ titulo, referencia, onTitulo, onReferencia, id
   );
 }
 
-/** Renomeia o relatorio (nome e mes de referencia). `onSalvo` e chamado depois de gravar. */
+const mesmoConjunto = (a, b) => a.length === b.length && a.every((x) => b.includes(x));
+
+/** Edita o relatorio: nome, mes de referencia e para quem e (comercial ou supervisor). `onSalvo` roda depois de gravar. */
 export default function EditarRelatorioDialog({ relatorio, onClose, onSalvo }) {
+  const tipoInicial = relatorio.tipo === "supervisor" ? "supervisor" : "comercial";
+  const supInicial = (relatorio.supervisores || []).map((s) => s.codigo);
   const [titulo, setTitulo] = useState(relatorio.titulo);
   const [referencia, setReferencia] = useState(relatorio.referencia || "");
+  const [tipo, setTipo] = useState(tipoInicial);
+  const [supervisores, setSupervisores] = useState(supInicial);
+  const [opcoes, setOpcoes] = useState(null);
   const [salvando, setSalvando] = useState(false);
   const [erro, setErro] = useState("");
+
+  useEffect(() => {
+    let vivo = true;
+    api.get("/relatorios/supervisores").then(({ data }) => vivo && setOpcoes(data.supervisores || [])).catch(() => vivo && setOpcoes([]));
+    return () => { vivo = false; };
+  }, []);
+
+  const mudouDestino = tipo !== tipoInicial || (tipo === "supervisor" && !mesmoConjunto(supervisores, supInicial));
+  const destinoInvalido = tipo === "supervisor" && supervisores.length === 0;
 
   async function salvar(e) {
     e.preventDefault();
     setSalvando(true);
     setErro("");
     try {
-      await api.put(`/relatorios/${relatorio.id}`, { titulo, referencia: referencia || null });
+      const corpo = { titulo, referencia: referencia || null };
+      if (mudouDestino) { corpo.tipo = tipo; corpo.supervisores = tipo === "supervisor" ? supervisores : []; } // so envia o destino se mudou
+      await api.put(`/relatorios/${relatorio.id}`, corpo);
       onSalvo();
     } catch (err) {
       setErro(err?.response?.data?.error || "Não foi possível salvar.");
@@ -42,14 +61,20 @@ export default function EditarRelatorioDialog({ relatorio, onClose, onSalvo }) {
   }
 
   return (
-    <Dialog open onClose={onClose} size="lg" ariaLabel="Renomear relatório">
-      <form onSubmit={salvar} className="flex flex-col gap-4 p-5" id="form-editar-relatorio">
-        <h2 className="text-base font-semibold text-neutral-900">Renomear relatório</h2>
-        {erro && <p role="alert" className="rounded-lg border border-danger/30 bg-danger/10 px-3 py-2 text-sm text-danger">{erro}</p>}
-        <CamposRelatorio idPrefixo="ed" titulo={titulo} referencia={referencia} onTitulo={setTitulo} onReferencia={setReferencia} />
-        <div className="flex justify-end gap-2">
+    <Dialog open onClose={onClose} sheet size="lg" ariaLabel="Editar relatório">
+      <form onSubmit={salvar} className="flex min-h-0 flex-1 flex-col" id="form-editar-relatorio">
+        <div className="shrink-0 border-b border-neutral-200 px-5 pb-3 pt-[max(1rem,env(safe-area-inset-top))]">
+          <h2 className="text-base font-semibold text-neutral-900">Renomear relatório</h2>
+          <p className="mt-0.5 text-xs text-neutral-500">Nome, mês de referência e para quem é o relatório.</p>
+        </div>
+        <div className="min-h-0 flex-1 space-y-4 overflow-y-auto px-5 py-4">
+          {erro && <p role="alert" className="rounded-lg border border-danger/30 bg-danger/10 px-3 py-2 text-sm text-danger">{erro}</p>}
+          <CamposRelatorio idPrefixo="ed" titulo={titulo} referencia={referencia} onTitulo={setTitulo} onReferencia={setReferencia} />
+          <DestinoRelatorio idPrefixo="ed" tipo={tipo} supervisores={supervisores} opcoes={opcoes} onTipo={setTipo} onSupervisores={setSupervisores} desabilitado={salvando} />
+        </div>
+        <div className="flex shrink-0 justify-end gap-2 border-t border-neutral-200 px-5 py-3">
           <Button variant="ghost" onClick={onClose} disabled={salvando}>Cancelar</Button>
-          <Button type="submit" disabled={salvando || titulo.trim().length < 2}>{salvando ? "Salvando..." : "Salvar"}</Button>
+          <Button type="submit" disabled={salvando || titulo.trim().length < 2 || destinoInvalido} id="ed-salvar">{salvando ? "Salvando..." : "Salvar"}</Button>
         </div>
       </form>
     </Dialog>
