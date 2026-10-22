@@ -45,6 +45,9 @@ services:
       - rebaixa-backend
     networks:
       - rebaixa-net
+      # Para alcancar o MCP do BI (location /mcp no nginx.conf). Rede dedicada de proposito: NAO ligar
+      # o nginx na bi-net, onde existe o apelido "backend" e o upstream do nginx poderia resolver errado.
+      - mcp-net
 
 networks:
   rebaixa-net:
@@ -53,4 +56,8 @@ networks:
   bi-net:
     external: true
     name: docker_bi_network
+  # Rede so com o MCP do BI e o nginx. Precisa existir antes do deploy: docker network create bi_cometa_mcp_net
+  mcp-net:
+    external: true
+    name: bi_cometa_mcp_net
 
