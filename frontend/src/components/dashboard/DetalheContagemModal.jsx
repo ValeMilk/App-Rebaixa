@@ -34,6 +34,14 @@ function diasAte(dataIso) {
   return Math.round((alvo - Date.UTC(hoje.getFullYear(), hoje.getMonth(), hoje.getDate())) / 86400000);
 }
 
+// Dias entre duas datas "AAAA-MM-DD" (b - a)
+function diasEntre(a, b) {
+  const ma = /^(\d{4})-(\d{2})-(\d{2})/.exec(a || "");
+  const mb = /^(\d{4})-(\d{2})-(\d{2})/.exec(b || "");
+  if (!ma || !mb) return null;
+  return Math.round((Date.UTC(+mb[1], +mb[2] - 1, +mb[3]) - Date.UTC(+ma[1], +ma[2] - 1, +ma[3])) / 86400000);
+}
+
 function Agente({ nome, codigo }) {
   if (!nome && !codigo) return <span className="text-neutral-400">não identificado</span>;
   return (
@@ -50,7 +58,7 @@ function Agente({ nome, codigo }) {
  * Registros "sem lote" (quantidade zero com validade vazia ou igual ao dia da visita) viram o
  * grupo de visitas em que nao havia o produto.
  */
-function agruparPorLote(historico, lotes) {
+function agruparPorLote(historico, lotes, ultimaVisita, diasSemRecontagem) {
   const SEM = "__sem_produto__";
   const grupos = new Map();
   for (const h of historico) {
@@ -76,9 +84,15 @@ function agruparPorLote(historico, lotes) {
       semContagem = diasDeVisita.filter((d) => d > primeira && d < chave && !contados.has(d));
     }
     const ultimaContagem = chave === SEM ? null : dia(linhas[0].contadoEm);
+    const vencido = chave !== SEM && chave <= hoje;
+    // Lote que saiu do painel por nao ter sido reencontrado: a loja foi visitada mais de N dias depois da contagem dele
+    const intervalo = chave === SEM ? null : diasEntre(ultimaContagem, ultimaVisita);
+    const naoReencontrado = chave !== SEM && !lote && !vencido && linhas[0].quantidade > 0 &&
+      diasSemRecontagem > 0 && intervalo != null && intervalo > diasSemRecontagem;
     return {
-      chave, semProduto: chave === SEM, validade: chave === SEM ? null : chave, lote, linhas, vencido: chave !== SEM && chave <= hoje,
+      chave, semProduto: chave === SEM, validade: chave === SEM ? null : chave, lote, linhas, vencido,
       semContagem, semContagemDepois: semContagem.filter((d) => d > ultimaContagem),
+      naoReencontrado, intervalo,
     };
   });
   const ordem = (g) => (g.lote ? 0 : g.semProduto ? 2 : 1);
@@ -172,7 +186,12 @@ export default function DetalheContagemModal({ item, onClose }) {
   const antigos = lotes.filter((l) => l.naUltimaVisita === false);
 
   const historico = dados?.historico;
-  const grupos = useMemo(() => (historico ? agruparPorLote(historico, lotes) : []), [historico, lotes]);
+  const diasSemRecontagem = Number(dados?.diasSemRecontagem) || 0;
+  const diaUltimaVisita = dia(it?.ultimaVisitaEm);
+  const grupos = useMemo(
+    () => (historico ? agruparPorLote(historico, lotes, diaUltimaVisita, diasSemRecontagem) : []),
+    [historico, lotes, diaUltimaVisita, diasSemRecontagem],
+  );
 
   // Contagem mais nova que o painel ainda nao processou (lote vigente ou registro de "sem produto")
   const diaUsado = lotes.map((l) => dia(l.contadoEm)).filter(Boolean).sort().pop() || null;
@@ -238,7 +257,8 @@ export default function DetalheContagemModal({ item, onClose }) {
                   ? `A quantidade é a soma de ${usados.length} lotes (datas de validade) em giro ou rebaixa.`
                   : "A quantidade vem de um único lote (uma data de validade)."}
                 {lotes.length > usados.length ? " Lotes ainda “ok” ficam de fora da soma." : ""}
-                {" "}Cada lote vale pela sua última contagem.
+                {" "}Cada lote vale pela sua última contagem
+                {diasSemRecontagem > 0 ? `, desde que a loja não tenha sido visitada mais de ${diasSemRecontagem} dias depois dela (aí o lote é considerado como não existindo mais).` : "."}
               </p>
 
               {lotes.length === 0 ? (
@@ -324,7 +344,7 @@ export default function DetalheContagemModal({ item, onClose }) {
                           {g.lote && <Badge tone={st.tone} dot>{st.label}</Badge>}
                           {g.lote && <span className="text-xs text-neutral-500">{g.lote.entraNaSoma ? "entra na soma" : "não entra na soma"}</span>}
                           {!g.lote && !g.semProduto && (
-                            <Badge tone="neutral">{g.vencido ? "vencido" : g.linhas[0].quantidade === 0 ? "zerado" : "fora do painel"}</Badge>
+                            <Badge tone="neutral">{g.vencido ? "vencido" : g.linhas[0].quantidade === 0 ? "zerado" : g.naoReencontrado ? "não reencontrado" : "fora do painel"}</Badge>
                           )}
                           <span className="ml-auto text-xs text-neutral-500">
                             {g.linhas.length} {g.semProduto ? (g.linhas.length === 1 ? "visita" : "visitas") : g.linhas.length === 1 ? "contagem" : "contagens"}
@@ -333,6 +353,12 @@ export default function DetalheContagemModal({ item, onClose }) {
                         {g.semProduto && (
                           <p className="border-t border-neutral-100 px-3 py-2 text-xs text-neutral-500">
                             Nessas visitas a quantidade informada foi zero, sem nenhum lote. Os lotes contados antes de uma visita assim deixam de valer no painel.
+                          </p>
+                        )}
+                        {g.naoReencontrado && (
+                          <p className="border-t border-neutral-100 bg-neutral-50 px-3 py-2 text-xs text-neutral-700" data-nao-reencontrado>
+                            <strong>Fora do painel:</strong> a loja foi visitada em {fmtData(diaUltimaVisita)}, {g.intervalo} dias depois da última contagem
+                            deste lote ({fmtContagem(g.linhas[0].contadoEm)}). Passando de {diasSemRecontagem} dias, o painel considera que ele não existe mais.
                           </p>
                         )}
                         {g.lote && g.semContagemDepois.length > 0 && (

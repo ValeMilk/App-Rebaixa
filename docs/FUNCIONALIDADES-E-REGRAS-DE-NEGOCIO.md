@@ -95,13 +95,14 @@ Os percentuais são arredondados em dias (por exemplo, shelf de 60 dias: giro a 
 
 ### 4.2 Consolidação por produto e loja
 
-**Quais contagens valem** (regra de 02/10/2026):
+**Quais contagens valem** (regra de 02/10/2026; janela de 30 dias e regra dos 14 dias de 23/10/2026):
 
-- Cada **lote** (produto + data de validade, numa loja) vale pela **sua última contagem** nos últimos 15 dias. Contar um lote novo numa visita **não apaga** um lote antigo que a promotora não recontou. (Antes valia só a última visita do produto, e os lotes não recontados sumiam do painel.)
-- Um lote só deixa de valer quando: **vence**; é **recontado com zero**; uma visita posterior registra que **não há o produto na loja** (quantidade zero sem lote); ou a última contagem dele tem **mais de 15 dias**.
+- Cada **lote** (produto + data de validade, numa loja) vale pela **sua última contagem** nos últimos 30 dias. Contar um lote novo numa visita **não apaga** um lote antigo que a promotora não recontou. (Antes valia só a última visita do produto, e os lotes não recontados sumiam do painel.)
+- Um lote só deixa de valer quando: **vence**; é **recontado com zero**; uma visita posterior registra que **não há o produto na loja** (quantidade zero sem lote); a última contagem dele tem **mais de 30 dias**; ou ele **não foi reencontrado** (regra abaixo).
+- **Lote não reencontrado**: se a **última visita à loja** (de qualquer produto) aconteceu **mais de 14 dias depois** da última contagem do lote (data da última visita − data da contagem do lote > 14), o sistema assume que o lote **não existe mais** e o tira do painel. Com exatamente 14 dias de diferença o lote continua valendo. A visita conta mesmo quando só registrou "sem produto" de outro item. Na janela "Detalhes da contagem" esses lotes aparecem como **"não reencontrado"**, com a explicação.
 - Se o mesmo lote foi contado mais de uma vez no mesmo dia, vale a menor quantidade e, em empate, a contagem mais recente.
 - O produto só entra se o estoque somado dos lotes vigentes na loja passar do mínimo: **mais de 5 unidades** (mais de 2 para quatro códigos específicos).
-- Consequência a conhecer: um lote que foi todo vendido, mas que a promotora não registrou como zerado, continua aparecendo até vencer ou até a contagem completar 15 dias. A orientação à equipe de campo é registrar zero quando o lote acabar.
+- Consequência a conhecer: um lote que foi todo vendido, mas que a promotora não registrou como zerado, continua aparecendo até vencer, até a contagem completar 30 dias ou até a loja ser visitada mais de 14 dias depois da contagem dele. A orientação à equipe de campo é registrar zero quando o lote acabar.
 
 Uma loja pode ter vários lotes do mesmo produto com validades diferentes. O sistema mostra **uma linha por produto e loja**, seguindo estas regras:
 
@@ -312,7 +313,7 @@ Visão macro → micro do estoque em risco:
   - A janela avisa quando algum lote **não foi recontado na última visita** do produto (ele continua valendo pela sua última contagem).
   - **Histórico de contagem por lote**: para cada data de validade, as contagens dos últimos 60 dias num **gráfico de linha** (eixo horizontal: quando foi contado; eixo vertical: quantidade), com a contagem usada no painel destacada. "Ver em tabela" mostra quem contou e a **variação** em relação à contagem anterior do mesmo lote.
   - **Visitas em que o lote não foi contado**: quando a promotora visitou a loja e contou outros lotes do produto, mas não aquele, a visita aparece marcada com × no gráfico. Se isso aconteceu depois da última contagem do lote, o bloco avisa "Não contado na última visita" (ou "nas últimas N visitas"), com as datas, e uma linha tracejada mostra que o painel continua usando a contagem antiga.
-  - Lotes que já saíram (vencidos, zerados ou com contagem antiga) aparecem em blocos separados, assim como as **visitas em que a promotora registrou que não havia o produto** (quantidade zero, sem lote). Essas visitas cancelam os lotes contados antes delas.
+  - Lotes que já saíram (vencidos, zerados, **não reencontrados** ou com contagem antiga) aparecem em blocos separados, assim como as **visitas em que a promotora registrou que não havia o produto** (quantidade zero, sem lote). Essas visitas cancelam os lotes contados antes delas.
   - Se existir uma contagem mais nova que o painel ainda não refletiu, a janela avisa; ela entra na sincronização seguinte (a cada 30 minutos).
 
 ### 9.2 Métricas Redes (supervisor, diretoria, administrador)

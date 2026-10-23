@@ -1,6 +1,7 @@
 const Estoque = require("../models/Estoque");
 const Carteira = require("../models/Carteira");
 const { query, pgConfigurado } = require("../services/estoquePgDbService");
+const { DIAS_SEM_RECONTAGEM } = require("../services/estoqueSyncService");
 const { carteiraDoUsuario, clientesDoUsuario, alcancaCliente } = require("../services/escopoService");
 const { buscarUltimasComprasLote, buscarUltimaCompraRedeBatch } = require("../services/erpService");
 const { montarLinhas, gerarPlanilha } = require("../services/exportacaoVencimentosService");
@@ -131,6 +132,7 @@ async function detalhes(req, res) {
     sincronizadoEm: item.updatedAt,
     historico,
     diasHistorico: DIAS_HISTORICO,
+    diasSemRecontagem: DIAS_SEM_RECONTAGEM,
   });
 }
 

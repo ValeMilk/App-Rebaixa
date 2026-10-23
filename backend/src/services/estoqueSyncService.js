@@ -11,6 +11,9 @@ const { classificarPorValidade } = require("./classificadorService");
  *  - cada lote (loja + produto + validade) vale pela SUA ultima contagem nos ultimos 15 dias;
  *  - o lote sai quando vence, quando e recontado com zero, ou quando uma visita posterior
  *    registra que nao ha o produto na loja (quantidade zero sem lote);
+ *  - o lote tambem sai quando a loja foi visitada mais de DIAS_SEM_RECONTAGEM dias depois da
+ *    contagem dele (ultima visita da loja - contagem do lote > 14): assume-se que nao existe mais.
+ *    (regra de 23/10/2026)
  *  - o produto so entra se o estoque somado na loja passar do minimo (5 un; 2 para 4 codigos).
  * Demais criterios iguais aos da view.
  *
@@ -18,8 +21,13 @@ const { classificarPorValidade } = require("./classificadorService");
  * lotes em giro/rebaixa (lotes ok ficam de fora), data_validade = a mais proxima entre esses
  * lotes, status = o pior. Item sem nenhum lote em giro/rebaixa nao entra (exceto sem shelf).
  * Cada linha traz `lotes` (todos os lotes do item, inclusive os "ok") com quem contou e quando.
+ *
+ * A skill docs/skills/vencimentos-estoque replica esta consulta para o MCP do BI: ao mudar a regra
+ * (janela, minimos, limites do shelf), atualizar la tambem.
  */
 const JANELA_DIAS = 30;
+// Lote cuja contagem e mais de N dias anterior a ultima visita da loja nao foi reencontrado: sai do painel
+const DIAS_SEM_RECONTAGEM = 14;
 const CODIGOS_LIMITE_2 = ["121035", "121135", "121235", "121835"];
 
 const SQL_ESTOQUE = `
@@ -36,7 +44,8 @@ WITH base AS (
 visitas AS (
   -- Ultima visita do promotor a cada loja (qualquer produto, inclusive "sem produto")
   SELECT DISTINCT ON (codigo_destino) codigo_destino,
-    to_char(event_dth, 'YYYY-MM-DD"T"HH24:MI') AS visita_em, agent_name AS visita_por
+    to_char(event_dth, 'YYYY-MM-DD"T"HH24:MI') AS visita_em, agent_name AS visita_por,
+    event_dth::date AS visita_data
   FROM base
   ORDER BY codigo_destino, event_dth DESC, id
 ),
@@ -62,15 +71,18 @@ ultima_do_lote AS (
   ORDER BY codigo_destino, produto_codigo, data_validade, data_visita DESC, quantidade, event_dth DESC, id
 ),
 vigentes AS (
-  -- O lote sai quando: venceu, foi recontado com zero, ou houve visita posterior sem o produto
+  -- O lote sai quando: venceu, foi recontado com zero, houve visita posterior sem o produto, ou a loja
+  -- foi visitada mais de ${DIAS_SEM_RECONTAGEM} dias depois da contagem dele (nao foi reencontrado)
   SELECT u.*,
     SUM(u.quantidade) OVER (PARTITION BY u.codigo_destino, u.produto_codigo) AS estoque_total,
     MAX(u.data_visita) OVER (PARTITION BY u.codigo_destino, u.produto_codigo) AS ultima_visita
   FROM ultima_do_lote u
+  JOIN visitas lv ON lv.codigo_destino = u.codigo_destino
   LEFT JOIN sem_estoque z ON z.codigo_destino = u.codigo_destino AND z.produto_codigo = u.produto_codigo
   WHERE u.data_validade > CURRENT_DATE
     AND u.quantidade > 0
     AND (z.data_zero IS NULL OR u.data_visita >= z.data_zero)
+    AND (lv.visita_data - u.data_visita) <= ${DIAS_SEM_RECONTAGEM}
 ),
 lotes AS (
   SELECT
@@ -232,4 +244,4 @@ async function sincronizarEstoque() {
   return { eventosBaixados: linhas.length, upserts, removidos: del.deletedCount || 0 };
 }
 
-module.exports = { sincronizarEstoque, SQL_ESTOQUE, montarDoc, montarLotes };
+module.exports = { sincronizarEstoque, SQL_ESTOQUE, DIAS_SEM_RECONTAGEM, montarDoc, montarLotes };

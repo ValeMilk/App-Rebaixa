@@ -1,7 +1,7 @@
 const test = require("node:test");
 const assert = require("node:assert/strict");
 
-const { montarDoc, montarLotes, SQL_ESTOQUE } = require("../../src/services/estoqueSyncService");
+const { montarDoc, montarLotes, SQL_ESTOQUE, DIAS_SEM_RECONTAGEM } = require("../../src/services/estoqueSyncService");
 
 // Linha como a consulta devolve (lotes ja como array, do json_agg)
 const linha = (extra = {}) => ({
@@ -118,6 +118,11 @@ test("o SQL mantem a regra do shelf (45% giro, 73% rebaixa) e a regra de quais l
   assert.match(SQL_ESTOQUE, /u\.data_validade > CURRENT_DATE/);
   assert.match(SQL_ESTOQUE, /u\.quantidade > 0/);
   assert.match(SQL_ESTOQUE, /u\.data_visita >= z\.data_zero/);
+  // lote nao reencontrado: ultima visita da loja - contagem do lote > 14 dias (23/10/2026)
+  assert.equal(DIAS_SEM_RECONTAGEM, 14);
+  assert.match(SQL_ESTOQUE, /JOIN visitas lv ON lv\.codigo_destino = u\.codigo_destino/);
+  assert.match(SQL_ESTOQUE, /AND \(lv\.visita_data - u\.data_visita\) <= 14/);
+  assert.match(SQL_ESTOQUE, /event_dth::date AS visita_data/);
   // minimo de unidades na loja: 2 para os quatro codigos, 5 para os demais
   assert.match(SQL_ESTOQUE, /IN \('121035', '121135', '121235', '121835'\) THEN 2 ELSE 5/);
   assert.doesNotMatch(SQL_ESTOQUE, /\$\{/); // nenhuma interpolacao ficou sem resolver
