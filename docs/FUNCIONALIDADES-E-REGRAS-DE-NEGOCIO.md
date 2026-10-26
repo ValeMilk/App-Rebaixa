@@ -1,11 +1,14 @@
 # InfoVale (Rebaixa Valemilk) — Fluxos e regras de negócio
 
-Documento funcional do sistema, escrito para a equipe comercial, supervisores, diretoria e administradores. Descreve **como o sistema funciona hoje** (levantado em 29/09/2026): quem faz o quê, em que ordem, e quais regras o sistema aplica em cada passo. Não trata de aspectos técnicos.
+Documento funcional do sistema, escrito para a equipe comercial, supervisores, diretoria, administradores e para quem cuida do produto. Descreve **como o sistema funciona hoje** (levantado em 29/09/2026 e atualizado em 26/10/2026): quem faz o quê, em que ordem, e quais regras o sistema aplica em cada passo. Não trata de aspectos técnicos de construção do sistema.
+
+**Quem está chegando agora deve começar pela seção 0**, que resume o produto, as regras que mais surpreendem, os números e limites e o mapa de telas. O restante é a referência completa, e a seção 13 lista os comportamentos que provavelmente precisam de decisão do negócio.
 
 ---
 
 ## Sumário
 
+0. [Resumo para quem está chegando](#0-resumo-para-quem-está-chegando)
 1. [Para que serve o InfoVale](#1-para-que-serve-o-infovale)
 2. [Quem usa e o que cada perfil faz](#2-quem-usa-e-o-que-cada-perfil-faz)
 3. [De onde vêm os dados e com que frequência são atualizados](#3-de-onde-vêm-os-dados-e-com-que-frequência-são-atualizados)
@@ -19,6 +22,102 @@ Documento funcional do sistema, escrito para a equipe comercial, supervisores, d
 11. [Administração do sistema](#11-administração-do-sistema)
 12. [Glossário](#12-glossário)
 13. [Comportamentos atuais a validar](#13-comportamentos-atuais-a-validar)
+14. [Evolução em aberto](#14-evolução-em-aberto)
+
+---
+
+## 0. Resumo para quem está chegando
+
+### 0.1 O produto em poucas linhas
+
+O **InfoVale** (nome interno: Rebaixa Valemilk) é a ferramenta da equipe comercial da Valemilk. Ele faz três coisas principais:
+
+1. **Evita perda por vencimento nas lojas dos clientes**: lê as contagens de estoque feitas pelos promotores, aponta o que está consumindo a vida útil e sugere oferta interna (giro) ou rebaixa.
+2. **Formaliza e aprova rebaixas e ofertas**: cada ação vira uma solicitação com análise de preço e margem, que passa por aprovação.
+3. **Planeja e acompanha ações com as redes**: encartes e ofertas internas num calendário, precificados produto a produto, com indicadores de cobertura e performance.
+
+Em volta disso existem apoios: **Relatórios Scanntech** (PDFs de mercado vistos como imagens), **Agenda de Visitas** dos supervisores, **Integração e Acompanhamento de Estoque** das redes e a **administração** (usuários, permissões, redes, sincronização). Os usuários são hoje cerca de 35: vendedores (maioria), supervisores, diretoria e administrador.
+
+### 0.2 Os dois ciclos principais
+
+```
+CICLO 1 — Vencimento nas lojas
+Contagem do promotor (Ativmob) → regra do shelf (giro / rebaixa) → Painel de Vencimentos e Lojas
+   → Solicitação de rebaixa ou oferta interna → Supervisor → Diretoria → Aprovado
+   → "Ação ativa": selo "Em rebaixa" / "Em oferta" até o fim do período
+
+CICLO 2 — Ações com as redes
+Rede e subrede (carteira do Lacteus) → Encarte ou Oferta interna no calendário
+   → precificação por subcategoria (PDV, oferta, sellout, margens) → PDF para a rede
+   → Métricas Redes (cobertura) e Performance (comparação de períodos)
+```
+
+Por padrão a etapa do **supervisor** na aprovação está desligada (ver 13.1).
+
+### 0.3 As regras que mais surpreendem
+
+1. **O status vem da parte do shelf já consumida, não dos dias que faltam**: giro a partir de 45%, rebaixa a partir de 73% (4.1).
+2. **A quantidade de uma linha soma só os lotes em giro ou rebaixa.** Lote ainda "ok" fica de fora, e produto com todos os lotes ok nem aparece (4.2).
+3. **Cada lote vale pela sua última contagem, por até 30 dias.** E o lote sai do painel se a loja foi visitada mais de 14 dias depois da última contagem dele: assume-se que não existe mais (4.2).
+4. **Só entra produto com mais de 5 unidades na loja** (mais de 2 para quatro códigos de caixa) (4.2).
+5. **O tipo da ação** segue o status no Painel de Vencimentos (giro gera oferta; rebaixa e sem shelf geram rebaixa), mas o botão por loja da tela Lojas gera sempre rebaixa (5.3 e 13.3).
+6. **A solicitação nasce com o status do perfil de quem criou**: vendedor → Ag. Supervisor; supervisor → Ag. Diretoria; diretoria e administrador → Aprovado (7.2).
+7. **O responsável de rede prevalece sobre a carteira**: só ele edita os encartes da rede e decide as solicitações dela, e enxerga todas as lojas dela (seção 10).
+8. **Subrede é a subclasse do cliente no Lacteus.** Cliente sem rede cadastrada entra com a subclasse fazendo o papel de rede (código "S" + número da subclasse) (seção 10).
+9. **A permissão libera a tela ou a ação, mas os dados continuam os da carteira de cada um.** O perfil Admin sempre tem tudo (11.5).
+10. **A senha de acesso é o código do usuário no Lacteus** (seção 2).
+11. **O Lacteus tem precedência**: uma rede criada no InfoVale cede quando a loja passa a existir no Lacteus (11.6).
+12. **Nos encartes, a margem da oferta não pode ser maior que a margem PDV** (8.4).
+
+### 0.4 Números e limites
+
+| O quê | Valor | Seção |
+|---|---|---|
+| Giro | 45% ou mais do shelf consumido | 4.1 |
+| Rebaixa | 73% ou mais do shelf consumido | 4.1 |
+| Janela de contagens | 30 dias | 4.2 |
+| Lote não reencontrado | última visita da loja mais de 14 dias depois da contagem do lote | 4.2 |
+| Estoque mínimo para aparecer | mais de 5 un (mais de 2 para os códigos 121035, 121135, 121235 e 121835) | 4.2 |
+| Faixas de prazo | crítico até 15 dias, alerta até 30, atenção até 60 | 4.3 |
+| Cor da margem | verde a partir de 20%, amarelo de 10% a 20%, vermelho abaixo de 10% | 5.2 |
+| Métricas Redes | 0% crítico, abaixo de 40% urgente, abaixo de 70% atenção, 70% ou mais boa | 9.2 |
+| Acompanhamento de Estoque | cobertura baixa até 7 dias, adequada 7 a 30, alta 30 a 60, excesso acima de 60 | 9.4 |
+| Histórico de contagem (Detalhes) | 60 dias | 9.1 |
+| Planilha de vencimentos | até 2.000 itens por exportação | 9.1 |
+| Lojas candidatas a uma rede do InfoVale | contadas no Ativmob nos últimos 90 dias | 11.6 |
+| Relatórios importados | até 60 MB por PDF e 150 páginas por relatório | 11.7 |
+| Atualização automática dos dados | a cada 30 minutos | 3 |
+| Duração da sessão | 8 horas | 2 |
+
+### 0.5 Mapa de telas
+
+| Menu | Para quê | Quem abre por padrão | Seção |
+|---|---|---|---|
+| Dashboard (Painel de Vencimentos) | Estoque em risco, criar solicitações em lote, exportar planilha, detalhes da contagem | Admin | 9.1 |
+| Métricas Redes | Cobertura de negociação de cada rede no mês | Supervisor, Diretoria, Admin | 9.2 |
+| Lojas | Produtos em giro e rebaixa por loja e rede; pedir rebaixa ou oferta | Vendedor, Admin | 5 e 6 |
+| Solicitações | Acompanhar e decidir as solicitações | Vendedor, Admin | 7 |
+| Encartes | Calendário da rede, ações e precificação | Supervisor, Diretoria, Admin | 8 |
+| Calendário Geral | Todas as redes juntas, PDF geral | Supervisor, Diretoria, Admin | 8.5 |
+| Performance | Comparar encartes entre dois períodos | Diretoria, Admin | 9.3 |
+| Agenda de Visitas | Agenda semanal de visitas dos supervisores | Supervisor (monta), Diretoria (consulta), Admin | 9.5 |
+| Relatórios Scanntech | Ver e baixar relatórios em PDF | Supervisor, Diretoria, Admin | 11.7 |
+| Acompanhamento Estoque | Evolução do estoque e da venda de uma rede | Admin | 9.4 |
+| Integração Estoque | Importar a planilha de estoque que a rede envia | Admin | 11.4 |
+| Usuários, Resp. Rede, Redes InfoVale, Importar Relatório, Sincronização, Permissões | Administração | Admin | 11 |
+
+Os padrões acima podem ser alterados na tela Permissões (11.5). O que está de fato liberado hoje em produção é descrito no fim de 11.5.
+
+### 0.6 De onde vêm os dados
+
+| Fonte | Usada para | Se falhar |
+|---|---|---|
+| **Ativmob** (via banco de BI) | Contagens de estoque e validade dos promotores | Painel e Lojas ficam com o último retrato sincronizado |
+| **Lacteus** (ERP) | Carteira, produtos, preços, shelf, última compra | Margens e planilha ficam sem a última compra; carteira não atualiza |
+| **Esigma** (segundo ERP) | Clientes e produtos da rede "Esigma" | Rede Esigma não atualiza |
+| **PDFs dos relatórios** | Importados à mão pelo administrador | Não há importação automática |
+
+O banco de BI também pode ser consultado por inteligência artificial (conector MCP). Existe uma **skill "vencimentos-estoque"** que ensina o assistente a responder perguntas de vencimento com a mesma regra do painel (arquivos em `docs/skills/`).
 
 ---
 
@@ -38,10 +137,10 @@ Funciona no computador e no celular (pode ser instalado como aplicativo).
 
 | Perfil | Papel | Telas que enxerga (padrão) |
 |---|---|---|
-| **Vendedor** | Atende as lojas da própria carteira. Solicita rebaixas e ofertas para elas. | Lojas, Pedidos |
+| **Vendedor** | Atende as lojas da própria carteira. Solicita rebaixas e ofertas para elas. | Lojas, Solicitações (no celular, "Pedidos") |
 | **Supervisor** | Responde por um grupo de vendedores e por redes. Negocia encartes com as redes e faz a primeira aprovação das solicitações dos seus vendedores. | Métricas Redes, Encartes, Calendário Geral, Relatórios Scanntech, Agenda de Visitas (monta a própria) |
 | **Diretoria** | Dá a aprovação final das solicitações e acompanha encartes, performance e métricas. | Métricas Redes, Encartes, Calendário Geral, Performance, Relatórios Scanntech, Agenda de Visitas (consulta a de todos) |
-| **Administrador** | Tudo o que a diretoria faz, mais o Painel de Vencimentos, as telas Lojas e Pedidos, a Integração Estoque e o Acompanhamento de Estoque e a administração (usuários, responsáveis de rede, redes do InfoVale, importação de relatórios, sincronização, permissões). | Todas |
+| **Administrador** | Tudo o que a diretoria faz, mais o Painel de Vencimentos, as telas Lojas e Solicitações, a Integração Estoque e o Acompanhamento de Estoque e a administração (usuários, responsáveis de rede, redes do InfoVale, importação de relatórios, sincronização, permissões). | Todas |
 
 A tabela acima é o **padrão**. O administrador pode mudar o que cada perfil abre e faz na tela **Permissões** (seção 11.5): por exemplo, liberar o Painel de Vencimentos para os supervisores.
 
@@ -57,7 +156,7 @@ Ao entrar, cada perfil cai na sua tela de trabalho: vendedor em **Lojas**, super
 
 | Informação | Origem | Atualização |
 |---|---|---|
-| Estoque e validade dos produtos nas lojas | Relatório de estoque crítico da Ativmob (BI) | A cada 30 minutos, e sempre que alguém abre o sistema |
+| Estoque e validade dos produtos nas lojas | Contagens dos promotores no Ativmob, lidas do banco de BI | A cada 30 minutos, e sempre que alguém abre o sistema |
 | Carteira: cliente → vendedor → supervisor → rede/subrede | ERP Lacteus | A cada 30 minutos, e sempre que alguém abre o sistema |
 | Cadastro de produtos, preços (tabela, mínimo, promo, custo) e shelf | ERP Lacteus | Só manualmente, pela tela Sincronização |
 | Clientes do Esigma | ERP Esigma | A cada 30 minutos |
@@ -66,7 +165,7 @@ Ao entrar, cada perfil cai na sua tela de trabalho: vendedor em **Lojas**, super
 
 Regras de origem que valem a pena conhecer:
 
-- O estoque vem das **contagens das promotoras na Ativmob** dos últimos 15 dias. As regras de quais contagens valem estão na seção 4.2.
+- O estoque vem das **contagens das promotoras na Ativmob** dos últimos 30 dias. As regras de quais contagens valem estão na seção 4.2.
 - Na carteira, **o supervisor de um cliente é o que está no cadastro do cliente no Lacteus**, não o supervisor do vendedor.
 - A carteira exclui rotas de indústria, remessa, licitação e extra-rota, redes marcadas como inativas e algumas redes específicas. Clientes sem rede continuam aparecendo.
 - Produtos que deixam de existir no Lacteus **não somem** do sistema automaticamente.
@@ -215,7 +314,7 @@ A rede e a subrede da solicitação vêm sempre da carteira do cliente.
 - **Supervisor**: decide as solicitações **Ag. Supervisor** dos seus vendedores, aprovando (vai para Ag. Diretoria) ou rejeitando. Se a rede tem um **responsável de rede** cadastrado, **só ele** decide as solicitações daquela rede.
 - **Diretoria e administrador**: decidem as solicitações **Ag. Diretoria** (aprovação final ou rejeição) e também podem aprovar ou rejeitar **diretamente** uma solicitação que ainda está Ag. Supervisor.
 - A decisão pode levar um comentário, opcional inclusive na rejeição. Tudo fica registrado no histórico da solicitação (quem, quando, o quê).
-- Na tela **Pedidos**, solicitações da mesma rede e produto aparecem agrupadas e podem ser decididas de uma vez ("Decidir todas").
+- Na tela **Solicitações**, solicitações da mesma rede e produto aparecem agrupadas e podem ser decididas de uma vez ("Decidir todas").
 
 Atenção: decidir exige a permissão "Aprovar ou rejeitar solicitações", que por padrão só diretoria e administrador têm. Enquanto ela não for marcada para o perfil Supervisor na tela Permissões, a etapa do supervisor não acontece (ver item 13.1).
 
@@ -229,7 +328,7 @@ Atenção: decidir exige a permissão "Aprovar ou rejeitar solicitações", que 
 - **Vendedor** vê só as solicitações que criou.
 - **Supervisor** vê as que criou, as pendentes que aguardam a decisão dele e todas as das redes em que é responsável.
 - **Diretoria e administrador** veem todas.
-- A tela Pedidos filtra por status (Ag. Supervisor, Ag. Diretoria, Aprovados, Rejeitados). O detalhe mostra o período da ação, a análise de preços item a item (última compra, PDV e margem, oferta e margem, sellout, desconto) e o histórico completo.
+- A tela Solicitações filtra por status (Ag. Supervisor, Ag. Diretoria, Aprovados, Rejeitados). O detalhe mostra o período da ação, a análise de preços item a item (última compra, PDV e margem, oferta e margem, sellout, desconto) e o histórico completo.
 
 ---
 
@@ -412,10 +511,10 @@ Painel construído sobre os **retratos de estoque** gravados pela Integração E
 1. **A carteira define o alcance de cada um.** O vendedor enxerga as lojas em que é o vendedor cadastrado; o supervisor, as lojas e redes em que é o supervisor cadastrado; diretoria e administrador enxergam tudo.
 2. **O responsável de rede prevalece sobre a carteira.** O administrador pode designar um supervisor como responsável por uma rede. A partir daí, só ele edita os encartes dessa rede e decide as solicitações pendentes dela, e ele passa a enxergar a rede mesmo que ela não esteja na sua carteira: **todas as lojas da rede** entram no alcance dele (Painel de Vencimentos, Lojas, solicitações que ele mesmo abre e planilha exportada), somadas às lojas da própria carteira.
 3. **Redes inativas** no Lacteus não aparecem em nenhuma tela.
-7. **Subrede = subclasse do cliente no Lacteus.** Em Encartes, a subrede pode ser escolhida direto, sem passar pela rede (a rede é preenchida sozinha). Cliente que **não tem rede** cadastrada no Lacteus, mas tem subclasse, entra no InfoVale com a subclasse fazendo o papel de rede (código "S" + número da subclasse); a última compra dessa "rede" é a dos clientes da subclasse.
-4. **A rede Esigma** é vista por diretoria e administrador; um supervisor só a vê se for designado responsável por ela.
-5. **Solicitações**: vendedor vê as próprias; supervisor vê as próprias, as que aguardam a sua decisão e as das redes pelas quais é responsável; diretoria e administrador veem todas.
-6. **Encartes**: supervisor vê as redes que atende; diretoria e administrador veem todas.
+4. **Subrede = subclasse do cliente no Lacteus.** Em Encartes, a subrede pode ser escolhida direto, sem passar pela rede (a rede é preenchida sozinha). Cliente que **não tem rede** cadastrada no Lacteus, mas tem subclasse, entra no InfoVale com a subclasse fazendo o papel de rede (código "S" + número da subclasse); a última compra dessa "rede" é a dos clientes da subclasse.
+5. **A rede Esigma** é vista por diretoria e administrador; um supervisor só a vê se for designado responsável por ela.
+6. **Solicitações**: vendedor vê as próprias; supervisor vê as próprias, as que aguardam a sua decisão e as das redes pelas quais é responsável; diretoria e administrador veem todas.
+7. **Encartes**: supervisor vê as redes que atende; diretoria e administrador veem todas.
 
 ---
 
@@ -506,6 +605,15 @@ O acesso é controlado **por perfil**: cada usuário tem um perfil (Vendedor, Su
 - Cada perfil alterado aparece como **Personalizado** (com quem alterou e quando) e pode voltar ao padrão com **Restaurar padrão**.
 - Um perfil sem nenhuma permissão continua entrando no sistema, mas vê apenas o aviso de que não há tela liberada.
 - Aprovar solicitações continua seguindo as etapas: com a permissão, o supervisor decide a primeira etapa e diretoria e admin a final (seção 7.3).
+
+**Configuração em produção em 26/10/2026** (foto do dia; a tela Permissões mostra o estado atual). Dos três perfis editáveis, o Vendedor está no padrão e os outros dois foram personalizados:
+
+| Perfil | O que foi alterado em relação ao padrão |
+|---|---|
+| Supervisor | **Ganhou** o Painel de Vencimentos. **Perdeu** "Criar rebaixa ou oferta interna" e "Montar a própria agenda de visitas". |
+| Diretoria | **Ganhou** o Painel de Vencimentos. **Perdeu** "Ver a agenda de todos os supervisores". |
+
+Efeitos práticos: o supervisor não abre a Agenda de Visitas nem cria solicitações, e a diretoria não abre a agenda. Além disso, **a decisão das solicitações acontece dentro da tela Solicitações**, que só o Vendedor e o Admin abrem; a diretoria tem a permissão de aprovar, mas não a tela onde isso é feito. Hoje, portanto, só o administrador consegue decidir solicitações pelo sistema (ver 13.1).
 
 ### 11.6 Redes InfoVale (lojas que só existem no Ativmob)
 
@@ -603,8 +711,8 @@ Na mesma tela o administrador **renomeia** (nome e mês), **adiciona PDFs** e **
 
 Situações em que o sistema se comporta de um jeito que provavelmente não é o desejado. Cabe ao negócio decidir se são erros a corrigir ou regras a manter.
 
-1. **O supervisor não aprova por padrão.** O fluxo prevê a primeira aprovação pelo supervisor, mas o perfil Supervisor não tem, por padrão, nem a tela Solicitações nem a permissão de aprovar; só diretoria e administrador aprovam ou rejeitam, e toda solicitação de vendedor depende da diretoria. Para ativar a etapa do supervisor, basta marcar as duas permissões para o perfil na tela Permissões (seção 11.5).
-2. **Ação por rede fica sem margens.** Ao solicitar para todas as lojas de uma rede, a última compra nunca é encontrada; as solicitações são criadas com PDV e oferta, mas sem margem calculada.
+1. **O supervisor não aprova por padrão, e hoje só o administrador decide.** O fluxo prevê a primeira aprovação pelo supervisor, mas o perfil Supervisor não tem, por padrão, nem a tela Solicitações nem a permissão de aprovar; só diretoria e administrador aprovam ou rejeitam, e toda solicitação de vendedor depende da diretoria. Para ativar a etapa do supervisor, basta marcar as duas permissões para o perfil na tela Permissões (seção 11.5). Além disso, a decisão é tomada **dentro da tela Solicitações**, e a Diretoria não tem essa tela por padrão (tem só a permissão de aprovar): enquanto ela não for liberada, a diretoria não tem onde decidir e a fila fica com o administrador.
+2. **Ação por rede fica sem margens.** Ao solicitar para todas as lojas de uma rede, a última compra nunca é encontrada (o formulário da tela Lojas envia a lista de lojas em vez do código da rede, e a consulta recusa o pedido); as solicitações são criadas com PDV e oferta, mas sem margem calculada.
 3. **Na tela Lojas toda ação nasce como rebaixa**, mesmo para produtos em giro, que deveriam gerar oferta interna (como acontece no Painel de Vencimentos).
 4. **Métricas Redes diz "últimos 30 dias", mas calcula o mês atual** (do dia 1 ao último dia). E a cobertura mede os dias com ação que estão negociados, não os dias do mês cobertos por ações.
 5. **A diretoria não cria encartes por padrão.** O botão "+ Nova Ação" só aparece para quem tem a permissão "Criar nova ação" (por padrão, supervisor e administrador); pode ser liberado à diretoria na tela Permissões.
@@ -616,3 +724,37 @@ Situações em que o sistema se comporta de um jeito que provavelmente não é o
 11. **Duas fórmulas de "sugerir sellout"**: nas solicitações por loja, a sugestão mantém na oferta a mesma margem do PDV; nos encartes, a sugestão é proporcional à diferença entre PDV e oferta. Os valores sugeridos são diferentes para os mesmos números.
 12. **Todo usuário enxerga os selos de ação ativa de todas as lojas**, inclusive de lojas fora da sua carteira.
 13. **Operacional (resolvido em 02/10/2026)**: a atualização automática do estoque ficou parada de 25/09 a 02/10 por um problema de rede no servidor; nesse período o Painel e a tela Lojas mostraram o retrato de 25/09. A janela "Detalhes da contagem" mostra a data da última sincronização para esse tipo de situação ficar visível.
+
+---
+
+## 14. Evolução em aberto
+
+Ideias e pendências levantadas até aqui. **Não são compromissos**: servem de insumo para priorizar. Antes de tudo, os itens 13.1 (quem decide as solicitações), 13.2 (última compra da rede) e 13.3 (tipo da ação na tela Lojas) são os que mais afetam o dia a dia.
+
+**Estoque e vencimentos**
+
+- Botão **Detalhes da contagem** também na tela Lojas (hoje só existe no Painel de Vencimentos).
+- Filtro no Painel para ver só os **lotes não contados na última visita**.
+- **Parâmetros ajustáveis pelo negócio.** Os números da regra (45% e 73% do shelf, janela de 30 dias, 14 dias sem recontagem, mínimo de 5 e 2 unidades) são fixos no sistema; mudar qualquer um exige alteração técnica. Uma tela de parâmetros permitiria à operação ajustar sozinha.
+- Tratar o caso do lote vendido que a promotora não zerou (item 4.2), por exemplo com um lembrete à equipe de campo.
+
+**Relatórios Scanntech**
+
+- **Remover ou reordenar páginas** de um relatório já publicado (hoje é preciso excluir e importar de novo).
+- Avisar o supervisor quando sai um relatório novo para ele.
+
+**Agenda de Visitas**
+
+- Marcar a visita como **realizada** e comparar o planejado com as visitas e contagens reais do Ativmob (hoje a agenda é só planejamento).
+- **Arrastar** a visita para mudar o dia ou o horário.
+- Deixar o vendedor consultar a agenda do seu supervisor.
+
+**Dados e cadastros**
+
+- Só cerca de **metade dos clientes tem a cidade preenchida** no Lacteus; completar o cadastro melhora a Agenda de Visitas.
+- Lojas que só existem no Ativmob dependem de cadastro manual na tela Redes InfoVale (11.6).
+
+**Operação**
+
+- Novas versões do sistema estão sendo publicadas **manualmente** no servidor, porque o serviço automático do GitHub está sem créditos.
+- O InfoVale roda num **servidor compartilhado e pequeno** (2 processadores) com outros sistemas da empresa. Existe um plano de otimização de CPU e containers, analisado e aguardando decisão.
