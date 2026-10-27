@@ -13,6 +13,7 @@
 const sql = require("mssql");
 
 let pool = null;
+let conectando = null; // promise do connect em andamento: chamadas simultaneas esperam o mesmo pool
 
 function esigmaConfigurado() {
   return !!(
@@ -28,6 +29,7 @@ async function getPool() {
     throw new Error("Esigma nao configurado. Preencha ERP_HOST2, ERP_USER2, ERP_PASSWORD2 e ERP_DATABASE2 no .env");
   }
   if (pool && pool.connected) return pool;
+  if (conectando) return conectando;
 
   const config = {
     server:   process.env.ERP_HOST2,
@@ -56,9 +58,26 @@ async function getPool() {
   // `sql.connect()` usa um pool GLOBAL unico do pacote mssql — como o erpDbService.js
   // (Lacteus) tambem conecta via mssql, usar o atalho faria os dois compartilharem
   // a mesma conexao (o que conectar primeiro "vence" e o outro reusa essa conexao errada).
-  pool = new sql.ConnectionPool(config);
-  await pool.connect();
-  return pool;
+  //
+  // Um unico connect por vez, devolvendo o pool local (mesma correcao do erpDbService.js:
+  // duas chamadas simultaneas durante o connect geravam "Connection is closed").
+  conectando = (async () => {
+    const anterior = pool;
+    const novo = new sql.ConnectionPool(config);
+    try {
+      await novo.connect();
+      novo.on("error", (err) => {
+        console.error("[esigmaDbService] pool com erro, sera recriado na proxima consulta:", err.message);
+        if (pool === novo) pool = null;
+      });
+      pool = novo;
+      if (anterior && anterior !== novo) anterior.close().catch(() => {});
+      return novo;
+    } finally {
+      conectando = null;
+    }
+  })();
+  return conectando;
 }
 
 async function query(sql_str) {

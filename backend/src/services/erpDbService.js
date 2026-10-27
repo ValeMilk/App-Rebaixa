@@ -13,6 +13,7 @@
 const sql = require("mssql");
 
 let pool = null;
+let conectando = null; // promise do connect em andamento: chamadas simultaneas esperam o mesmo pool
 
 function erpConfigurado() {
   return !!(
@@ -28,6 +29,7 @@ async function getPool() {
     throw new Error("ERP nao configurado. Preencha ERP_HOST, ERP_USER, ERP_PASSWORD e ERP_DATABASE no .env");
   }
   if (pool && pool.connected) return pool;
+  if (conectando) return conectando;
 
   const config = {
     server:   process.env.ERP_HOST,
@@ -57,9 +59,27 @@ async function getPool() {
   // tambem conecta num segundo ERP (Esigma, esigmaDbService.js), usar o atalho
   // faria os dois compartilharem a mesma conexao (o que conectar primeiro "vence"
   // e o outro silenciosamente reusa essa conexao errada).
-  pool = new sql.ConnectionPool(config);
-  await pool.connect();
-  return pool;
+  //
+  // Um unico connect por vez, e cada chamada devolve o pool que ELA viu conectar (variavel
+  // local), nunca a variavel do modulo: antes, duas chamadas simultaneas durante o connect
+  // criavam dois pools e a primeira devolvia o segundo ainda desconectado ("Connection is closed").
+  conectando = (async () => {
+    const anterior = pool;
+    const novo = new sql.ConnectionPool(config);
+    try {
+      await novo.connect();
+      novo.on("error", (err) => {
+        console.error("[erpDbService] pool com erro, sera recriado na proxima consulta:", err.message);
+        if (pool === novo) pool = null;
+      });
+      pool = novo;
+      if (anterior && anterior !== novo) anterior.close().catch(() => {});
+      return novo;
+    } finally {
+      conectando = null;
+    }
+  })();
+  return conectando;
 }
 
 async function query(sql_str) {
