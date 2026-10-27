@@ -66,7 +66,8 @@ export default function RebaixaLoteModal({ itens, onClose, onEnviado }) {
     setLoadingUC(true);
     Promise.all(
       itens.map((it) =>
-        api.get("/erp/ultima-compra", { params: { clienteCodigo: it.clienteCodigo, produtoCodigo: it.produtoCodigo } })
+        // codigoRede: se a loja nao compra em nome proprio, o backend cai para a ultima compra da rede
+        api.get("/erp/ultima-compra", { params: { clienteCodigo: it.clienteCodigo, produtoCodigo: it.produtoCodigo, codigoRede: it.codigoRede || undefined } })
           .then(({ data }) => [it._id, data])
           .catch(() => [it._id, { encontrado: false }])
       )
@@ -87,7 +88,8 @@ export default function RebaixaLoteModal({ itens, onClose, onEnviado }) {
     const dataUC = uc?.encontrado ? uc.dataUltimaCompra : null;
     // Desconto de contrato diluido: so informativo, nao entra nas margens
     const descUC = uc?.encontrado ? camposDesconto(uc) : {};
-    return { c, precoUC, dataUC, descUC, ...calcMargens({ ...c, precoUC }) };
+    const origemUC = uc?.encontrado ? uc.origem : null;
+    return { c, precoUC, dataUC, descUC, origemUC, ...calcMargens({ ...c, precoUC }) };
   }
 
   async function handleSubmit(e) {
@@ -237,7 +239,7 @@ export default function RebaixaLoteModal({ itens, onClose, onEnviado }) {
                             ) : d.precoUC != null ? (
                               <>
                                 <div className="font-bold text-secondary">{fmtBRL(d.precoUC)}</div>
-                                <div className="text-neutral-400">{fmtData(d.dataUC)}</div>
+                                <div className="text-neutral-400">{fmtData(d.dataUC)}{d.origemUC === "rede" ? <span className="text-info font-semibold"> · da rede</span> : null}</div>
                                 <UltimaCompraComDesconto
                                   align="right"
                                   className="mt-0.5"

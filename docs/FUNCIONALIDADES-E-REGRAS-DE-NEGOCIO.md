@@ -257,7 +257,7 @@ Margem oferta  = (Preço da oferta − Custo promo) ÷ Preço da oferta
 
 - As margens aparecem coloridas: **verde a partir de 20%**, **amarelo de 10% a 20%**, **vermelho abaixo de 10%**.
 - O sistema **sugere um sellout** que mantenha, na oferta, a mesma margem que a loja tem no PDV. A sugestão pode ser aplicada com um clique.
-- Se a loja **nunca comprou** o produto, as margens ficam em branco e o formulário avisa; a solicitação pode ser enviada mesmo assim.
+- Se a loja **não tem compra em nome próprio** no Lacteus (compra pelo CD da rede ou tem outro código lá), o formulário usa a **última compra da rede** (compra mais recente do produto por qualquer loja da rede), marcada como "da rede", igual à planilha de vencimentos (desde 27/10/2026). Se nem a rede comprou, as margens ficam em branco e o formulário avisa; a solicitação pode ser enviada mesmo assim.
 - **Última compra com desconto de contrato diluído** (desde 27/10/2026): abaixo da última compra, o formulário mostra o mesmo preço já com o desconto de contrato da loja abatido (`última compra × (1 − desconto%)`), o percentual e de onde ele vem. O desconto é o **vigente hoje** no Lacteus, nesta ordem: contrato (A23/A24) com desconto para o **produto**; senão, contrato com desconto para a **categoria** do produto; senão, o **desconto da rede** (cadastro da rede). Valem os contratos da rede da loja e os da própria loja; quando mais de um se aplica, prevalece o do produto sobre o da categoria, o da loja sobre o da rede e, por fim, o maior percentual. **Esse preço é só informativo: as margens e o sellout sugerido continuam calculados pela última compra normal.** O valor fica gravado na solicitação e aparece no detalhe dela. Loja sem desconto mostra "sem desconto de contrato".
 
 ### 5.3 Tipo da ação

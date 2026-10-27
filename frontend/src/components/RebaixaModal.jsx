@@ -37,14 +37,15 @@ export default function RebaixaModal({ item, onClose, onEnviado, tipo = "rebaixa
   useEffect(() => {
     let cancelado = false;
     setLoadingUC(true);
+    // codigoRede: se a loja nao compra em nome proprio (compra pelo CD), o backend cai para a ultima compra da rede
     api.get("/erp/ultima-compra", {
-      params: { clienteCodigo: item.clienteCodigo, produtoCodigo: item.produtoCodigo },
+      params: { clienteCodigo: item.clienteCodigo, produtoCodigo: item.produtoCodigo, codigoRede: item.codigoRede || undefined },
     })
       .then(({ data }) => { if (!cancelado) setUltimaCompra(data); })
       .catch(() => { if (!cancelado) setUltimaCompra({ encontrado: false }); })
       .finally(() => { if (!cancelado) setLoadingUC(false); });
     return () => { cancelado = true; };
-  }, [item.clienteCodigo, item.produtoCodigo]);
+  }, [item.clienteCodigo, item.produtoCodigo, item.codigoRede]);
 
   const precoUC = ultimaCompra?.encontrado ? Number(ultimaCompra.precoUltimaCompra) : null;
   const dataUC  = ultimaCompra?.encontrado ? ultimaCompra.dataUltimaCompra : null;
@@ -176,12 +177,21 @@ export default function RebaixaModal({ item, onClose, onEnviado, tipo = "rebaixa
                 <>
                   <div className="font-bold text-secondary text-sm leading-tight mt-0.5">{fmtBRL(precoUC)}</div>
                   <div className="text-[9px] text-neutral-400">{fmtData(dataUC)}</div>
+                  {ultimaCompra?.origem === "rede" && (
+                    <div className="text-[9px] text-info font-semibold leading-tight">da rede</div>
+                  )}
                 </>
               ) : (
                 <div className="text-neutral-400 text-xs mt-1">Sem histórico</div>
               )}
             </div>
           </div>
+
+          {!loadingUC && ultimaCompra?.origem === "rede" && (
+            <div className="-mt-2 mb-3 text-[10px] text-neutral-500 px-1">
+              A loja não compra em nome próprio no Lacteus: preço da compra mais recente de outra loja da rede.
+            </div>
+          )}
 
           {/* Última compra com desconto de contrato diluído (informativo) */}
           {precoUC != null && descUC.descontoContratoPercentual != null && (

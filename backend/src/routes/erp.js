@@ -19,17 +19,27 @@ function camposDesconto(r) {
   };
 }
 
+// `codigoRede` (opcional): quando a loja nao tem compra em nome proprio (compra pelo CD da rede
+// ou tem outro codigo no Lacteus), cai para a compra mais recente de qualquer loja da rede,
+// a mesma regra da planilha de vencimentos. A resposta diz a `origem` ("loja" | "rede").
 router.get("/ultima-compra", async (req, res) => {
-  const { clienteCodigo, produtoCodigo } = req.query || {};
+  const { clienteCodigo, produtoCodigo, codigoRede } = req.query || {};
   if (!clienteCodigo || !produtoCodigo) {
     return res.status(400).json({ error: "clienteCodigo e produtoCodigo sao obrigatorios" });
   }
   try {
-    const r0 = await buscarUltimaCompra(clienteCodigo, produtoCodigo);
+    let origem = "loja";
+    let r0 = await buscarUltimaCompra(clienteCodigo, produtoCodigo);
+    if (!r0 && codigoRede) {
+      r0 = await buscarUltimaCompraRede(codigoRede, produtoCodigo);
+      origem = "rede";
+    }
     if (!r0) return res.json({ encontrado: false });
     const [r] = await anexarDescontoContrato([r0]);
     return res.json({
       encontrado: true,
+      origem,
+      clienteCompraCodigo: r.clienteCodigo != null ? String(r.clienteCodigo).trim() : null,
       precoUltimaCompra: Number(r.precoUltimaCompra) || 0,
       dataUltimaCompra: r.dataUltimaCompra,
       subcategoria: r.subcategoria || null,
