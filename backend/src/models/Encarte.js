@@ -18,6 +18,10 @@ const encarteItemSchema = new mongoose.Schema(
     // Ultima compra gravada no momento da adicao do item
     precoUltimaCompra:  { type: Number, default: null },
     dataUltimaCompra:   { type: Date,   default: null },
+    // Desconto de contrato (A23/A24) ou de rede (A16) vigente na adicao; so informativo, nao entra nas margens
+    descontoContratoPercentual:   { type: Number, default: null }, // 0-100
+    descontoContratoTipo:         { type: String, default: null }, // "Contrato Produto" | "Contrato Categoria" | "Rede"
+    precoUltimaCompraComDesconto: { type: Number, default: null },
     // Precificacao do encarte
     precoOferta:        { type: Number, default: null },
     precoPDV:           { type: Number, default: null },

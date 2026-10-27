@@ -7,6 +7,7 @@ import { TONE, toneMargem } from "@/lib/tones";
 import { IcoX, IcoUsers, IcoAlert } from "@/components/Icons";
 import Dialog from "@/components/ui/Dialog";
 import Button from "@/components/ui/Button";
+import UltimaCompraComDesconto, { camposDesconto } from "@/components/UltimaCompraComDesconto";
 
 export function MargemBadge({ pct }) {
   if (pct == null) return <span className="text-base font-semibold text-neutral-300">—</span>;
@@ -47,6 +48,8 @@ export default function RebaixaModal({ item, onClose, onEnviado, tipo = "rebaixa
 
   const precoUC = ultimaCompra?.encontrado ? Number(ultimaCompra.precoUltimaCompra) : null;
   const dataUC  = ultimaCompra?.encontrado ? ultimaCompra.dataUltimaCompra : null;
+  // Desconto de contrato diluído: só informativo, não entra nas margens
+  const descUC  = ultimaCompra?.encontrado ? camposDesconto(ultimaCompra) : {};
 
   // Margem PDV = (PreçoPDV - ÚltimaCompra) / PreçoPDV
   const margemPDV = useMemo(() => {
@@ -105,6 +108,7 @@ export default function RebaixaModal({ item, onClose, onEnviado, tipo = "rebaixa
           sellout: sellout ? Number(sellout) : 0,
           precoUltimaCompra: precoUC ?? undefined,
           dataUltimaCompra: dataUC ?? undefined,
+          ...descUC,
           margemPDV:    margemPDV    != null ? Math.round(margemPDV    * 10) / 10 : undefined,
           margemOferta: margemOferta != null ? Math.round(margemOferta * 10) / 10 : undefined,
           estoqueRefId: item._id,
@@ -178,6 +182,18 @@ export default function RebaixaModal({ item, onClose, onEnviado, tipo = "rebaixa
               )}
             </div>
           </div>
+
+          {/* Última compra com desconto de contrato diluído (informativo) */}
+          {precoUC != null && descUC.descontoContratoPercentual != null && (
+            <div className="-mt-2 mb-3 rounded-xl border border-secondary/15 bg-secondary/5 px-3 py-1.5">
+              <UltimaCompraComDesconto
+                align="center"
+                preco={descUC.precoUltimaCompraComDesconto}
+                percentual={descUC.descontoContratoPercentual}
+                tipo={descUC.descontoContratoTipo}
+              />
+            </div>
+          )}
 
           {!loadingUC && precoUC == null && (
             <div className="mb-3 rounded-xl bg-warning/10 border border-warning/30 p-2.5 text-[11px] text-warning flex items-start gap-2">

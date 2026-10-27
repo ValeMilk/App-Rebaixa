@@ -349,6 +349,7 @@ async function buscarUltimaCompraRedeBatch(codigoRede, produtosCodigos) {
 WITH UltimaCompra AS (
     SELECT
         e02.E02_LIVRE        AS produtoCodigo,
+        m00.M00_ID_A00       AS clienteCodigo,
         m01.M01_PRECOU       AS precoUltimaCompra,
         m00.M00_ENTSAI       AS dataUltimaCompra,
         ROW_NUMBER() OVER (
@@ -367,6 +368,7 @@ WITH UltimaCompra AS (
 )
 SELECT
     produtoCodigo,
+    clienteCodigo,
     precoUltimaCompra,
     dataUltimaCompra
 FROM UltimaCompra
@@ -374,18 +376,143 @@ WHERE rn = 1;
 `;
 
   const result = await req.query(query);
-  
-  // Transforma array em objeto { produtoCodigo: { preco, data } }
+
+  // Transforma array em objeto { produtoCodigo: { preco, data, clienteCodigo } }
   const map = {};
   result.recordset.forEach(r => {
     // E02_LIVRE e CHAR de tamanho fixo: apara os espacos para casar com o codigoLivre (ja aparado) do cadastro
     map[String(r.produtoCodigo).trim()] = {
       preco: Number(r.precoUltimaCompra) || 0,
-      data: r.dataUltimaCompra
+      data: r.dataUltimaCompra,
+      // loja da rede que fez a compra mais recente (usado para resolver o desconto de contrato)
+      clienteCodigo: r.clienteCodigo != null ? String(r.clienteCodigo).trim() : null,
     };
   });
-  
+
   return map;
+}
+
+/* ------------------------------------------------------------------ */
+/* Desconto de contrato (A23/A24) e desconto de rede (A16)             */
+/* ------------------------------------------------------------------ */
+
+/**
+ * Desconto de contrato vigente para pares loja+produto, na regra do comercial:
+ *   1. A24 do contrato para o PRODUTO (A24_ID_E02)            -> "Contrato Produto"
+ *   2. A24 do contrato para a CATEGORIA E01 do produto        -> "Contrato Categoria"
+ *   3. A16_REM_DESC_VALOR da rede do cliente                  -> "Rede"
+ *   4. nada                                                   -> 0, tipo null
+ * Contrato (A23) vale quando e da rede do cliente OU do proprio cliente, esta ativo e
+ * a data de hoje cai no periodo. Quando mais de um contrato casa, vence: produto antes de
+ * categoria, contrato do cliente antes do da rede, maior percentual.
+ * Cliente sem rede (A00_ID_A16 = 0, caso das redes "S<n>") so casa contrato por cliente.
+ *
+ * @param {Array<{clienteCodigo, produtoCodigo}>} pares  produtoCodigo = E02_LIVRE
+ * @returns {Map<string, {percentual:number, tipo:string|null}>} chave "cliente|produto", percentual 0-100
+ */
+async function buscarDescontosContrato(pares) {
+  const resultado = new Map();
+  if (!erpConfigurado() || !Array.isArray(pares) || !pares.length) return resultado;
+  const { getPool } = require("./erpDbService");
+  const sql = require("mssql");
+  const pool = await getPool();
+  const LOTE = 150;
+  for (let i = 0; i < pares.length; i += LOTE) {
+    const fatia = pares.slice(i, i + LOTE);
+    const clientes = [...new Set(fatia.map((p) => String(p.clienteCodigo).trim()))];
+    const produtos = [...new Set(fatia.map((p) => String(p.produtoCodigo).trim()))];
+    const req = pool.request();
+    clientes.forEach((c, k) => req.input(`c${k}`, sql.VarChar(50), c));
+    produtos.forEach((p, k) => req.input(`p${k}`, sql.VarChar(50), p));
+    const { recordset } = await req.query(`
+      WITH Base AS (
+        SELECT c.A00_ID AS clienteCodigo, p.E02_LIVRE AS produtoCodigo, p.E02_ID, p.E02_ID_E01 AS categoriaId,
+               c.A00_ID_A16 AS redeId, ISNULL(a16.A16_REM_DESC_VALOR, 0) AS descRede
+        FROM dbo.A00 c WITH (NOLOCK)
+        LEFT JOIN dbo.A16 a16 WITH (NOLOCK) ON c.A00_ID_A16 = a16.A16_ID
+        CROSS JOIN dbo.E02 p WITH (NOLOCK)
+        WHERE c.A00_ID IN (${clientes.map((_, k) => `@c${k}`).join(",")})
+          AND p.E02_LIVRE IN (${produtos.map((_, k) => `@p${k}`).join(",")})
+          AND p.E02_TIPO = '04'
+          AND (p.E02_DESC IS NULL OR p.E02_DESC NOT LIKE '%(INATIVO)%')
+      ),
+      Contratos AS (
+        SELECT b.clienteCodigo, b.produtoCodigo, a24.A24_DESC_PERC AS perc,
+               CASE WHEN a24.A24_ID_E02 = b.E02_ID THEN 1 ELSE 2 END AS prioridade,
+               CASE WHEN a23.A23_ID_CLIENTE = b.clienteCodigo THEN 0 ELSE 1 END AS origem
+        FROM Base b
+        INNER JOIN dbo.A23 a23 WITH (NOLOCK)
+           ON ((b.redeId > 0 AND a23.A23_ID_A16 = b.redeId) OR a23.A23_ID_CLIENTE = b.clienteCodigo)
+          AND (a23.A23_ATIVO = 1 OR a23.A23_ATIVO IS NULL)
+          AND CAST(GETDATE() AS DATE) BETWEEN a23.A23_DT_INICIO AND ISNULL(a23.A23_DT_FIM, CAST(GETDATE() AS DATE))
+        INNER JOIN dbo.A24 a24 WITH (NOLOCK)
+           ON a24.A24_ID_A23 = a23.A23_ID
+          AND a24.A24_DESC_PERC > 0
+          AND ( (a24.A24_ID_E02 = b.E02_ID AND a24.A24_ID_E02 > 0)
+             OR ((a24.A24_ID_E02 IS NULL OR a24.A24_ID_E02 = 0) AND a24.A24_ID_E01 = b.categoriaId) )
+      ),
+      Ranqueado AS (
+        SELECT clienteCodigo, produtoCodigo, perc, prioridade,
+               ROW_NUMBER() OVER (PARTITION BY clienteCodigo, produtoCodigo ORDER BY prioridade, origem, perc DESC) AS rn
+        FROM Contratos
+      )
+      SELECT b.clienteCodigo, b.produtoCodigo,
+             CASE WHEN r.perc > 0 THEN r.perc WHEN b.descRede > 0 THEN b.descRede ELSE 0 END AS percentual,
+             CASE WHEN r.perc > 0 AND r.prioridade = 1 THEN 'Contrato Produto'
+                  WHEN r.perc > 0 THEN 'Contrato Categoria'
+                  WHEN b.descRede > 0 THEN 'Rede'
+                  ELSE NULL END AS tipo
+      FROM Base b
+      LEFT JOIN Ranqueado r
+        ON r.clienteCodigo = b.clienteCodigo AND r.produtoCodigo = b.produtoCodigo AND r.rn = 1
+    `);
+    for (const r of recordset) {
+      const chave = `${String(r.clienteCodigo).trim()}|${String(r.produtoCodigo).trim()}`;
+      const percentual = Number(r.percentual) || 0;
+      const atual = resultado.get(chave);
+      // E02_LIVRE pode repetir entre cadastros: fica o maior percentual
+      if (!atual || percentual > atual.percentual) {
+        resultado.set(chave, { percentual, tipo: percentual > 0 ? r.tipo || null : null });
+      }
+    }
+  }
+  return resultado;
+}
+
+/**
+ * Anexa a cada linha de ultima compra o desconto de contrato e o preco com o desconto diluido:
+ *   precoUltimaCompraComDesconto = precoUltimaCompra * (1 - percentual/100)
+ * Falha na consulta de desconto nunca derruba a ultima compra: os campos saem null.
+ * As margens do app NAO usam este preco; ele e so informativo.
+ *
+ * @param {Array<object|null>} linhas  [{ clienteCodigo, produtoCodigo, precoUltimaCompra, ... }]
+ */
+async function anexarDescontoContrato(linhas) {
+  const validas = linhas.filter((l) => l && l.clienteCodigo != null && l.produtoCodigo != null);
+  let descontos = new Map();
+  if (validas.length) {
+    try {
+      descontos = await buscarDescontosContrato(validas);
+    } catch (err) {
+      console.error("[anexarDescontoContrato]", err.message);
+    }
+  }
+  return linhas.map((l) => {
+    if (!l) return l;
+    const chave = `${String(l.clienteCodigo).trim()}|${String(l.produtoCodigo).trim()}`;
+    const d = descontos.get(chave);
+    if (!d) {
+      return { ...l, descontoContratoPercentual: null, descontoContratoTipo: null, precoUltimaCompraComDesconto: null };
+    }
+    const pct = Number(d.percentual) || 0;
+    const preco = Number(l.precoUltimaCompra) || 0;
+    return {
+      ...l,
+      descontoContratoPercentual: pct,
+      descontoContratoTipo: pct > 0 ? d.tipo : null,
+      precoUltimaCompraComDesconto: Math.round(preco * (1 - pct / 100) * 10000) / 10000,
+    };
+  });
 }
 
 module.exports = {
@@ -399,5 +526,7 @@ module.exports = {
   buscarUltimaCompra,
   buscarUltimaCompraRede,
   buscarUltimaCompraRedeBatch,
+  buscarDescontosContrato,
+  anexarDescontoContrato,
 };
 

@@ -13,6 +13,7 @@ import { rankStatus, SEGMENTO } from "@/lib/estoque";
 import { IcoSearch, IcoX, IcoChevronDown, IcoStore, IcoAlert, IcoClock, IcoPackage, IcoTrendDown, IcoTag, IcoUsers } from "@/components/Icons";
 import RebaixaModal, { MargemBadge } from "@/components/RebaixaModal";
 import AcaoAtivaBadge from "@/components/AcaoAtivaBadge";
+import UltimaCompraComDesconto, { camposDesconto } from "@/components/UltimaCompraComDesconto";
 
 
 function Badge({ cls }) {
@@ -42,18 +43,21 @@ function RedeRebaixaModal({ redeSubrede, codigoRede, produto, onClose, onEnviado
   useEffect(() => {
     let cancelado = false;
     setLoadingUC(true);
+    // A rota filtra pelo codigo da rede direto no ERP (compra mais recente de qualquer loja da rede)
     api.post("/erp/ultima-compra-rede", {
-      clientesCodigos: produto.lojas.map((l) => l.clienteCodigo),
+      codigoRede,
       produtoCodigo: produto.produtoCodigo,
     })
       .then(({ data }) => { if (!cancelado) setUltimaCompra(data); })
       .catch(() => { if (!cancelado) setUltimaCompra({ encontrado: false }); })
       .finally(() => { if (!cancelado) setLoadingUC(false); });
     return () => { cancelado = true; };
-  }, [produto.produtoCodigo]);
+  }, [codigoRede, produto.produtoCodigo]);
 
   const precoUC = ultimaCompra?.encontrado ? Number(ultimaCompra.precoUltimaCompra) : null;
   const dataUC  = ultimaCompra?.encontrado ? ultimaCompra.dataUltimaCompra : null;
+  // Desconto de contrato diluido da loja que fez a compra mais recente: so informativo, nao entra nas margens
+  const descUC  = ultimaCompra?.encontrado ? camposDesconto(ultimaCompra) : {};
 
   const margemPDV = useMemo(() => {
     const p = Number(precoPDV);
@@ -111,6 +115,7 @@ function RedeRebaixaModal({ redeSubrede, codigoRede, produto, onClose, onEnviado
               sellout: sellout ? Number(sellout) : 0,
               precoUltimaCompra: precoUC ?? undefined,
               dataUltimaCompra: dataUC ?? undefined,
+              ...descUC,
               margemPDV:    margemPDV    != null ? Math.round(margemPDV    * 10) / 10 : undefined,
               margemOferta: margemOferta != null ? Math.round(margemOferta * 10) / 10 : undefined,
               estoqueRefId: loja.estoqueRefId,
@@ -195,6 +200,18 @@ function RedeRebaixaModal({ redeSubrede, codigoRede, produto, onClose, onEnviado
               )}
             </div>
           </div>
+
+          {/* Última compra com desconto de contrato diluído (informativo) */}
+          {precoUC != null && descUC.descontoContratoPercentual != null && (
+            <div className="-mt-2 mb-3 rounded-xl border border-secondary/15 bg-secondary/5 px-3 py-1.5">
+              <UltimaCompraComDesconto
+                align="center"
+                preco={descUC.precoUltimaCompraComDesconto}
+                percentual={descUC.descontoContratoPercentual}
+                tipo={descUC.descontoContratoTipo}
+              />
+            </div>
+          )}
 
           {!loadingUC && precoUC == null && (
             <div className="mb-3 rounded-xl bg-warning/10 border border-warning/30 p-2.5 text-[11px] text-warning flex items-start gap-2">

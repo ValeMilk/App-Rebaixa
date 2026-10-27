@@ -9,6 +9,7 @@ import { IcoX, IcoAlert, IcoStore } from "@/components/Icons";
 import Dialog from "@/components/ui/Dialog";
 import Button from "@/components/ui/Button";
 import Badge from "@/components/ui/Badge";
+import UltimaCompraComDesconto, { camposDesconto } from "@/components/UltimaCompraComDesconto";
 
 // Tipo de solicitacao sugerido pelo status de shelf do item (giro -> oferta interna)
 const tipoDe = (it) => STATUS_SHELF_MAP[it.status]?.acao || "rebaixa";
@@ -84,7 +85,9 @@ export default function RebaixaLoteModal({ itens, onClose, onEnviado }) {
     const uc = ultimaCompra[it._id];
     const precoUC = uc?.encontrado ? Number(uc.precoUltimaCompra) : null;
     const dataUC = uc?.encontrado ? uc.dataUltimaCompra : null;
-    return { c, precoUC, dataUC, ...calcMargens({ ...c, precoUC }) };
+    // Desconto de contrato diluido: so informativo, nao entra nas margens
+    const descUC = uc?.encontrado ? camposDesconto(uc) : {};
+    return { c, precoUC, dataUC, descUC, ...calcMargens({ ...c, precoUC }) };
   }
 
   async function handleSubmit(e) {
@@ -126,6 +129,7 @@ export default function RebaixaLoteModal({ itens, onClose, onEnviado }) {
               sellout: d.c.sellout ? Number(d.c.sellout) : 0,
               precoUltimaCompra: d.precoUC ?? undefined,
               dataUltimaCompra: d.dataUC ?? undefined,
+              ...d.descUC,
               margemPDV: d.margemPDV != null ? Math.round(d.margemPDV * 10) / 10 : undefined,
               margemOferta: d.margemOferta != null ? Math.round(d.margemOferta * 10) / 10 : undefined,
               estoqueRefId: it._id,
@@ -234,6 +238,13 @@ export default function RebaixaLoteModal({ itens, onClose, onEnviado }) {
                               <>
                                 <div className="font-bold text-secondary">{fmtBRL(d.precoUC)}</div>
                                 <div className="text-neutral-400">{fmtData(d.dataUC)}</div>
+                                <UltimaCompraComDesconto
+                                  align="right"
+                                  className="mt-0.5"
+                                  preco={d.descUC.precoUltimaCompraComDesconto}
+                                  percentual={d.descUC.descontoContratoPercentual}
+                                  tipo={d.descUC.descontoContratoTipo}
+                                />
                               </>
                             ) : (
                               <div className="text-neutral-400">Sem histórico</div>

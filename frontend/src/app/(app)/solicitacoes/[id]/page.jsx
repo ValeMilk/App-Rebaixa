@@ -177,10 +177,12 @@ export default function DetalheSolicitacao() {
                 valor={i.sellout != null ? Number(i.sellout).toLocaleString("pt-BR") : "—"}
                 sub="unidades"
               />
-              {i.descontoPercentual != null && (
+              {/* Última compra com o desconto de contrato diluído (informativo; as margens usam a última compra normal) */}
+              {i.descontoContratoPercentual > 0 && (
                 <CampoValor
-                  label="Desconto"
-                  valor={fmtPct(i.descontoPercentual)}
+                  label="Últ. compra c/ desconto"
+                  valor={fmtBRL(i.precoUltimaCompraComDesconto)}
+                  sub={`−${fmtPct(i.descontoContratoPercentual)}${i.descontoContratoTipo ? ` · ${i.descontoContratoTipo}` : ""}`}
                 />
               )}
             </div>

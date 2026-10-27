@@ -13,6 +13,10 @@ const itemSchema = new mongoose.Schema(
     margemCalculada: { type: Number },
     precoUltimaCompra: { type: Number },
     dataUltimaCompra: { type: Date },
+    // Desconto de contrato (A23/A24) ou de rede (A16) vigente na criacao; so informativo
+    descontoContratoPercentual: { type: Number, default: null }, // 0-100
+    descontoContratoTipo: { type: String, default: null },       // "Contrato Produto" | "Contrato Categoria" | "Rede"
+    precoUltimaCompraComDesconto: { type: Number, default: null },
     precoPDV: { type: Number },
     margemPDV: { type: Number },
     margemOferta: { type: Number },

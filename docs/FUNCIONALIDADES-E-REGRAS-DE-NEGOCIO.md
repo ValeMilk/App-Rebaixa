@@ -1,6 +1,6 @@
 # InfoVale (Rebaixa Valemilk) — Fluxos e regras de negócio
 
-Documento funcional do sistema, escrito para a equipe comercial, supervisores, diretoria, administradores e para quem cuida do produto. Descreve **como o sistema funciona hoje** (levantado em 29/09/2026 e atualizado em 26/10/2026): quem faz o quê, em que ordem, e quais regras o sistema aplica em cada passo. Não trata de aspectos técnicos de construção do sistema.
+Documento funcional do sistema, escrito para a equipe comercial, supervisores, diretoria, administradores e para quem cuida do produto. Descreve **como o sistema funciona hoje** (levantado em 29/09/2026 e atualizado em 27/10/2026): quem faz o quê, em que ordem, e quais regras o sistema aplica em cada passo. Não trata de aspectos técnicos de construção do sistema.
 
 **Quem está chegando agora deve começar pela seção 0**, que resume o produto, as regras que mais surpreendem, os números e limites e o mapa de telas. O restante é a referência completa, e a seção 13 lista os comportamentos que provavelmente precisam de decisão do negócio.
 
@@ -258,6 +258,7 @@ Margem oferta  = (Preço da oferta − Custo promo) ÷ Preço da oferta
 - As margens aparecem coloridas: **verde a partir de 20%**, **amarelo de 10% a 20%**, **vermelho abaixo de 10%**.
 - O sistema **sugere um sellout** que mantenha, na oferta, a mesma margem que a loja tem no PDV. A sugestão pode ser aplicada com um clique.
 - Se a loja **nunca comprou** o produto, as margens ficam em branco e o formulário avisa; a solicitação pode ser enviada mesmo assim.
+- **Última compra com desconto de contrato diluído** (desde 27/10/2026): abaixo da última compra, o formulário mostra o mesmo preço já com o desconto de contrato da loja abatido (`última compra × (1 − desconto%)`), o percentual e de onde ele vem. O desconto é o **vigente hoje** no Lacteus, nesta ordem: contrato (A23/A24) com desconto para o **produto**; senão, contrato com desconto para a **categoria** do produto; senão, o **desconto da rede** (cadastro da rede). Valem os contratos da rede da loja e os da própria loja; quando mais de um se aplica, prevalece o do produto sobre o da categoria, o da loja sobre o da rede e, por fim, o maior percentual. **Esse preço é só informativo: as margens e o sellout sugerido continuam calculados pela última compra normal.** O valor fica gravado na solicitação e aparece no detalhe dela. Loja sem desconto mostra "sem desconto de contrato".
 
 ### 5.3 Tipo da ação
 
@@ -281,7 +282,7 @@ Na tela **Lojas**, um produto que aparece no card de uma rede pode receber uma a
 3. Ao confirmar, o sistema cria **uma solicitação por loja da rede**, todas com o mesmo tipo, preços, margens, motivo e período; a quantidade e a validade são as de cada loja.
 4. Cada solicitação segue o fluxo de aprovação normal.
 
-Hoje a última compra da rede não é encontrada nesse formulário (ver item 13.2), então as margens ficam em branco.
+A última compra mostrada é a compra mais recente do produto por qualquer loja da rede, e o desconto de contrato diluído (ver 5.2) é o da loja que fez essa compra; todas as solicitações criadas levam o mesmo valor. (Até 27/10/2026 esse formulário nunca encontrava a última compra, ver item 13.2.)
 
 ---
 
@@ -367,13 +368,13 @@ Não há impedimento para períodos sobrepostos na mesma rede.
 No detalhe do encarte, **+ Adicionar Produto** abre o fluxo de precificação por subcategoria:
 
 1. Escolhe a **categoria** (opcional) e a **subcategoria** (obrigatória). O sistema lista os produtos ativos da subcategoria, todos já marcados; o usuário desmarca os que não entram.
-2. Para cada produto, o sistema mostra o preço de **Tabela (70)**, o **Mínimo**, o **Promo** e a **última compra da rede** (a compra mais recente daquele produto por qualquer loja da rede). No topo aparecem as **médias** dos produtos selecionados.
+2. Para cada produto, o sistema mostra o preço de **Tabela (70)**, o **Mínimo**, o **Promo** e a **última compra da rede** (a compra mais recente daquele produto por qualquer loja da rede), acompanhada da **última compra com o desconto de contrato diluído** da loja que fez essa compra (mesma regra da seção 5.2; só informativa, não entra nas margens). No topo aparecem as **médias** dos produtos selecionados, inclusive a média com desconto quando algum produto tem contrato.
 3. O usuário define **um preço único para a subcategoria**: Preço PDV, Preço de oferta e Sellout. O sistema mostra as margens em tempo real, com as mesmas fórmulas do Fluxo 1, usando a última compra média.
 4. Ajudas de precificação:
    - **Sugerir sellout**: calcula o desconto proporcional à diferença entre PDV e oferta (`última compra × (PDV − oferta) ÷ PDV`).
    - **Partir da margem**: clicando na margem, o usuário digita a margem desejada e o sistema calcula o preço correspondente (PDV a partir da margem PDV; oferta a partir da margem de oferta).
 5. Regras: PDV e oferta são obrigatórios; a **margem da oferta não pode ser maior que a margem PDV**.
-6. Ao salvar, cada produto entra no encarte com as margens calculadas **com a sua própria última compra** (não com a média). Produtos sem última compra ficam com margens em branco.
+6. Ao salvar, cada produto entra no encarte com as margens calculadas **com a sua própria última compra** (não com a média). Produtos sem última compra ficam com margens em branco. O desconto de contrato e o preço com desconto são gravados no item e aparecem no detalhe do encarte e na edição do produto.
 
 Cada produto pode depois ser **editado individualmente** (PDV, oferta, sellout; mesmas regras) ou **removido**. O nome, o período e a subrede do encarte também podem ser alterados; o encarte pode ser excluído (com confirmação).
 
@@ -694,6 +695,8 @@ Na mesma tela o administrador **renomeia** (nome e mês), **adiciona PDFs** e **
 | **Rede / Subrede** | Grupo de lojas de um cliente e a bandeira ou loja específica dentro dele. Exibido como "REDE — SUBREDE". |
 | **Responsável de rede** | Supervisor designado pelo administrador para responder por uma rede; prevalece sobre a carteira. |
 | **Última compra** | Preço e data da venda mais recente de um produto para uma loja (ou para qualquer loja da rede). |
+| **Última compra com desconto diluído** | A última compra com o desconto de contrato vigente abatido (produto, categoria ou rede, nessa ordem). Só informativa: não entra nas margens. |
+| **Desconto de contrato** | Percentual negociado no Lacteus (contrato A23/A24 da loja ou da rede, ou desconto da rede) pago à parte da nota. |
 | **PDV** | Preço de venda ao consumidor praticado pela loja. |
 | **Sellout** | Desconto em R$ que a Valemilk concede sobre a última compra para viabilizar a oferta. |
 | **Custo promo** | Última compra menos o sellout: o custo efetivo do produto para a loja durante a ação. |
@@ -712,7 +715,7 @@ Na mesma tela o administrador **renomeia** (nome e mês), **adiciona PDFs** e **
 Situações em que o sistema se comporta de um jeito que provavelmente não é o desejado. Cabe ao negócio decidir se são erros a corrigir ou regras a manter.
 
 1. **O supervisor não aprova por padrão, e hoje só o administrador decide.** O fluxo prevê a primeira aprovação pelo supervisor, mas o perfil Supervisor não tem, por padrão, nem a tela Solicitações nem a permissão de aprovar; só diretoria e administrador aprovam ou rejeitam, e toda solicitação de vendedor depende da diretoria. Para ativar a etapa do supervisor, basta marcar as duas permissões para o perfil na tela Permissões (seção 11.5). Além disso, a decisão é tomada **dentro da tela Solicitações**, e a Diretoria não tem essa tela por padrão (tem só a permissão de aprovar): enquanto ela não for liberada, a diretoria não tem onde decidir e a fila fica com o administrador.
-2. **Ação por rede fica sem margens.** Ao solicitar para todas as lojas de uma rede, a última compra nunca é encontrada (o formulário da tela Lojas envia a lista de lojas em vez do código da rede, e a consulta recusa o pedido); as solicitações são criadas com PDV e oferta, mas sem margem calculada.
+2. **Ação por rede fica sem margens** — **resolvido em 27/10/2026.** Ao solicitar para todas as lojas de uma rede, a última compra nunca era encontrada (o formulário da tela Lojas enviava a lista de lojas em vez do código da rede, e a consulta recusava o pedido). O formulário passou a consultar pela rede; as solicitações saem com última compra, margens e desconto de contrato.
 3. **Na tela Lojas toda ação nasce como rebaixa**, mesmo para produtos em giro, que deveriam gerar oferta interna (como acontece no Painel de Vencimentos).
 4. **Métricas Redes diz "últimos 30 dias", mas calcula o mês atual** (do dia 1 ao último dia). E a cobertura mede os dias com ação que estão negociados, não os dias do mês cobertos por ações.
 5. **A diretoria não cria encartes por padrão.** O botão "+ Nova Ação" só aparece para quem tem a permissão "Criar nova ação" (por padrão, supervisor e administrador); pode ser liberado à diretoria na tela Permissões.

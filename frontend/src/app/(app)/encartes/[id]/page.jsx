@@ -8,6 +8,7 @@ import { useEffect, useState, useCallback, useMemo } from "react";
 import { useRouter, useParams } from "next/navigation";
 import api from "@/lib/api";
 import { fmtData } from "@/lib/utils";
+import UltimaCompraComDesconto, { camposDesconto } from "@/components/UltimaCompraComDesconto";
 import {
   IcoChevronRight,
   IcoX,
@@ -209,6 +210,7 @@ function AdicionarProdutoModal({ encarteId, codigoRede, onClose, onAdicionado })
     let minSum = 0, minN = 0;
     let promoSum = 0, promoN = 0;
     let ucSum  = 0, ucN  = 0;
+    let ucDescSum = 0, ucDescN = 0; // media da ultima compra com desconto de contrato (so informativa)
     let ucMaisRecente = null;
     for (const p of produtosSelecionados) {
       const cod = p.codigoLivre || p.codigo;
@@ -218,16 +220,21 @@ function AdicionarProdutoModal({ encarteId, codigoRede, onClose, onAdicionado })
       const uc = ultimasCompras[cod];
       if (uc?.preco != null) {
         ucSum += Number(uc.preco); ucN++;
+        if (uc.precoUltimaCompraComDesconto != null) { ucDescSum += Number(uc.precoUltimaCompraComDesconto); ucDescN++; }
         if (uc.data && (!ucMaisRecente || new Date(uc.data) > new Date(ucMaisRecente))) {
           ucMaisRecente = uc.data;
         }
       }
     }
+    const mediaUC     = ucN     ? ucSum     / ucN     : null;
+    const mediaUCDesc = ucDescN ? ucDescSum / ucDescN : null;
     return {
       mediaTabela:    tabN   ? tabSum   / tabN   : null,
       mediaMinimo:    minN   ? minSum   / minN   : null,
       mediaPrecoPromo: promoN ? promoSum / promoN : null,
-      mediaUC:        ucN    ? ucSum    / ucN    : null,
+      mediaUC,
+      // so mostra quando algum produto tem desconto (media menor que a normal)
+      mediaUCDesc: mediaUCDesc != null && mediaUC != null && mediaUCDesc < mediaUC - 0.0001 ? mediaUCDesc : null,
       ucCarregados: ucN,
       ucMaisRecente,
     };
@@ -316,10 +323,11 @@ function AdicionarProdutoModal({ encarteId, codigoRede, onClose, onAdicionado })
         // Reutiliza UC já buscada em background
         let precoUC = ultimasCompras[cod]?.preco ?? null;
         let dataUC  = ultimasCompras[cod]?.data  ?? null;
+        let descUC  = precoUC != null ? camposDesconto(ultimasCompras[cod]) : {};
         if (precoUC == null) {
           try {
             const { data: uc } = await api.post("/erp/ultima-compra-rede", { produtoCodigo: cod, codigoRede });
-            if (uc?.encontrado) { precoUC = Number(uc.precoUltimaCompra); dataUC = uc.dataUltimaCompra; }
+            if (uc?.encontrado) { precoUC = Number(uc.precoUltimaCompra); dataUC = uc.dataUltimaCompra; descUC = camposDesconto(uc); }
           } catch { /* segue sem UC */ }
         }
 
@@ -337,6 +345,7 @@ function AdicionarProdutoModal({ encarteId, codigoRede, onClose, onAdicionado })
           custo:             p.custo,
           precoUltimaCompra: precoUC,
           dataUltimaCompra:  dataUC,
+          ...descUC,
           precoOferta:       ofertaNum,
           precoPDV:          pdvNum,
           sellout:           selloutNum,
@@ -408,6 +417,9 @@ function AdicionarProdutoModal({ encarteId, codigoRede, onClose, onAdicionado })
                         {stats.ucMaisRecente && (
                           <div className="text-[9px] text-neutral-400 mt-0.5">{new Date(stats.ucMaisRecente).toLocaleDateString('pt-BR')}</div>
                         )}
+                        {stats.mediaUCDesc != null && (
+                          <div className="text-[9px] text-neutral-500 mt-0.5">c/ desc. contrato <b className="text-secondary">{fmtBRL(stats.mediaUCDesc)}</b></div>
+                        )}
                       </>
                     : ucBuscado ? <div className="text-neutral-300 text-xs">sem compra</div> : <div className="text-neutral-300 text-xs">buscando...</div>
                   }
@@ -448,6 +460,9 @@ function AdicionarProdutoModal({ encarteId, codigoRede, onClose, onAdicionado })
                 </div>
                 {stats.mediaUC != null && stats.ucMaisRecente && (
                   <div className="text-[10px] text-neutral-400 text-right mt-0.5">{new Date(stats.ucMaisRecente).toLocaleDateString('pt-BR')}</div>
+                )}
+                {stats.mediaUCDesc != null && (
+                  <div className="text-[10px] text-neutral-500 text-right mt-0.5">c/ desc. contrato <b className="text-secondary">{fmtBRL(stats.mediaUCDesc)}</b></div>
                 )}
               </div>
             </div>
@@ -606,6 +621,14 @@ function AdicionarProdutoModal({ encarteId, codigoRede, onClose, onAdicionado })
                               : ucBuscado ? <span className="text-neutral-300 text-[10px]">sem compra</span> : <span className="text-neutral-300 text-[10px]">buscando...</span>
                             }
                           </div>
+                          {uc && (
+                            <UltimaCompraComDesconto
+                              align="right"
+                              preco={uc.precoUltimaCompraComDesconto}
+                              percentual={uc.descontoContratoPercentual}
+                              tipo={uc.descontoContratoTipo}
+                            />
+                          )}
                         </div>
                       </div>
                     </button>
@@ -1043,6 +1066,14 @@ function EditarPrecificacaoModal({ item, encarteId, onClose, onAtualizado }) {
           <div className="bg-info/10 rounded-xl p-3 border border-info/30">
             <div className="text-xs text-info font-semibold uppercase tracking-wide mb-1">Última Compra (Custo)</div>
             <div className="text-2xl font-bold text-info">{fmtBRL(item.precoUltimaCompra)}</div>
+            {/* Desconto de contrato diluído gravado na adição do item (informativo; margens usam o custo acima) */}
+            <UltimaCompraComDesconto
+              align="left"
+              className="mt-1"
+              preco={item.precoUltimaCompraComDesconto}
+              percentual={item.descontoContratoPercentual}
+              tipo={item.descontoContratoTipo}
+            />
           </div>
 
           {/* Preço PDV */}
@@ -1389,6 +1420,12 @@ export default function EncarteDetalhe() {
                               {it.dataUltimaCompra && (
                                 <div className="text-[10px] text-neutral-400 tabular-nums">{fmtData(it.dataUltimaCompra)}</div>
                               )}
+                              <UltimaCompraComDesconto
+                                align="right"
+                                preco={it.precoUltimaCompraComDesconto}
+                                percentual={it.descontoContratoPercentual}
+                                tipo={it.descontoContratoTipo}
+                              />
                             </div>
                           </div>
 
