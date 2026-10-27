@@ -3,6 +3,7 @@ const {
   criar,
   listar,
   obter,
+  foto,
   decidir,
   cancelar,
   listarAtivas,
@@ -17,6 +18,7 @@ router.get("/", listar);
 router.get("/ativas", listarAtivas);
 router.post("/", requirePermission("solicitacoes.criar"), criar);
 router.get("/:id", obter);
+router.get("/:id/foto", foto);
 router.post("/:id/decidir", requirePermission("solicitacoes.decidir"), decidir);
 router.post("/:id/cancelar", cancelar);
 

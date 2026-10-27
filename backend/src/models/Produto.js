@@ -15,8 +15,10 @@ const produtoSchema = new mongoose.Schema(
 
     // Tabela de precos do ERP
     precoTabela:  { type: Number, default: 0 },  // E02_PRECO  (TABELA_70)
-    precoMinimo:  { type: Number, default: 0 },  // E02_PRECO_02 (MINIMO)
-    precoPromo:   { type: Number, default: 0 },  // E02_PRECO_03 (PROMO)
+    precoMinimo:  { type: Number, default: 0 },  // E02_PRECO_MIN (preco minimo do item)
+    precoP2:      { type: Number, default: 0 },  // E02_PRECO_02 (P#2: preco de oferta interna)
+    precoP3:      { type: Number, default: 0 },  // E02_PRECO_03 (P#3: preco de rebaixa)
+    precoPromo:   { type: Number, default: 0 },  // = precoP3 (nome antigo, mantido para as telas de encarte)
     custo:        { type: Number, default: 0 },  // E02_CUSTO_LIVRE
     shelf:        { type: Number, default: 0 },  // e02_validade (shelf life em dias; 0 = nao informado)
     diasGiro:     { type: Number, default: 0 },  // 45% do shelf, em dias CONSUMIDOS: a partir daqui entra em giro (oferta interna)

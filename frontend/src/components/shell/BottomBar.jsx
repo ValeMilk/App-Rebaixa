@@ -5,7 +5,11 @@ import clsx from "clsx";
 import { IcoMenu } from "@/components/Icons";
 
 // Barra inferior do celular: ate 3 destinos + "Menu" (abre a sidebar como painel lateral).
-export default function BottomBar({ itens, ativo, onMenu }) {
+// `badges`: { [href]: numero } mostra um contador no icone; `badgeMenu` no botao Menu (itens fora da barra).
+export default function BottomBar({ itens, ativo, badges = {}, badgeMenu = 0, onMenu }) {
+  const bolinha = (n) => (n > 0 ? (
+    <span className="absolute -right-2 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-danger px-1 text-[10px] font-semibold leading-none text-white" aria-label={`${n} novas`}>{n > 99 ? "99+" : n}</span>
+  ) : null);
   return (
     <nav
       aria-label="Navegação principal"
@@ -26,7 +30,7 @@ export default function BottomBar({ itens, ativo, onMenu }) {
                 active ? "bg-secondary/10 text-secondary" : "text-neutral-500"
               )}
             >
-              <Icon className="h-6 w-6" aria-hidden />
+              <span className="relative"><Icon className="h-6 w-6" aria-hidden />{bolinha(badges[href])}</span>
               {short || label}
             </span>
           </Link>
@@ -39,7 +43,7 @@ export default function BottomBar({ itens, ativo, onMenu }) {
         aria-label="Abrir menu completo"
       >
         <span className="flex flex-col items-center gap-1 rounded-2xl px-2 py-1 text-[11px] font-medium text-neutral-500">
-          <IcoMenu className="h-6 w-6" aria-hidden />
+          <span className="relative"><IcoMenu className="h-6 w-6" aria-hidden />{bolinha(badgeMenu)}</span>
           Menu
         </span>
       </button>

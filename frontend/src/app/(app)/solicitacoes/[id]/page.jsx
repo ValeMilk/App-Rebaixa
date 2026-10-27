@@ -18,6 +18,9 @@ const STATUS_LABEL = {
   cancelado:           { l: "Cancelado",      tone: "neutral" },
 };
 
+const ORIGEM_OFERTA = { rede: "Preço da rede", item: "Preço do item", vendedor: "Sugerido pelo vendedor" };
+const ORIGEM_SELLOUT = { automatico: "automático (margem da rede)", sugerido_pdv: "sugerido (margem do PDV)", manual: "informado" };
+
 function fmtBRL(v) {
   if (v == null || isNaN(v)) return "—";
   return Number(v).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
@@ -30,6 +33,11 @@ function corMargem(m) {
   const t = TONE[toneMargem(m)];
   return `${t.bg} ${t.text}`;
 }
+function paraInputData(d) {
+  if (!d) return "";
+  const x = new Date(d);
+  return isNaN(x) ? "" : x.toISOString().slice(0, 10);
+}
 
 function CampoValor({ label, valor, sub, destaque }) {
   return (
@@ -41,6 +49,26 @@ function CampoValor({ label, valor, sub, destaque }) {
   );
 }
 
+/** Foto da solicitacao: a rota exige o token, entao carrega como blob e mostra por object URL. */
+function FotoSolicitacao({ id }) {
+  const [url, setUrl] = useState(null);
+  const [erro, setErro] = useState(false);
+  useEffect(() => {
+    let objeto = null;
+    api.get(`/solicitacoes/${id}/foto`, { responseType: "blob" })
+      .then(({ data }) => { objeto = URL.createObjectURL(data); setUrl(objeto); })
+      .catch(() => setErro(true));
+    return () => { if (objeto) URL.revokeObjectURL(objeto); };
+  }, [id]);
+  if (erro) return <p className="text-xs text-neutral-500">Foto indisponível.</p>;
+  if (!url) return <p className="text-xs text-neutral-500">Carregando foto…</p>;
+  return (
+    <a href={url} target="_blank" rel="noreferrer" className="block">
+      <img src={url} alt="Foto da ação" className="max-h-72 rounded-xl border border-neutral-200 object-contain" />
+    </a>
+  );
+}
+
 export default function DetalheSolicitacao() {
   const { id } = useParams();
   const router = useRouter();
@@ -48,13 +76,24 @@ export default function DetalheSolicitacao() {
   const [s, setS] = useState(null);
   const [loading, setLoading] = useState(true);
   const [motivoDecisao, setMotivoDecisao] = useState("");
+  const [ajustar, setAjustar] = useState(false);
+  const [ajuste, setAjuste] = useState({ precoOferta: "", sellout: "", inicioAcao: "", fimAcao: "" });
   useTituloDaPagina(s ? `${s.tipo === "oferta_interna" ? "Oferta interna" : "Rebaixa"} · ${s.cliente}` : "Solicitação", s ? `Cód. ${s.clienteCodigo}` : undefined);
+
+  const veMargens = pode(user, "solicitacoes.ver_margens") && !s?.margensOcultas;
 
   async function carregar() {
     setLoading(true);
     try {
       const { data } = await api.get(`/solicitacoes/${id}`);
       setS(data.solicitacao);
+      const it = data.solicitacao?.itens?.[0] || {};
+      setAjuste({
+        precoOferta: it.precoOferta != null ? String(it.precoOferta) : "",
+        sellout: it.sellout != null ? String(it.sellout) : "",
+        inicioAcao: paraInputData(data.solicitacao?.inicioAcao),
+        fimAcao: paraInputData(data.solicitacao?.fimAcao),
+      });
     } finally {
       setLoading(false);
     }
@@ -65,7 +104,10 @@ export default function DetalheSolicitacao() {
   async function decidir(decisao) {
     if (!confirm(`Confirmar ${decisao}?`)) return;
     try {
-      await api.post(`/solicitacoes/${id}/decidir`, { decisao, motivoDecisao });
+      const body = { decisao, motivoDecisao };
+      if (decisao === "aprovado" && ajustar) body.ajustes = ajuste;
+      await api.post(`/solicitacoes/${id}/decidir`, body);
+      setAjustar(false);
       await carregar();
     } catch (err) {
       alert(err.response?.data?.error || "Erro");
@@ -91,8 +133,10 @@ export default function DetalheSolicitacao() {
     ((user?.role === "diretoria" || user?.role === "admin") &&
       (s.status === "pendente_supervisor" || s.status === "aprovado_supervisor")));
 
-  const podeCancelar = ["pendente_supervisor", "aprovado_supervisor"].includes(s.status);
+  const podeCancelar = ["pendente_supervisor", "aprovado_supervisor"].includes(s.status) && (String(s.criadoPorId) === user?.id || user?.role === "admin");
   const statusInfo = STATUS_LABEL[s.status] || { l: s.status, tone: "neutral" };
+  const travado = s.itens?.some((i) => i.precoOfertaTravado);
+  const ofertaBloqueada = travado && user?.role === "supervisor";
 
   return (
     <div>
@@ -109,7 +153,10 @@ export default function DetalheSolicitacao() {
             <p className="text-neutral-500 text-sm">Criado por: {s.criadoPorNome} ({s.criadoPorCodigo})</p>
             {s.supervisorNome && <p className="text-neutral-500 text-sm">Supervisor: {s.supervisorNome} ({s.supervisorCodigo})</p>}
           </div>
-          <Badge tone={statusInfo.tone} dot className="self-start">{statusInfo.l}</Badge>
+          <div className="flex flex-col items-end gap-1.5">
+            <Badge tone={statusInfo.tone} dot className="self-start">{statusInfo.l}</Badge>
+            {s.contraConcorrente && <Badge tone="warning" className="text-[10px] font-semibold">Contra concorrente</Badge>}
+          </div>
         </div>
 
         {s.motivo && (<p className="mt-4 text-sm"><strong>Motivo:</strong> {s.motivo}</p>)}
@@ -121,6 +168,21 @@ export default function DetalheSolicitacao() {
             <span className="font-semibold text-neutral-800">
               {s.inicioAcao ? fmtData(s.inicioAcao) : "—"} até {s.fimAcao ? fmtData(s.fimAcao) : "—"}
             </span>
+          </div>
+        )}
+
+        {/* v2.0: etapas exigidas */}
+        {s.aprovacao && ["pendente_supervisor", "aprovado_supervisor"].includes(s.status) && (
+          <div className={`mt-3 rounded-xl border px-3 py-2 text-xs ${s.aprovacao.exigeDiretoria ? "border-warning/30 bg-warning/10 text-warning" : "border-success/30 bg-success/10 text-success"}`}>
+            <b>{s.aprovacao.exigeDiretoria ? "Exige diretoria" : "Aprovação do supervisor encerra o fluxo"}</b>
+            {veMargens && s.aprovacao.motivoEscalada ? ` · ${s.aprovacao.motivoEscalada}` : ""}
+          </div>
+        )}
+
+        {s.temFoto && (
+          <div className="mt-4">
+            <div className="text-[10px] font-bold uppercase tracking-wide text-neutral-400 mb-1.5">Foto</div>
+            <FotoSolicitacao id={id} />
           </div>
         )}
       </div>
@@ -145,18 +207,40 @@ export default function DetalheSolicitacao() {
               </div>
             </div>
 
-            {/* Bloco: Visao do vendedor */}
-            <div className="text-[10px] font-bold uppercase tracking-wide text-neutral-400 mb-1.5">Análise do vendedor</div>
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-2">
+            {/* Bloco: precos de referencia (v2.0) */}
+            <div className="text-[10px] font-bold uppercase tracking-wide text-neutral-400 mb-1.5">Referências</div>
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-2 mb-3">
+              <CampoValor
+                label={i.precoTabelaRede != null ? "Tabela da rede" : "Tabela 70"}
+                valor={fmtBRL(i.precoTabelaRede ?? i.precoTabela)}
+                sub={i.precoTabelaRede != null && i.precoTabela ? `item ${fmtBRL(i.precoTabela)}` : null}
+              />
+              <CampoValor label="Preço mínimo" valor={fmtBRL(i.precoMinimo)} />
               <CampoValor
                 label="Última compra"
-                valor={fmtBRL(i.precoUltimaCompra ?? i.precoTabela)}
-                sub={i.dataUltimaCompra ? fmtData(i.dataUltimaCompra) : "preço tabela"}
+                valor={fmtBRL(i.precoUltimaCompra)}
+                sub={i.dataUltimaCompra ? fmtData(i.dataUltimaCompra) : "sem histórico"}
               />
+              <CampoValor
+                label="Desc. cliente"
+                valor={i.descontoContratoPercentual != null ? fmtPct(i.descontoContratoPercentual) : "—"}
+                sub={i.descontoContratoTipo || null}
+              />
+              <CampoValor
+                label="Preço líquido"
+                valor={fmtBRL(i.precoLiquido ?? i.precoUltimaCompraComDesconto)}
+                sub="últ. compra − desconto"
+                destaque
+              />
+            </div>
+
+            {/* Bloco: negociacao */}
+            <div className="text-[10px] font-bold uppercase tracking-wide text-neutral-400 mb-1.5">Negociação</div>
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-2">
               <CampoValor
                 label="Preço PDV"
                 valor={fmtBRL(i.precoPDV)}
-                sub={i.margemPDV != null ? (
+                sub={veMargens && i.margemPDV != null ? (
                   <span className={`inline-block px-1.5 py-0.5 rounded font-bold ${corMargem(i.margemPDV)}`}>
                     Margem {fmtPct(i.margemPDV)}
                   </span>
@@ -165,25 +249,38 @@ export default function DetalheSolicitacao() {
               <CampoValor
                 label="Preço oferta"
                 valor={fmtBRL(i.precoOferta)}
-                sub={i.margemOferta != null ? (
-                  <span className={`inline-block px-1.5 py-0.5 rounded font-bold ${corMargem(i.margemOferta)}`}>
-                    Margem {fmtPct(i.margemOferta)}
-                  </span>
-                ) : null}
+                sub={
+                  <>
+                    {i.precoOfertaOrigem && <span className="block">{ORIGEM_OFERTA[i.precoOfertaOrigem]}{i.precoOfertaTravado ? " 🔒" : ""}</span>}
+                    {veMargens && i.margemOferta != null && (
+                      <span className={`inline-block px-1.5 py-0.5 rounded font-bold ${corMargem(i.margemOferta)}`}>
+                        Margem {fmtPct(i.margemOferta)}
+                      </span>
+                    )}
+                  </>
+                }
                 destaque
               />
-              <CampoValor
-                label="Sellout"
-                valor={i.sellout != null ? Number(i.sellout).toLocaleString("pt-BR") : "—"}
-                sub="unidades"
-              />
-              {/* Última compra com o desconto de contrato diluído (informativo; as margens usam a última compra normal) */}
-              {i.descontoContratoPercentual > 0 && (
-                <CampoValor
-                  label="Últ. compra c/ desconto"
-                  valor={fmtBRL(i.precoUltimaCompraComDesconto)}
-                  sub={`−${fmtPct(i.descontoContratoPercentual)}${i.descontoContratoTipo ? ` · ${i.descontoContratoTipo}` : ""}`}
-                />
+              {veMargens && (
+                <>
+                  <CampoValor
+                    label="Sellout"
+                    valor={fmtBRL(i.sellout)}
+                    sub={i.selloutOrigem ? ORIGEM_SELLOUT[i.selloutOrigem] : "R$ por unidade"}
+                  />
+                  <CampoValor
+                    label="Valemilk recebe"
+                    valor={fmtBRL(i.valorRecebido)}
+                    sub={i.precoPiso != null ? `piso ${fmtBRL(i.precoPiso)} (${i.pisoTipo === "p3" ? "P#3" : "mínimo"})` : "líquido − sellout"}
+                  />
+                  {(i.margemRedeAplicada != null || i.custoRedeAplicado != null) && (
+                    <CampoValor
+                      label="Rede"
+                      valor={i.margemRedeAplicada != null ? `margem ${fmtPct(i.margemRedeAplicada)}` : "—"}
+                      sub={i.custoRedeAplicado != null ? `custo ${fmtBRL(i.custoRedeAplicado)} (${i.custoRedeOrigem === "custo_medio" ? "custo médio" : "preço líquido"})` : null}
+                    />
+                  )}
+                </>
               )}
             </div>
           </div>
@@ -191,11 +288,42 @@ export default function DetalheSolicitacao() {
       </div>
 
       {podeDecidir && (
-        <div className="surface p-4 mb-4">
-          <label className="block text-xs font-medium text-neutral-600 mb-1">Comentario da decisao</label>
-          <textarea className="input" rows={2} value={motivoDecisao} onChange={(e) => setMotivoDecisao(e.target.value)} />
-          <div className="mt-3 flex gap-2">
-            <button onClick={() => decidir("aprovado")} className="btn-primary">Aprovar</button>
+        <div className="surface p-4 mb-4 space-y-3">
+          <label className="flex items-center gap-2 text-xs font-semibold text-neutral-700">
+            <input type="checkbox" className="h-4 w-4" checked={ajustar} onChange={(e) => setAjustar(e.target.checked)} />
+            Ajustar as condições antes de aprovar
+          </label>
+          {ajustar && (
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+              <div>
+                <label className="block text-[10px] font-semibold uppercase tracking-wide text-neutral-500 mb-1">Preço da oferta (R$)</label>
+                <input type="number" step="0.01" min="0" inputMode="decimal" className={`input ${ofertaBloqueada ? "bg-neutral-50" : ""}`} readOnly={ofertaBloqueada}
+                  value={ajuste.precoOferta} onChange={(e) => setAjuste((a) => ({ ...a, precoOferta: e.target.value }))} />
+                {ofertaBloqueada && <div className="mt-1 text-[10px] text-neutral-400">Preço da rede: só a diretoria altera.</div>}
+              </div>
+              {veMargens && (
+                <div>
+                  <label className="block text-[10px] font-semibold uppercase tracking-wide text-neutral-500 mb-1">Sellout (R$)</label>
+                  <input type="number" step="0.01" min="0" inputMode="decimal" className="input"
+                    value={ajuste.sellout} onChange={(e) => setAjuste((a) => ({ ...a, sellout: e.target.value }))} />
+                </div>
+              )}
+              <div>
+                <label className="block text-[10px] font-semibold uppercase tracking-wide text-neutral-500 mb-1">Início</label>
+                <input type="date" className="input" value={ajuste.inicioAcao} onChange={(e) => setAjuste((a) => ({ ...a, inicioAcao: e.target.value }))} />
+              </div>
+              <div>
+                <label className="block text-[10px] font-semibold uppercase tracking-wide text-neutral-500 mb-1">Fim</label>
+                <input type="date" className="input" value={ajuste.fimAcao} onChange={(e) => setAjuste((a) => ({ ...a, fimAcao: e.target.value }))} />
+              </div>
+            </div>
+          )}
+          <div>
+            <label className="block text-xs font-medium text-neutral-600 mb-1">Comentario da decisao</label>
+            <textarea className="input" rows={2} value={motivoDecisao} onChange={(e) => setMotivoDecisao(e.target.value)} />
+          </div>
+          <div className="flex gap-2">
+            <button onClick={() => decidir("aprovado")} className="btn-primary">{ajustar ? "Ajustar e aprovar" : "Aprovar"}</button>
             <button onClick={() => decidir("rejeitado")} className="btn-secondary border-danger text-danger hover:bg-danger/10">Rejeitar</button>
           </div>
         </div>
@@ -203,6 +331,24 @@ export default function DetalheSolicitacao() {
 
       {podeCancelar && (
         <button onClick={cancelar} className="btn-ghost text-danger">Cancelar solicitacao</button>
+      )}
+
+      {s.ajustes?.length > 0 && (
+        <div className="surface p-4 mt-6">
+          <h2 className="font-semibold mb-3">Ajustes</h2>
+          <ul className="space-y-2 text-sm">
+            {s.ajustes.map((a, k) => (
+              <li key={k} className="flex flex-wrap justify-between gap-3 border-b border-neutral-100 pb-2 last:border-0">
+                <span>
+                  <strong>{a.porNome}</strong> ({a.porRole}): oferta {fmtBRL(a.antes?.precoOferta)} → {fmtBRL(a.depois?.precoOferta)}
+                  {veMargens && a.antes && "sellout" in a.antes ? ` · sellout ${fmtBRL(a.antes.sellout)} → ${fmtBRL(a.depois?.sellout)}` : ""}
+                  {" · "}{fmtData(a.depois?.inicioAcao)} até {fmtData(a.depois?.fimAcao)}
+                </span>
+                <span className="text-neutral-500 text-xs">{fmtDataHora(a.em)}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
       )}
 
       <div className="surface p-4 mt-6">

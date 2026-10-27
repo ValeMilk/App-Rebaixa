@@ -89,6 +89,26 @@ export default function SyncPage() {
         </div>
 
         <div className="surface p-5">
+          <h2 className="font-semibold mb-2">Compras de 90 dias (ERP)</h2>
+          <p className="text-sm text-neutral-500 mb-4">
+            Compras por loja × produto dos últimos 90 dias (Lacteus), base da lista “todos os itens” da visão do vendedor. Roda sozinha às 05:30.
+          </p>
+          <button onClick={() => rodar("compras")} className="btn-secondary" disabled={rodando}>
+            Sincronizar agora
+          </button>
+        </div>
+
+        <div className="surface p-5">
+          <h2 className="font-semibold mb-2">Visão do vendedor (ATIVMOB + ERP)</h2>
+          <p className="text-sm text-neutral-500 mb-4">
+            Recalcula Estoque e vencimento e Ruptura por loja (lotes, não contado, não reencontrado, rupturas). Depende da carteira e das compras já sincronizadas; roda sozinha a cada 30 min.
+          </p>
+          <button onClick={() => rodar("visao")} className="btn-primary" disabled={rodando}>
+            {rodando ? "Aguarde..." : "Sincronizar agora"}
+          </button>
+        </div>
+
+        <div className="surface p-5">
           <h2 className="font-semibold mb-2">Esigma Completo</h2>
           <p className="text-sm text-neutral-500 mb-4">
             Atualiza carteira de clientes + catálogo de produtos do Esigma de uma vez.

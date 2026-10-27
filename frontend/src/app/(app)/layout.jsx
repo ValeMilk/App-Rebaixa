@@ -12,8 +12,10 @@ import TopBar from "@/components/shell/TopBar";
 import MobileHeader from "@/components/shell/MobileHeader";
 import BottomBar from "@/components/shell/BottomBar";
 import NavSheet from "@/components/shell/NavSheet";
+import AtivarPushBanner from "@/components/pendencias/AtivarPushBanner";
 
 const CHAVE_SIDEBAR = "iv.sidebar";
+const INTERVALO_CONTADOR_MS = 60000;
 
 export default function AppLayout({ children }) {
   const router = useRouter();
@@ -24,6 +26,7 @@ export default function AppLayout({ children }) {
   const [conferidas, setConferidas] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
   const [sheetOpen, setSheetOpen] = useState(false);
+  const [naoVistas, setNaoVistas] = useState(0);
 
   useEffect(() => { init(); }, [init]);
   useEffect(() => { if (!loading && !token) router.replace("/login"); }, [loading, token, router]);
@@ -60,6 +63,23 @@ export default function AppLayout({ children }) {
     return () => document.removeEventListener("visibilitychange", atualizar);
   }, [loading, token, refresh, logout]);
 
+  // Contador de pendencias nao vistas (bolinha no menu): ao abrir, a cada 60 s e ao voltar para a aba.
+  // So para quem recebe pendencias; pausa com a aba escondida.
+  const recebePendencias = pode(user, "pendencias.receber");
+  useEffect(() => {
+    if (!token || !recebePendencias) { setNaoVistas(0); return; }
+    let vivo = true;
+    let timer = null;
+    const buscar = () => {
+      if (document.visibilityState !== "visible") return;
+      api.get("/pendencias/contador").then(({ data }) => { if (vivo) setNaoVistas(Number(data?.naoVistas) || 0); }).catch(() => {});
+    };
+    buscar();
+    timer = setInterval(buscar, INTERVALO_CONTADOR_MS);
+    document.addEventListener("visibilitychange", buscar);
+    return () => { vivo = false; clearInterval(timer); document.removeEventListener("visibilitychange", buscar); };
+  }, [token, recebePendencias, pathname]);
+
   // Guarda de rota (RBAC): sem a permissao da tela, vai para a tela inicial do usuario
   // (so depois da primeira conferencia com o servidor, para nao barrar com permissoes velhas do navegador)
   const permissoesProntas = conferidas && !!user?.permissoes;
@@ -90,6 +110,10 @@ export default function AppLayout({ children }) {
 
   const itens = navVisivel(user);
   const ativo = hrefAtivo(itens, pathname);
+  const badges = naoVistas > 0 ? { "/pendencias": naoVistas } : {};
+  const itensBarra = itensBarraInferior(itens);
+  // Pendencias fora dos 3 primeiros da barra inferior: a bolinha vai para o botao Menu
+  const badgeMenu = naoVistas > 0 && !itensBarra.some((n) => n.href === "/pendencias") ? naoVistas : 0;
 
   return (
     <PageTitleProvider>
@@ -99,6 +123,7 @@ export default function AppLayout({ children }) {
           user={user}
           itens={itens}
           ativo={ativo}
+          badges={badges}
           collapsed={collapsed}
           onToggle={toggleCollapse}
           onLogout={logout}
@@ -107,6 +132,7 @@ export default function AppLayout({ children }) {
         <div className="flex min-w-0 flex-1 flex-col">
           <TopBar className="hidden lg:flex" collapsed={collapsed} onToggle={toggleCollapse} />
           <MobileHeader user={user} onMenu={() => setSheetOpen(true)} />
+          {recebePendencias && pathname !== "/pendencias" && <AtivarPushBanner compacto />}
 
           <main className="min-w-0 flex-1 px-4 py-4 pb-24 md:px-6 lg:px-8 lg:py-6 lg:pb-16">
             <div className="mx-auto flex max-w-[1600px] flex-col gap-6">{children}</div>
@@ -116,11 +142,11 @@ export default function AppLayout({ children }) {
             InfoVale · Valemilk © {new Date().getFullYear()}
           </footer>
 
-          <BottomBar itens={itensBarraInferior(itens)} ativo={ativo} onMenu={() => setSheetOpen(true)} />
+          <BottomBar itens={itensBarra} ativo={ativo} badges={badges} badgeMenu={badgeMenu} onMenu={() => setSheetOpen(true)} />
         </div>
       </div>
 
-      <NavSheet open={sheetOpen} onClose={() => setSheetOpen(false)} user={user} itens={itens} ativo={ativo} onLogout={logout} />
+      <NavSheet open={sheetOpen} onClose={() => setSheetOpen(false)} user={user} itens={itens} ativo={ativo} badges={badges} onLogout={logout} />
     </PageTitleProvider>
   );
 }

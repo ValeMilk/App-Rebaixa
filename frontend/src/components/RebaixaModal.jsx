@@ -4,10 +4,16 @@ import { useEffect, useMemo, useState } from "react";
 import api from "@/lib/api";
 import { fmtData, fmtBRL } from "@/lib/utils";
 import { TONE, toneMargem } from "@/lib/tones";
+import { useAuth } from "@/lib/auth";
+import { pode } from "@/lib/permissoes";
+import { calcMargens, selloutSugeridoPDV, ofertaDoContexto, resolverSellout, camposUltimaCompra, camposPrecificacao, carregarContexto } from "@/lib/precificacao";
 import { IcoX, IcoUsers, IcoAlert } from "@/components/Icons";
 import Dialog from "@/components/ui/Dialog";
 import Button from "@/components/ui/Button";
-import UltimaCompraComDesconto, { camposDesconto } from "@/components/UltimaCompraComDesconto";
+import UltimaCompraComDesconto from "@/components/UltimaCompraComDesconto";
+import PrecosInfo, { SeloPrecoOferta } from "@/components/precificacao/PrecosInfo";
+import SelloutCampo from "@/components/precificacao/SelloutCampo";
+import FotoCaptura from "@/components/precificacao/FotoCaptura";
 
 export function MargemBadge({ pct }) {
   if (pct == null) return <span className="text-base font-semibold text-neutral-300">—</span>;
@@ -19,65 +25,60 @@ export function MargemBadge({ pct }) {
   );
 }
 
+/**
+ * Solicitacao de rebaixa / oferta interna para UMA loja (v2.0):
+ * - contexto de precificacao (ultima compra, desconto, Tabela 70/minimo, P#2/P#3 da rede ou do item)
+ * - preco da oferta travado quando a rede tem P#2/P#3; senao preenchido pelo item ou livre
+ * - sellout: automatico (margem da rede) ou sugerido pela margem do PDV; so quem ve margens digita
+ * - foto obrigatoria quando a acao combate um concorrente
+ */
 export default function RebaixaModal({ item, onClose, onEnviado, tipo = "rebaixa" }) {
   const isOferta = tipo === "oferta_interna";
+  const { user } = useAuth();
+  const veMargens = pode(user, "solicitacoes.ver_margens");
+
   const [precoOferta, setPrecoOferta] = useState("");
   const [precoPDV, setPrecoPDV] = useState("");
   const [sellout, setSellout] = useState("");
   const [motivo, setMotivo] = useState("");
   const [inicioAcao, setInicioAcao] = useState("");
   const [fimAcao, setFimAcao] = useState("");
+  const [contraConcorrente, setContraConcorrente] = useState(false);
+  const [foto, setFoto] = useState("");
   const [enviando, setEnviando] = useState(false);
   const [erro, setErro] = useState("");
 
-  // Última compra: { encontrado, precoUltimaCompra, dataUltimaCompra } | null (loading)
-  const [ultimaCompra, setUltimaCompra] = useState(null);
-  const [loadingUC, setLoadingUC] = useState(true);
+  const [ctx, setCtx] = useState(null);
+  const [loadingCtx, setLoadingCtx] = useState(true);
 
   useEffect(() => {
     let cancelado = false;
-    setLoadingUC(true);
-    // codigoRede: se a loja nao compra em nome proprio (compra pelo CD), o backend cai para a ultima compra da rede
-    api.get("/erp/ultima-compra", {
-      params: { clienteCodigo: item.clienteCodigo, produtoCodigo: item.produtoCodigo, codigoRede: item.codigoRede || undefined },
-    })
-      .then(({ data }) => { if (!cancelado) setUltimaCompra(data); })
-      .catch(() => { if (!cancelado) setUltimaCompra({ encontrado: false }); })
-      .finally(() => { if (!cancelado) setLoadingUC(false); });
+    setLoadingCtx(true);
+    carregarContexto(api, { clienteCodigo: item.clienteCodigo, produtoCodigo: item.produtoCodigo, codigoRede: item.codigoRede || undefined, tipo })
+      .then((c) => {
+        if (cancelado) return;
+        setCtx(c);
+        const of = ofertaDoContexto(c, tipo).precoOferta;
+        if (of?.valor != null) setPrecoOferta(String(of.valor));
+      })
+      .finally(() => { if (!cancelado) setLoadingCtx(false); });
     return () => { cancelado = true; };
-  }, [item.clienteCodigo, item.produtoCodigo, item.codigoRede]);
+  }, [item.clienteCodigo, item.produtoCodigo, item.codigoRede, tipo]);
 
+  const ultimaCompra = ctx?.ultimaCompra;
   const precoUC = ultimaCompra?.encontrado ? Number(ultimaCompra.precoUltimaCompra) : null;
   const dataUC  = ultimaCompra?.encontrado ? ultimaCompra.dataUltimaCompra : null;
-  // Desconto de contrato diluído: só informativo, não entra nas margens
-  const descUC  = ultimaCompra?.encontrado ? camposDesconto(ultimaCompra) : {};
+  const descUC  = camposUltimaCompra(ctx);
+  const oferta  = ofertaDoContexto(ctx, tipo);
 
-  // Margem PDV = (PreçoPDV - ÚltimaCompra) / PreçoPDV
-  const margemPDV = useMemo(() => {
-    const p = Number(precoPDV);
-    if (!p || p <= 0 || precoUC == null) return null;
-    return ((p - precoUC) / p) * 100;
-  }, [precoPDV, precoUC]);
-
-  // Margem Oferta = (PreçoOferta - (ÚltimaCompra - Sellout)) / PreçoOferta
-  const margemOferta = useMemo(() => {
-    const o = Number(precoOferta);
-    if (!o || o <= 0 || precoUC == null) return null;
-    const s = Number(sellout) || 0;
-    const tabelaComSellout = precoUC - s;
-    return ((o - tabelaComSellout) / o) * 100;
-  }, [precoOferta, sellout, precoUC]);
-
-  // Sellout sugerido = valor que mantém a mesma margem do PDV na oferta
-  // Derivado de: (Oferta - (UC - Sellout)) / Oferta = margemPDV
-  // => Sellout = UC - Oferta * (1 - margemPDV/100)
-  const selloutSugerido = useMemo(() => {
-    const o = Number(precoOferta);
-    if (!o || o <= 0 || precoUC == null || margemPDV == null) return null;
-    const s = precoUC - o * (1 - margemPDV / 100);
-    if (s <= 0) return null;
-    return Math.round(s * 100) / 100;
-  }, [precoOferta, precoUC, margemPDV]);
+  const { margemPDV } = useMemo(() => calcMargens({ precoPDV, precoOferta, sellout: 0, precoUC }), [precoPDV, precoOferta, precoUC]);
+  const sugPDV = useMemo(() => selloutSugeridoPDV({ precoUC, precoPDV, precoOferta }), [precoUC, precoPDV, precoOferta]);
+  const selloutEfetivo = useMemo(
+    () => resolverSellout({ oferta: oferta.precoOferta, selloutAutomatico: oferta.selloutAutomatico, veMargens, selloutDigitado: sellout, precoUC, precoPDV, precoOferta }),
+    [oferta, veMargens, sellout, precoUC, precoPDV, precoOferta]
+  );
+  const { margemOferta } = useMemo(() => calcMargens({ precoPDV, precoOferta, sellout: selloutEfetivo.valor, precoUC }), [precoPDV, precoOferta, selloutEfetivo, precoUC]);
+  const valorRecebido = ctx?.precoLiquido != null ? ctx.precoLiquido - (selloutEfetivo.valor || 0) : null;
 
   async function handleSubmit(e) {
     e.preventDefault();
@@ -86,6 +87,7 @@ export default function RebaixaModal({ item, onClose, onEnviado, tipo = "rebaixa
     if (!precoPDV)    { setErro("Informe o preço PDV"); return; }
     if (!inicioAcao || !fimAcao) { setErro("Informe o período da ação (início e fim)"); return; }
     if (new Date(fimAcao) < new Date(inicioAcao)) { setErro("Fim da ação não pode ser anterior ao início"); return; }
+    if (contraConcorrente && !foto) { setErro("Ação contra concorrente exige a foto tirada na hora"); return; }
     setEnviando(true);
     try {
       await api.post("/solicitacoes", {
@@ -97,21 +99,21 @@ export default function RebaixaModal({ item, onClose, onEnviado, tipo = "rebaixa
         motivo,
         inicioAcao,
         fimAcao,
+        contraConcorrente,
+        foto: foto || undefined,
         itens: [{
           produto: item.produto,
           produtoCodigo: item.produtoCodigo,
           quantidade: item.quantidade,
           dataValidade: item.dataValidade,
           diasParaVencer: item.diasParaVencer,
-          precoTabela: item.precoTabela,
+          precoTabela: ctx?.precoTabela ?? item.precoTabela,
           precoOferta: Number(precoOferta),
           precoPDV: Number(precoPDV),
-          sellout: sellout ? Number(sellout) : 0,
-          precoUltimaCompra: precoUC ?? undefined,
-          dataUltimaCompra: dataUC ?? undefined,
           ...descUC,
           margemPDV:    margemPDV    != null ? Math.round(margemPDV    * 10) / 10 : undefined,
           margemOferta: margemOferta != null ? Math.round(margemOferta * 10) / 10 : undefined,
+          ...camposPrecificacao(ctx, { tipo, precoOferta, sellout: selloutEfetivo.valor, selloutOrigem: selloutEfetivo.origem }),
           estoqueRefId: item._id,
         }],
       });
@@ -151,13 +153,13 @@ export default function RebaixaModal({ item, onClose, onEnviado, tipo = "rebaixa
             {item.redeSubrede && (
               <div className="mt-1.5 flex items-center gap-1.5 text-[11px] text-info font-semibold">
                 <IcoUsers className="w-3 h-3" />
-                <span className="truncate">Rebaixa para toda a rede</span>
+                <span className="truncate">{item.redeSubrede}</span>
               </div>
             )}
           </div>
 
           {/* Info strip horizontal: Qtd · Vence · Última Compra */}
-          <div className="flex items-stretch rounded-xl border border-neutral-100 overflow-hidden mb-3">
+          <div className="flex items-stretch rounded-xl border border-neutral-100 overflow-hidden mb-2">
             <div className="flex-1 bg-white px-2 py-2 text-center">
               <div className="text-[9px] text-neutral-500 font-semibold uppercase tracking-wide">Qtd</div>
               <div className="font-bold text-neutral-800 text-lg leading-tight">{item.quantidade}</div>
@@ -171,7 +173,7 @@ export default function RebaixaModal({ item, onClose, onEnviado, tipo = "rebaixa
             </div>
             <div className="flex-1 bg-secondary/5 px-2 py-2 text-center">
               <div className="text-[9px] text-secondary/70 font-semibold uppercase tracking-wide">Últ. Compra</div>
-              {loadingUC ? (
+              {loadingCtx ? (
                 <div className="text-neutral-400 text-xs mt-1">…</div>
               ) : precoUC != null ? (
                 <>
@@ -187,15 +189,18 @@ export default function RebaixaModal({ item, onClose, onEnviado, tipo = "rebaixa
             </div>
           </div>
 
-          {!loadingUC && ultimaCompra?.origem === "rede" && (
-            <div className="-mt-2 mb-3 text-[10px] text-neutral-500 px-1">
+          {/* Tabela 70 · mínimo · desconto do cliente · preço líquido */}
+          {!loadingCtx && ctx && <PrecosInfo ctx={ctx} className="mb-2" />}
+
+          {!loadingCtx && ultimaCompra?.origem === "rede" && (
+            <div className="mb-2 text-[10px] text-neutral-500 px-1">
               A loja não compra em nome próprio no Lacteus: preço da compra mais recente de outra loja da rede.
             </div>
           )}
 
           {/* Última compra com desconto de contrato diluído (informativo) */}
           {precoUC != null && descUC.descontoContratoPercentual != null && (
-            <div className="-mt-2 mb-3 rounded-xl border border-secondary/15 bg-secondary/5 px-3 py-1.5">
+            <div className="mb-3 rounded-xl border border-secondary/15 bg-secondary/5 px-3 py-1.5">
               <UltimaCompraComDesconto
                 align="center"
                 preco={descUC.precoUltimaCompraComDesconto}
@@ -205,10 +210,10 @@ export default function RebaixaModal({ item, onClose, onEnviado, tipo = "rebaixa
             </div>
           )}
 
-          {!loadingUC && precoUC == null && (
+          {!loadingCtx && precoUC == null && (
             <div className="mb-3 rounded-xl bg-warning/10 border border-warning/30 p-2.5 text-[11px] text-warning flex items-start gap-2">
               <IcoAlert className="w-3.5 h-3.5 shrink-0 mt-0.5" />
-              <span>Cliente sem histórico de compra deste produto. As margens não poderão ser calculadas.</span>
+              <span>Loja sem histórico de compra deste produto: sem preço líquido{veMargens ? " e sem margens" : ""}. A solicitação pode ser enviada mesmo assim.</span>
             </div>
           )}
 
@@ -227,60 +232,70 @@ export default function RebaixaModal({ item, onClose, onEnviado, tipo = "rebaixa
               />
             </div>
 
-            {/* Margem PDV */}
-            <div className="flex items-center justify-between bg-neutral-50 rounded-xl px-3 py-2 border border-neutral-100">
-              <div>
-                <div className="text-xs font-semibold text-neutral-700">Margem PDV</div>
-                <div className="text-[10px] text-neutral-400">(PDV − Últ. Compra) / PDV</div>
+            {/* Margem PDV (so quem ve margens) */}
+            {veMargens && (
+              <div className="flex items-center justify-between bg-neutral-50 rounded-xl px-3 py-2 border border-neutral-100">
+                <div>
+                  <div className="text-xs font-semibold text-neutral-700">Margem PDV</div>
+                  <div className="text-[10px] text-neutral-400">(PDV − Últ. Compra) / PDV</div>
+                </div>
+                <MargemBadge pct={margemPDV} />
               </div>
-              <MargemBadge pct={margemPDV} />
-            </div>
+            )}
 
             {/* Preço Oferta */}
             <div>
-              <label className="block text-[10px] font-semibold text-neutral-500 uppercase tracking-wide mb-1">Preço da Oferta (R$) *</label>
+              <div className="mb-1 flex flex-wrap items-center justify-between gap-1">
+                <label className="block text-[10px] font-semibold text-neutral-500 uppercase tracking-wide">Preço da Oferta (R$) *</label>
+                <SeloPrecoOferta oferta={oferta.precoOferta} />
+              </div>
               <input
                 type="number" step="0.01" min="0"
-                className="input text-2xl font-bold py-2"
+                className={`input text-2xl font-bold py-2 ${oferta.precoOferta?.travado ? "bg-neutral-50 text-neutral-700" : ""}`}
                 value={precoOferta}
                 onChange={(e) => setPrecoOferta(e.target.value)}
-                placeholder="0,00"
+                placeholder={loadingCtx ? "…" : "0,00"}
                 inputMode="decimal"
+                readOnly={!!oferta.precoOferta?.travado}
                 required
               />
-            </div>
-
-            {/* Sellout */}
-            <div>
-              <label className="block text-[10px] font-semibold text-neutral-500 uppercase tracking-wide mb-1">Sellout (R$ desconto sobre últ. compra)</label>
-              <input
-                type="number" step="0.01" min="0"
-                className="input"
-                value={sellout}
-                onChange={(e) => setSellout(e.target.value)}
-                placeholder="0,00"
-                inputMode="decimal"
-              />
-              {selloutSugerido != null && String(sellout) !== String(selloutSugerido) && (
-                <button
-                  type="button"
-                  onClick={() => setSellout(String(selloutSugerido))}
-                  className="mt-1.5 flex items-center gap-1.5 text-[11px] text-info font-semibold hover:text-info active:opacity-70 transition"
-                >
-                  <span className="inline-block w-3.5 h-3.5 rounded-full bg-info/15 text-info text-[10px] font-bold flex items-center justify-center">↑</span>
-                  Sugerido {fmtBRL(selloutSugerido)} — manter margem PDV ({margemPDV?.toFixed(1)}%)
-                </button>
+              {!loadingCtx && !oferta.precoOferta?.rotulo && (
+                <div className="mt-1 text-[10px] text-neutral-400">Rede sem preço cadastrado: sugira o preço da oferta.</div>
               )}
             </div>
 
-            {/* Margem Oferta */}
-            <div className="flex items-center justify-between bg-neutral-50 rounded-xl px-3 py-2 border border-neutral-100">
-              <div>
-                <div className="text-xs font-semibold text-neutral-700">Margem Oferta</div>
-                <div className="text-[10px] text-neutral-400">(Oferta − (Últ. Compra − Sellout)) / Oferta</div>
+            {/* Sellout: so quem ve margens digita; para o vendedor e calculado em silencio */}
+            <SelloutCampo
+              veMargens={veMargens}
+              value={sellout}
+              onChange={setSellout}
+              selloutAutomatico={oferta.precoOferta?.travado ? oferta.selloutAutomatico : null}
+              margemRede={ctx?.margemRede?.margem}
+              selloutSugeridoPDV={sugPDV}
+              margemPDV={margemPDV}
+            />
+
+            {/* Margem Oferta + valor recebido (so quem ve margens) */}
+            {veMargens && (
+              <div className="flex items-center justify-between bg-neutral-50 rounded-xl px-3 py-2 border border-neutral-100">
+                <div>
+                  <div className="text-xs font-semibold text-neutral-700">Margem Oferta</div>
+                  <div className="text-[10px] text-neutral-400">(Oferta − (Últ. Compra − Sellout)) / Oferta</div>
+                  {valorRecebido != null && (
+                    <div className="mt-0.5 text-[10px] text-neutral-500">
+                      Valemilk recebe <b className="text-neutral-700">{fmtBRL(valorRecebido)}</b>
+                      {ctx?.piso?.valor != null && (
+                        <span className={valorRecebido < ctx.piso.valor && !oferta.precoOferta?.travado ? " text-danger" : " text-success"}>
+                          {" "}· piso {fmtBRL(ctx.piso.valor)}{valorRecebido < ctx.piso.valor && !oferta.precoOferta?.travado ? " (sobe para a diretoria)" : ""}
+                        </span>
+                      )}
+                      {selloutEfetivo.origem === "automatico" && <span className="text-success"> · sellout automático</span>}
+                    </div>
+                  )}
+                </div>
+                <MargemBadge pct={margemOferta} />
               </div>
-              <MargemBadge pct={margemOferta} />
-            </div>
+            )}
 
             {/* Motivo */}
             <div>
@@ -292,6 +307,13 @@ export default function RebaixaModal({ item, onClose, onEnviado, tipo = "rebaixa
                 placeholder="Ex: Produto próximo ao vencimento"
               />
             </div>
+
+            {/* Contra concorrente + foto */}
+            <label className="flex items-center gap-2 rounded-xl border border-neutral-100 bg-neutral-50 px-3 py-2 text-xs font-semibold text-neutral-700">
+              <input type="checkbox" className="h-4 w-4" checked={contraConcorrente} onChange={(e) => setContraConcorrente(e.target.checked)} />
+              Ação contra concorrente (exige foto)
+            </label>
+            <FotoCaptura value={foto} onChange={setFoto} obrigatoria={contraConcorrente} />
 
             {/* Período da ação */}
             <div className="grid grid-cols-2 gap-2">
@@ -316,7 +338,7 @@ export default function RebaixaModal({ item, onClose, onEnviado, tipo = "rebaixa
 
         {/* Footer fixo com botão */}
         <div className="shrink-0 px-4 py-3 border-t border-neutral-200 bg-white sm:rounded-b-2xl">
-          <Button type="submit" form="form-rebaixa" size="lg" className="w-full" disabled={enviando}>
+          <Button type="submit" form="form-rebaixa" size="lg" className="w-full" disabled={enviando || loadingCtx}>
             {enviando ? "Enviando..." : isOferta ? "Solicitar Oferta" : "Solicitar Rebaixa"}
           </Button>
         </div>

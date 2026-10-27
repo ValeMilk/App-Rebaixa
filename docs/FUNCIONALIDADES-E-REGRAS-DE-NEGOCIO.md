@@ -1,6 +1,6 @@
 # InfoVale (Rebaixa Valemilk) — Fluxos e regras de negócio
 
-Documento funcional do sistema, escrito para a equipe comercial, supervisores, diretoria, administradores e para quem cuida do produto. Descreve **como o sistema funciona hoje** (levantado em 29/09/2026 e atualizado em 27/10/2026): quem faz o quê, em que ordem, e quais regras o sistema aplica em cada passo. Não trata de aspectos técnicos de construção do sistema.
+Documento funcional do sistema, escrito para a equipe comercial, supervisores, diretoria, administradores e para quem cuida do produto. Descreve **como o sistema funciona hoje** (levantado em 29/09/2026 e atualizado em 27/10/2026 com a v2.0: telas do vendedor, pendências, precificação pela tabela da rede, escalada por valor recebido e margens por rede): quem faz o quê, em que ordem, e quais regras o sistema aplica em cada passo. Não trata de aspectos técnicos de construção do sistema.
 
 **Quem está chegando agora deve começar pela seção 0**, que resume o produto, as regras que mais surpreendem, os números e limites e o mapa de telas. O restante é a referência completa, e a seção 13 lista os comportamentos que provavelmente precisam de decisão do negócio.
 
@@ -258,12 +258,28 @@ Margem oferta  = (Preço da oferta − Custo promo) ÷ Preço da oferta
 - As margens aparecem coloridas: **verde a partir de 20%**, **amarelo de 10% a 20%**, **vermelho abaixo de 10%**.
 - O sistema **sugere um sellout** que mantenha, na oferta, a mesma margem que a loja tem no PDV. A sugestão pode ser aplicada com um clique.
 - Se a loja **não tem compra em nome próprio** no Lacteus (compra pelo CD da rede ou tem outro código lá), o formulário usa a **última compra da rede** (compra mais recente do produto por qualquer loja da rede), marcada como "da rede", igual à planilha de vencimentos (desde 27/10/2026). Se nem a rede comprou, as margens ficam em branco e o formulário avisa; a solicitação pode ser enviada mesmo assim.
-- **Última compra com desconto de contrato diluído** (desde 27/10/2026): abaixo da última compra, o formulário mostra o mesmo preço já com o desconto de contrato da loja abatido (`última compra × (1 − desconto%)`), o percentual e de onde ele vem. O desconto é o **vigente hoje** no Lacteus, nesta ordem: contrato (A23/A24) com desconto para o **produto**; senão, contrato com desconto para a **categoria** do produto; senão, o **desconto da rede** (cadastro da rede). Valem os contratos da rede da loja e os da própria loja; quando mais de um se aplica, prevalece o do produto sobre o da categoria, o da loja sobre o da rede e, por fim, o maior percentual. **Esse preço é só informativo: as margens e o sellout sugerido continuam calculados pela última compra normal.** O valor fica gravado na solicitação e aparece no detalhe dela. Loja sem desconto mostra "sem desconto de contrato".
+- **Última compra com desconto de contrato diluído** (desde 27/10/2026): abaixo da última compra, o formulário mostra o mesmo preço já com o desconto de contrato da loja abatido (`última compra × (1 − desconto%)`), o percentual e de onde ele vem. O desconto é o **vigente hoje** no Lacteus, nesta ordem: contrato (A23/A24) com desconto para o **produto**; senão, contrato com desconto para a **categoria** do produto; senão, o **desconto da rede** (cadastro da rede). Valem os contratos da rede da loja e os da própria loja; quando mais de um se aplica, prevalece o do produto sobre o da categoria, o da loja sobre o da rede e, por fim, o maior percentual. Contratos cujo tipo de desconto é "Nenhum" não contam (o Lacteus não os aplica nas notas). **As margens continuam calculadas pela última compra normal.** O valor fica gravado na solicitação e aparece no detalhe dela. Loja sem desconto mostra "sem desconto de contrato".
+
+**Campos da v2.0 (27/10/2026).** Além da última compra, o formulário mostra uma faixa de referência, somente leitura:
+
+| Campo | Origem |
+|---|---|
+| **Tabela 70** ou **Tabela da rede** | Preço de tabela do item no Lacteus. Quando a rede tem tabela própria no Lacteus (preço P#1 por rede), vale o da rede, e o do item aparece embaixo. |
+| **Preço mínimo** | Preço mínimo do item no Lacteus. |
+| **Desconto do cliente** | O mesmo desconto de contrato descrito acima, em %. |
+| **Preço líquido** | `última compra × (1 − desconto do cliente)`. Exemplo: última compra R$ 9,40 e desconto 6% dão R$ 8,84. É o custo real da loja; o **valor que a Valemilk recebe** é o preço líquido menos o sellout. |
+
+E as regras novas do preenchimento:
+
+- **Preço da oferta pela tabela da rede.** Se a rede tem no Lacteus o preço P#3 (rebaixa) ou P#2 (oferta interna) do produto, o campo vem preenchido e **travado**, com o selo "Preço da rede (P#3)". Se só o item tem P#2/P#3, o campo vem preenchido, mas pode ser ajustado ("Preço do item"). Sem nenhum dos dois, o vendedor sugere o preço.
+- **Sellout automático.** Com preço da rede e margem da rede cadastrada (seção 11.8), o sistema calcula o sellout que mantém a margem da rede no preço da oferta: `custo da rede − preço da oferta × (1 − margem da rede)`, onde o custo da rede é o custo médio da planilha da rede, quando existe, ou o preço líquido. Sem preço da rede, vale a sugestão antiga (manter na oferta a margem do PDV).
+- **O vendedor nunca vê margem nem sellout.** Para quem não tem a permissão "Ver margens e sellout" (por padrão só supervisor, diretoria e admin), o campo de sellout não aparece: o sistema calcula e grava em silêncio (automático ou sugerido pelo PDV). O detalhe da solicitação e a lista também escondem margens, sellout e valor recebido dessas pessoas.
+- **Foto contra concorrente.** A caixa "Ação contra concorrente" obriga uma foto tirada na hora pela câmera do celular (sem galeria), reduzida no aparelho antes de subir. Sem a caixa, a foto é opcional. A foto aparece no detalhe da solicitação.
+- Loja sem última compra: o formulário avisa, não há preço líquido, e a solicitação pode ser enviada mesmo assim (ela sobe para a diretoria, ver 7.2).
 
 ### 5.3 Tipo da ação
 
-- No **Painel de Vencimentos**, o tipo segue o status do produto: item em **giro** gera **oferta interna**; item em **rebaixa** ou **sem shelf** gera **rebaixa**.
-- Na tela **Lojas**, o botão do produto gera sempre **rebaixa** (ver item 13.3).
+- No **Painel de Vencimentos**, na tela **Lojas** (desde 27/10/2026) e nas telas **Estoque e vencimento** e **Pendências**, o tipo segue o status do produto: item em **giro** gera **oferta interna**; item em **rebaixa** ou **sem shelf** gera **rebaixa**.
 - No Painel, o administrador pode marcar vários itens na tabela e criar todas as solicitações de uma vez, com motivo e período comuns e preços por item. Cada item vira **uma solicitação**, do tipo correspondente ao seu status. O botão informa a composição: "Criar N solicitações (x rebaixas · y ofertas)".
 
 ### 5.4 O que acontece depois
@@ -300,24 +316,33 @@ A última compra mostrada é a compra mais recente do produto por qualquer loja 
 
 ### 7.2 Onde a solicitação nasce
 
-O status inicial depende de quem cria:
+O status inicial depende de quem cria e, desde 27/10/2026 (v2.0), de **a solicitação exigir ou não a diretoria**:
 
 | Quem cria | Nasce como | Supervisor responsável |
 |---|---|---|
 | Vendedor | Ag. Supervisor | o supervisor da loja na carteira do vendedor |
-| Supervisor | Ag. Diretoria (já com a primeira aprovação) | ele mesmo |
+| Supervisor | Aprovado, se não exige diretoria; senão Ag. Diretoria | ele mesmo |
 | Diretoria ou administrador | Aprovado | não se aplica |
 
-A rede e a subrede da solicitação vêm sempre da carteira do cliente.
+**Quando a solicitação exige a diretoria** (regra de escalada, calculada ao criar e refeita a cada ajuste):
+
+- **Não exige** quando o preço da oferta veio da tabela da rede (P#2/P#3 cadastrado no Lacteus): o preço já é considerado aprovado.
+- **Não exige** quando o preço foi sugerido e o **valor que a Valemilk recebe** (preço líquido − sellout) é **igual ou maior que o piso** do item.
+- **Exige** quando o valor recebido fica **abaixo do piso**, e também quando não dá para conferir (loja sem última compra ou item sem piso cadastrado).
+- O **piso** é, por padrão, o **preço mínimo** do item no Lacteus; o administrador pode trocar por rede para o P#3 (seção 11.8).
+
+O detalhe da solicitação mostra "Exige diretoria" ou "Aprovação do supervisor encerra o fluxo" e, para quem vê margens, o motivo com os valores. A rede e a subrede da solicitação vêm sempre da carteira do cliente.
 
 ### 7.3 Quem decide
 
-- **Supervisor**: decide as solicitações **Ag. Supervisor** dos seus vendedores, aprovando (vai para Ag. Diretoria) ou rejeitando. Se a rede tem um **responsável de rede** cadastrado, **só ele** decide as solicitações daquela rede.
+- **Supervisor**: decide as solicitações **Ag. Supervisor** dos seus vendedores. Ao aprovar, a solicitação vai para **Aprovado** se não exige diretoria, ou para **Ag. Diretoria** se exige. Se a rede tem um **responsável de rede** cadastrado, **só ele** decide as solicitações daquela rede.
+- **Ajuste na decisão** (v2.0): antes de aprovar, o supervisor (e também diretoria e administrador) pode marcar "Ajustar as condições" e mudar o **preço da oferta**, o **sellout** e o **período**. O sistema recalcula margens, valor recebido e a escalada, registra o ajuste (antes e depois, quem e quando) e lança "ajustada" no histórico. Preço que veio da tabela da rede só a diretoria altera.
 - **Diretoria e administrador**: decidem as solicitações **Ag. Diretoria** (aprovação final ou rejeição) e também podem aprovar ou rejeitar **diretamente** uma solicitação que ainda está Ag. Supervisor.
 - A decisão pode levar um comentário, opcional inclusive na rejeição. Tudo fica registrado no histórico da solicitação (quem, quando, o quê).
 - Na tela **Solicitações**, solicitações da mesma rede e produto aparecem agrupadas e podem ser decididas de uma vez ("Decidir todas").
+- Uma solicitação criada pelo supervisor já nasce com a etapa dele cumprida, então ele nunca aprova a própria solicitação.
 
-Atenção: decidir exige a permissão "Aprovar ou rejeitar solicitações", que por padrão só diretoria e administrador têm. Enquanto ela não for marcada para o perfil Supervisor na tela Permissões, a etapa do supervisor não acontece (ver item 13.1).
+Desde 27/10/2026 o perfil Supervisor tem, por padrão, a tela Solicitações e a permissão de decidir (ver 11.5). Em produção, perfis personalizados antes dessa data precisam receber as duas permissões na tela Permissões, porque a personalização prevalece sobre o padrão.
 
 ### 7.4 Cancelamento e ação ativa
 
@@ -507,6 +532,34 @@ Painel construído sobre os **retratos de estoque** gravados pela Integração E
 
 ---
 
+### 9.6 Estoque e vencimento e Ruptura (vendedor, supervisor, diretoria, administrador) — v2.0, 27/10/2026
+
+Duas telas para o vendedor agir antes do vencimento, com os dados da própria carteira (supervisor: suas lojas e redes; diretoria e administrador: tudo).
+
+**Estoque e vencimento (por loja).** Lista **tudo o que a loja comprou nos últimos 90 dias** (notas do Lacteus, atualizadas uma vez por dia às 5h30) e tudo o que o promotor contou nos últimos 30 dias, mesmo sem compra. Para cada item: os lotes da última contagem com quantidade, validade, % do shelf e situação, quem contou e quando, a última compra. Nada some da tela:
+
+| Situação | Regra |
+|---|---|
+| Rebaixa / Giro / Ok / Sem shelf | Pior status entre os lotes vigentes, com a mesma régua do Painel (seção 4). |
+| Não reencontrado | Tem lote contado em 30 dias, mas nenhum vigente: a loja foi visitada mais de 14 dias depois da contagem. O lote aparece com o motivo, em cinza, e não entra na soma. |
+| Zerado | Última contagem do produto foi zero sem ruptura marcada ("lote encerrado"). |
+| Ruptura | Última contagem zero **e** ruptura marcada no Ativmob. |
+| Não contado | Comprou em 90 dias e não tem contagem nos últimos 30 dias (mostra a data da última contagem ou "nunca contado"). |
+
+Filtros: Todos, Ruptura, Rebaixa, Giro, Não contado, Não reencontrado; busca por produto. Itens em rebaixa ou giro têm o atalho **Solicitar rebaixa** / **Solicitar oferta** (mesmo formulário da seção 5; o tipo segue o status). A regra dos 14 dias continua valendo só para o estoque contado, porque os promotores nem sempre contam todos os itens.
+
+**Ruptura.** Lojas e itens com a última contagem em zero e ruptura marcada, com o promotor e a data. O vendedor registra **Marcar pedido feito** (com observação opcional), que conta como ação no acompanhamento das pendências. Quando uma contagem posterior mostra quantidade maior que zero, a ruptura sai da lista sozinha. As contagens chegam ao sistema a cada 30 minutos, mas o Ativmob só entrega os eventos ao banco de BI três vezes ao dia (a última por volta das 21h15), então uma contagem feita de tarde só aparece à noite.
+
+### 9.7 Pendências de contagem e acompanhamento — v2.0, 27/10/2026
+
+Toda contagem que entra em **rebaixa**, **giro** ou **ruptura** gera uma pendência para o **vendedor e o supervisor da loja ao mesmo tempo**, para que o supervisor possa agir antes do vendedor. A pendência é criada uma vez por loja, produto e lote; se a situação piora (giro para rebaixa), nasce outra e a de giro fica "superada".
+
+- **Canais**: a tela **Pendências** (com contador de não vistas no menu) e **push** no celular ou navegador, para quem ativar as notificações (o InfoVale instalado na tela inicial; no iPhone é preciso instalar antes). Não há push entre 21h e 7h: o que chega nesse horário é enviado às 7h. WhatsApp fica para uma fase seguinte.
+- **Cada destinatário** tem o seu "vista em" (marcado ao abrir a tela). **Ações que contam**: criar a solicitação de rebaixa ou oferta (a partir da pendência ou de qualquer outra tela), marcar o pedido de reposição como feito (ruptura) ou "Já resolvi" com motivo. Quando um dos dois age, a pendência do outro mostra quem agiu e o quê.
+- **Acompanhamento (administrador)**: por vendedor e supervisor, quantas pendências foram enviadas, vistas e tiveram ação (em 7, 30 ou 90 dias), e a lista em destaque das sem ação há mais de 48 horas, com quem já viu.
+
+---
+
 ## 10. Regras de visibilidade e responsabilidade
 
 1. **A carteira define o alcance de cada um.** O vendedor enxerga as lojas em que é o vendedor cadastrado; o supervisor, as lojas e redes em que é o supervisor cadastrado; diretoria e administrador enxergam tudo.
@@ -577,15 +630,21 @@ O acesso é controlado **por perfil**: cada usuário tem um perfil (Vendedor, Su
 | Painéis | Métricas Redes | Supervisor, Diretoria, Admin |
 | Painéis | Acompanhamento de Estoque | Admin |
 | Lojas e solicitações | Tela Lojas | Vendedor, Admin |
-| Lojas e solicitações | Tela Solicitações | Vendedor, Admin |
+| Lojas e solicitações | Tela Solicitações | Vendedor, Supervisor, Diretoria, Admin (desde 27/10/2026) |
 | Lojas e solicitações | Criar rebaixa ou oferta interna | Todos |
-| Lojas e solicitações | Aprovar ou rejeitar solicitações | Diretoria, Admin |
+| Lojas e solicitações | Aprovar ou rejeitar solicitações | Supervisor, Diretoria, Admin (desde 27/10/2026) |
+| Lojas e solicitações | Ver margens e sellout | Supervisor, Diretoria, Admin (nunca o Vendedor) |
+| Estoque, vencimento e ruptura | Telas Estoque e vencimento e Ruptura | Vendedor, Supervisor, Diretoria, Admin |
+| Estoque, vencimento e ruptura | Receber pendências de contagem | Vendedor, Supervisor |
+| Estoque, vencimento e ruptura | Acompanhamento das pendências | Admin |
 | Encartes | Encartes e Calendário Geral | Supervisor, Diretoria, Admin |
 | Encartes | Criar nova ação | Supervisor, Admin |
 | Encartes | Performance de encartes | Diretoria, Admin |
 | Estoque das redes | Integração Estoque | Admin |
 | Administração | Usuários | Admin |
 | Administração | Responsáveis de rede | Admin |
+| Administração | Margens por rede | Admin |
+| Administração | Anexar custo médio da rede | Supervisor (só o responsável pela rede), Admin |
 | Relatórios | Relatórios Scanntech (ver os relatórios do comercial e os do próprio supervisor) | Supervisor, Diretoria, Admin |
 | Relatórios | Ver os relatórios de cada supervisor | Diretoria, Admin |
 | Relatórios | Importar relatórios | Admin |
@@ -636,6 +695,23 @@ Efeitos práticos: o supervisor não abre a Agenda de Visitas nem cria solicita�
 - Essas lojas não têm vendedor (não existem na carteira de vendas) e a rede não tem histórico de compra no Lacteus: a análise de preço de ações por rede fica sem a última compra.
 - Uma rede com ações cadastradas em Encartes não pode ser excluída; dá para tirar lojas e supervisores dela.
 - Por padrão só o administrador usa a tela; pode ser liberada a outros perfis em Permissões.
+
+### 11.8 Margens por rede e custo médio (v2.0, 27/10/2026)
+
+Tela **Margens por Rede** (administrador; o supervisor responsável por uma rede abre só o bloco de custo médio das redes dele). Uma configuração por rede da carteira:
+
+| Campo | Regra |
+|---|---|
+| Margem operacional (%) | Um valor para a rede. |
+| Margem por loja (%) | Opcional, quando a rede trabalha com margem diferente por loja. Vale sobre a da rede. |
+| Margem por categoria (%) | Opcional, para redes com margem por categoria de produto. Vale sobre a da rede; a da loja vale sobre a da categoria. |
+| Piso da escalada | "Preço mínimo do item" (padrão) ou "P#3". É o valor com que o sistema compara o valor que a Valemilk recebe (seção 7.2). |
+| Dia limite das solicitações | Dia da semana e hora. Usado pelo envio centralizado à rede (fase seguinte). |
+| Modelo de e-mail e de Excel | Assunto, texto padrão e nome do modelo da rede (fase seguinte). |
+
+**Custo médio da rede.** Planilha da própria rede, por loja e produto (hoje só a Mix Mateus usa). Quem anexa: o administrador ou o **supervisor responsável pela rede** (Responsabilidades de rede). A importação segue o padrão da Integração Estoque: colunas reconhecidas pelo nome em qualquer ordem, prévia com linhas válidas e descartadas (com o motivo), lojas e produtos reconhecidos, valores nunca arredondados; a loja é reconhecida pelo código Lacteus (ou pelo código da rede já cadastrado na Integração Estoque) e o produto pelo código, pelo vínculo já feito na Integração Estoque ou pela descrição igual. Cada importação é uma **versão** com o arquivo original guardado; a mais recente é a usada na precificação; reenviar o mesmo arquivo avisa quando e por quem ele já foi importado.
+
+Como entra na solicitação: custo da rede = custo médio da planilha (loja e produto), senão o preço líquido; margem = da loja, senão da categoria, senão a operacional; sellout automático = `custo da rede − preço da oferta × (1 − margem)`.
 
 ### 11.7 Relatórios (PDF importado e visto como imagens)
 
@@ -701,7 +777,18 @@ Na mesma tela o administrador **renomeia** (nome e mês), **adiciona PDFs** e **
 | **Sellout** | Desconto em R$ que a Valemilk concede sobre a última compra para viabilizar a oferta. |
 | **Custo promo** | Última compra menos o sellout: o custo efetivo do produto para a loja durante a ação. |
 | **Margem PDV / Margem oferta** | (PDV − última compra) ÷ PDV e (oferta − custo promo) ÷ oferta. |
-| **Tabela 70** | Tabela de preços de rede do Lacteus; o "preço de tabela" do produto. |
+| **Tabela 70** | Preço de tabela do produto no Lacteus. Quando a rede tem tabela própria no Lacteus (P#1 por rede), vale a **tabela da rede**. |
+| **P#2 / P#3** | Preços de oferta interna (P#2) e de rebaixa (P#3) cadastrados no Lacteus, por rede ou no item. Preço da rede trava o campo da oferta e dispensa a diretoria. |
+| **Preço mínimo** | Preço mínimo do item no Lacteus; piso padrão da escalada. |
+| **Preço líquido** | Última compra × (1 − desconto do cliente). Custo real da loja. |
+| **Valor recebido** | Preço líquido menos o sellout: o que a Valemilk recebe por unidade na ação. Comparado com o piso para decidir se a diretoria precisa aprovar. |
+| **Sellout automático** | Sellout que mantém a margem da rede no preço da oferta: custo da rede − oferta × (1 − margem da rede). |
+| **Custo médio da rede** | Custo médio por loja e produto importado da planilha da própria rede (versões no cadastro de margens). |
+| **Piso** | Valor mínimo que a Valemilk deve receber para o supervisor encerrar a aprovação: preço mínimo do item (padrão) ou P#3. |
+| **Pendência** | Aviso ao vendedor e ao supervisor da loja de que uma contagem entrou em giro, rebaixa ou ruptura; registra vista e ação de cada um. |
+| **Ruptura** | Contagem do promotor com zero unidades e ruptura marcada no Ativmob. Zero sem ruptura é "lote encerrado". |
+| **Não reencontrado** | Lote cuja última contagem é mais de 14 dias anterior à última visita à loja; sai do Painel, mas continua visível na tela Estoque e vencimento. |
+| **Não contado** | Produto que a loja comprou nos últimos 90 dias e não teve contagem nos últimos 30 dias. |
 | **Ação ativa** | Solicitação não rejeitada nem cancelada cujo período ainda não terminou. |
 | **Cobertura** | Nas Métricas Redes, a proporção dos dias com ação no mês que já estão negociados. |
 | **Retrato** | Foto do estoque de uma rede em um dia, gravada a partir da planilha enviada (Integração Estoque). Não pode ser editado. |
@@ -714,9 +801,9 @@ Na mesma tela o administrador **renomeia** (nome e mês), **adiciona PDFs** e **
 
 Situações em que o sistema se comporta de um jeito que provavelmente não é o desejado. Cabe ao negócio decidir se são erros a corrigir ou regras a manter.
 
-1. **O supervisor não aprova por padrão, e hoje só o administrador decide.** O fluxo prevê a primeira aprovação pelo supervisor, mas o perfil Supervisor não tem, por padrão, nem a tela Solicitações nem a permissão de aprovar; só diretoria e administrador aprovam ou rejeitam, e toda solicitação de vendedor depende da diretoria. Para ativar a etapa do supervisor, basta marcar as duas permissões para o perfil na tela Permissões (seção 11.5). Além disso, a decisão é tomada **dentro da tela Solicitações**, e a Diretoria não tem essa tela por padrão (tem só a permissão de aprovar): enquanto ela não for liberada, a diretoria não tem onde decidir e a fila fica com o administrador.
+1. **O supervisor não aprova por padrão** — **resolvido em 27/10/2026.** O padrão do perfil Supervisor passou a incluir a tela Solicitações, a decisão da primeira etapa e as margens; a Diretoria ganhou a tela Solicitações. Em produção os perfis Supervisor e Diretoria estavam personalizados antes dessa data, então o administrador precisa marcar essas permissões na tela Permissões (ou restaurar o padrão) para a mudança valer.
 2. **Ação por rede fica sem margens** — **resolvido em 27/10/2026.** Ao solicitar para todas as lojas de uma rede, a última compra nunca era encontrada (o formulário da tela Lojas enviava a lista de lojas em vez do código da rede, e a consulta recusava o pedido). O formulário passou a consultar pela rede; as solicitações saem com última compra, margens e desconto de contrato.
-3. **Na tela Lojas toda ação nasce como rebaixa**, mesmo para produtos em giro, que deveriam gerar oferta interna (como acontece no Painel de Vencimentos).
+3. **Na tela Lojas toda ação nasce como rebaixa** — **resolvido em 27/10/2026.** O botão do produto passou a seguir o status do shelf (giro gera oferta interna), como no Painel.
 4. **Métricas Redes diz "últimos 30 dias", mas calcula o mês atual** (do dia 1 ao último dia). E a cobertura mede os dias com ação que estão negociados, não os dias do mês cobertos por ações.
 5. **A diretoria não cria encartes por padrão.** O botão "+ Nova Ação" só aparece para quem tem a permissão "Criar nova ação" (por padrão, supervisor e administrador); pode ser liberado à diretoria na tela Permissões.
 6. **Performance ignora ações longas**: uma ação que começa antes e termina depois do período comparado não entra no cálculo; só entram as que começam ou terminam dentro dele.

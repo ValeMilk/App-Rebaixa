@@ -24,6 +24,36 @@ const itemSchema = new mongoose.Schema(
     precoSugerido: { type: Number },
     descontoPercentual: { type: Number },
     estoqueRefId: { type: mongoose.Schema.Types.ObjectId, ref: "Estoque" },
+
+    // v2.0 (fases 2 e 3): retrato dos precos e da regra no momento da criacao
+    precoLiquido: { type: Number, default: null },        // ultima compra x (1 - desconto do cliente)
+    precoTabelaRede: { type: Number, default: null },     // P#1 da rede (E08), quando existe
+    precoMinimo: { type: Number, default: null },         // E02_PRECO_MIN
+    precoP2: { type: Number, default: null },             // P#2 usado (rede ou item)
+    precoP3: { type: Number, default: null },             // P#3 usado (rede ou item)
+    precoOfertaOrigem: { type: String, enum: [null, "rede", "item", "vendedor"], default: null },
+    precoOfertaTravado: { type: Boolean, default: false },
+    selloutOrigem: { type: String, enum: [null, "automatico", "sugerido_pdv", "manual"], default: null },
+    custoRedeAplicado: { type: Number, default: null },   // custo medio da planilha ou o preco liquido
+    custoRedeOrigem: { type: String, enum: [null, "custo_medio", "preco_liquido"], default: null },
+    margemRedeAplicada: { type: Number, default: null },  // 0-100
+    origemMargem: { type: String, enum: [null, "loja", "categoria", "rede"], default: null },
+    valorRecebido: { type: Number, default: null },       // preco liquido - sellout
+    precoPiso: { type: Number, default: null },
+    pisoTipo: { type: String, enum: [null, "minimo", "p3"], default: null },
+  },
+  { _id: false }
+);
+
+// Ajuste das condicoes pelo supervisor (ou diretoria/admin) na decisao
+const ajusteSchema = new mongoose.Schema(
+  {
+    em: { type: Date, default: Date.now },
+    porUserId: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
+    porNome: String,
+    porRole: String,
+    antes: { precoOferta: Number, sellout: Number, inicioAcao: Date, fimAcao: Date },
+    depois: { precoOferta: Number, sellout: Number, inicioAcao: Date, fimAcao: Date },
   },
   { _id: false }
 );
@@ -83,6 +113,17 @@ const solicitacaoSchema = new mongoose.Schema(
     aprovadoPorNome: String,
     aprovadoEm: Date,
     motivoDecisao: String,
+
+    // v2.0: acao contra concorrente exige foto (SolicitacaoFoto)
+    contraConcorrente: { type: Boolean, default: false },
+    temFoto: { type: Boolean, default: false },
+
+    // v2.0: escalada. exigeDiretoria = false quando o preco veio da rede ou o valor recebido >= piso
+    aprovacao: {
+      exigeDiretoria: { type: Boolean, default: true },
+      motivoEscalada: { type: String, default: null },
+    },
+    ajustes: { type: [ajusteSchema], default: [] },
 
     historico: { type: [historicoSchema], default: [] },
   },

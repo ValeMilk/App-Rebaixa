@@ -60,8 +60,8 @@ function SolCard({ s, podeDecidir, decidindo, setDecidindo, motivoDecisao, setMo
             <div key={i} className="flex items-center justify-between text-sm gap-2">
               <span className="text-neutral-700 truncate flex-1">{it.produto}</span>
               <div className="flex gap-2 items-center shrink-0">
-                {it.precoOferta && <span className="text-secondary font-bold text-xs">{fmtBRL(it.precoOferta)}</span>}
-                {it.margemOferta != null && (
+                {it.precoOferta && <span className="text-secondary font-bold text-xs">{fmtBRL(it.precoOferta)}{it.precoOfertaTravado ? " 🔒" : ""}</span>}
+                {!s.margensOcultas && it.margemOferta != null && (
                   <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${it.margemOferta >= 20 ? "bg-success/15 text-success" : it.margemOferta >= 10 ? "bg-warning/15 text-warning" : "bg-danger/15 text-danger"}`}>
                     {it.margemOferta?.toFixed(1)}%
                   </span>
@@ -107,7 +107,7 @@ function ProdutoGrupoCard({ prodGrupo, redeKey, podeDecidir, decidindo, setDecid
   const podeDecidirAlgum = sols.some(podeDecidir);
   const qtdTotal = sols.reduce((acc, s) => acc + (s.itens?.[0]?.quantidade || 0), 0);
   const precoOferta = sols[0]?.itens?.[0]?.precoOferta;
-  const margemOferta = sols[0]?.itens?.[0]?.margemOferta;
+  const margemOferta = sols[0]?.margensOcultas ? null : sols[0]?.itens?.[0]?.margemOferta;
   const motivo = sols[0]?.motivo;
   const criadoPorNome = sols[0]?.criadoPorNome;
   const criadoEm = sols[0]?.createdAt;

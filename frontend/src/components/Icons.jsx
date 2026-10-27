@@ -98,6 +98,30 @@ export const IcoAlert = (p) => (
   </Base>
 );
 
+export const IcoBell = (p) => (
+  <Base {...p}>
+    <path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9" />
+    <path d="M13.73 21a2 2 0 01-3.46 0" />
+  </Base>
+);
+
+export const IcoBoxOff = (p) => (
+  <Base {...p}>
+    <path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z" />
+    <line x1="3.27" y1="6.96" x2="12" y2="12.01" />
+    <line x1="12" y1="22.08" x2="12" y2="12" />
+    <line x1="2" y1="2" x2="22" y2="22" />
+  </Base>
+);
+
+export const IcoPercent = (p) => (
+  <Base {...p}>
+    <line x1="19" y1="5" x2="5" y2="19" />
+    <circle cx="6.5" cy="6.5" r="2.5" />
+    <circle cx="17.5" cy="17.5" r="2.5" />
+  </Base>
+);
+
 export const IcoClock = (p) => (
   <Base {...p}>
     <circle cx="12" cy="12" r="10" />

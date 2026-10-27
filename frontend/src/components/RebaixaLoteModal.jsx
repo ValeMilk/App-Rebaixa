@@ -5,29 +5,19 @@ import api from "@/lib/api";
 import { fmtData, fmtBRL } from "@/lib/utils";
 import { STATUS_SHELF_MAP } from "@/lib/estoque";
 import { TONE, toneMargem } from "@/lib/tones";
+import { useAuth } from "@/lib/auth";
+import { pode } from "@/lib/permissoes";
+import { calcMargens, selloutSugeridoPDV, ofertaDoContexto, resolverSellout, camposUltimaCompra, camposPrecificacao, carregarContexto } from "@/lib/precificacao";
 import { IcoX, IcoAlert, IcoStore } from "@/components/Icons";
 import Dialog from "@/components/ui/Dialog";
 import Button from "@/components/ui/Button";
 import Badge from "@/components/ui/Badge";
-import UltimaCompraComDesconto, { camposDesconto } from "@/components/UltimaCompraComDesconto";
+import UltimaCompraComDesconto from "@/components/UltimaCompraComDesconto";
+import { SeloPrecoOferta } from "@/components/precificacao/PrecosInfo";
+import SelloutCampo from "@/components/precificacao/SelloutCampo";
 
 // Tipo de solicitacao sugerido pelo status de shelf do item (giro -> oferta interna)
 const tipoDe = (it) => STATUS_SHELF_MAP[it.status]?.acao || "rebaixa";
-
-// Mesmas formulas do RebaixaModal, em funcao pura para aplicar item a item.
-function calcMargens({ precoPDV, precoOferta, sellout, precoUC }) {
-  const p = Number(precoPDV);
-  const o = Number(precoOferta);
-  const s = Number(sellout) || 0;
-  const margemPDV = p > 0 && precoUC != null ? ((p - precoUC) / p) * 100 : null;
-  const margemOferta = o > 0 && precoUC != null ? ((o - (precoUC - s)) / o) * 100 : null;
-  let selloutSugerido = null;
-  if (o > 0 && precoUC != null && margemPDV != null) {
-    const sug = precoUC - o * (1 - margemPDV / 100);
-    if (sug > 0) selloutSugerido = Math.round(sug * 100) / 100;
-  }
-  return { margemPDV, margemOferta, selloutSugerido };
-}
 
 function MargemMini({ label, pct }) {
   const t = TONE[toneMargem(pct)];
@@ -38,13 +28,20 @@ function MargemMini({ label, pct }) {
   );
 }
 
+/**
+ * Rebaixa/oferta em lote (Painel de Vencimentos): uma solicitacao por loja+produto. v2.0: cada item usa
+ * o contexto de precificacao (ultima compra, preco liquido, P#2/P#3 travado pela rede, sellout automatico).
+ * Sem foto neste fluxo (o lote e do administrador; a foto e do fluxo por loja).
+ */
 export default function RebaixaLoteModal({ itens, onClose, onEnviado }) {
+  const { user } = useAuth();
+  const veMargens = pode(user, "solicitacoes.ver_margens");
   const [motivo, setMotivo] = useState("");
   const [inicioAcao, setInicioAcao] = useState("");
   const [fimAcao, setFimAcao] = useState("");
-  const [campos, setCampos] = useState({});           // _id -> { precoPDV, precoOferta, sellout }
-  const [ultimaCompra, setUltimaCompra] = useState({}); // _id -> { encontrado, precoUltimaCompra, dataUltimaCompra }
-  const [loadingUC, setLoadingUC] = useState(true);
+  const [campos, setCampos] = useState({});   // _id -> { precoPDV, precoOferta, sellout }
+  const [ctxs, setCtxs] = useState({});       // _id -> contexto de precificacao
+  const [loadingCtx, setLoadingCtx] = useState(true);
   const [enviando, setEnviando] = useState(false);
   const [erro, setErro] = useState("");
 
@@ -63,18 +60,26 @@ export default function RebaixaLoteModal({ itens, onClose, onEnviado }) {
 
   useEffect(() => {
     let cancelado = false;
-    setLoadingUC(true);
+    setLoadingCtx(true);
     Promise.all(
       itens.map((it) =>
-        // codigoRede: se a loja nao compra em nome proprio, o backend cai para a ultima compra da rede
-        api.get("/erp/ultima-compra", { params: { clienteCodigo: it.clienteCodigo, produtoCodigo: it.produtoCodigo, codigoRede: it.codigoRede || undefined } })
-          .then(({ data }) => [it._id, data])
-          .catch(() => [it._id, { encontrado: false }])
+        carregarContexto(api, { clienteCodigo: it.clienteCodigo, produtoCodigo: it.produtoCodigo, codigoRede: it.codigoRede || undefined, tipo: tipoDe(it) })
+          .then((c) => [it._id, c])
       )
     ).then((pares) => {
       if (cancelado) return;
-      setUltimaCompra(Object.fromEntries(pares));
-      setLoadingUC(false);
+      const mapa = Object.fromEntries(pares);
+      setCtxs(mapa);
+      // Preco da oferta vindo da rede (travado) ou do item (editavel)
+      setCampos((atual) => {
+        const novo = { ...atual };
+        for (const it of itens) {
+          const of = ofertaDoContexto(mapa[it._id], tipoDe(it)).precoOferta;
+          if (of?.valor != null && !novo[it._id]?.precoOferta) novo[it._id] = { ...(novo[it._id] || {}), precoOferta: String(of.valor) };
+        }
+        return novo;
+      });
+      setLoadingCtx(false);
     });
     return () => { cancelado = true; };
   }, [itens]);
@@ -83,13 +88,18 @@ export default function RebaixaLoteModal({ itens, onClose, onEnviado }) {
 
   function dadosItem(it) {
     const c = campos[it._id] || {};
-    const uc = ultimaCompra[it._id];
+    const ctx = ctxs[it._id];
+    const uc = ctx?.ultimaCompra;
     const precoUC = uc?.encontrado ? Number(uc.precoUltimaCompra) : null;
     const dataUC = uc?.encontrado ? uc.dataUltimaCompra : null;
-    // Desconto de contrato diluido: so informativo, nao entra nas margens
-    const descUC = uc?.encontrado ? camposDesconto(uc) : {};
+    const descUC = camposUltimaCompra(ctx);
     const origemUC = uc?.encontrado ? uc.origem : null;
-    return { c, precoUC, dataUC, descUC, origemUC, ...calcMargens({ ...c, precoUC }) };
+    const oferta = ofertaDoContexto(ctx, tipoDe(it));
+    const { margemPDV } = calcMargens({ precoPDV: c.precoPDV, precoOferta: c.precoOferta, sellout: 0, precoUC });
+    const sugPDV = selloutSugeridoPDV({ precoUC, precoPDV: c.precoPDV, precoOferta: c.precoOferta });
+    const selloutEfetivo = resolverSellout({ oferta: oferta.precoOferta, selloutAutomatico: oferta.selloutAutomatico, veMargens, selloutDigitado: c.sellout, precoUC, precoPDV: c.precoPDV, precoOferta: c.precoOferta });
+    const { margemOferta } = calcMargens({ precoPDV: c.precoPDV, precoOferta: c.precoOferta, sellout: selloutEfetivo.valor, precoUC });
+    return { c, ctx, precoUC, dataUC, descUC, origemUC, oferta, margemPDV, margemOferta, sugPDV, selloutEfetivo };
   }
 
   async function handleSubmit(e) {
@@ -110,8 +120,9 @@ export default function RebaixaLoteModal({ itens, onClose, onEnviado }) {
       await Promise.all(
         itens.map((it) => {
           const d = dadosItem(it);
+          const tipo = tipoDe(it);
           return api.post("/solicitacoes", {
-            tipo: tipoDe(it),
+            tipo,
             cliente: it.cliente,
             clienteCodigo: it.clienteCodigo,
             codigoRede: it.codigoRede || null,
@@ -125,15 +136,13 @@ export default function RebaixaLoteModal({ itens, onClose, onEnviado }) {
               quantidade: it.quantidade,
               dataValidade: it.dataValidade,
               diasParaVencer: it.diasParaVencer,
-              precoTabela: it.precoTabela,
+              precoTabela: d.ctx?.precoTabela ?? it.precoTabela,
               precoOferta: Number(d.c.precoOferta),
               precoPDV: Number(d.c.precoPDV),
-              sellout: d.c.sellout ? Number(d.c.sellout) : 0,
-              precoUltimaCompra: d.precoUC ?? undefined,
-              dataUltimaCompra: d.dataUC ?? undefined,
               ...d.descUC,
               margemPDV: d.margemPDV != null ? Math.round(d.margemPDV * 10) / 10 : undefined,
               margemOferta: d.margemOferta != null ? Math.round(d.margemOferta * 10) / 10 : undefined,
+              ...camposPrecificacao(d.ctx, { tipo, precoOferta: d.c.precoOferta, sellout: d.selloutEfetivo.valor, selloutOrigem: d.selloutEfetivo.origem }),
               estoqueRefId: it._id,
             }],
           });
@@ -148,7 +157,7 @@ export default function RebaixaLoteModal({ itens, onClose, onEnviado }) {
     }
   }
 
-  const semHistorico = !loadingUC && itens.filter((it) => !ultimaCompra[it._id]?.encontrado).length;
+  const semHistorico = !loadingCtx && itens.filter((it) => !ctxs[it._id]?.ultimaCompra?.encontrado).length;
   const nOfertas = itens.filter((it) => tipoDe(it) === "oferta_interna").length;
   const nRebaixas = itens.length - nOfertas;
   const rotuloEnviar = nOfertas && nRebaixas
@@ -197,7 +206,7 @@ export default function RebaixaLoteModal({ itens, onClose, onEnviado }) {
             {semHistorico > 0 && (
               <div className="rounded-xl bg-warning/10 border border-warning/30 p-2.5 text-[11px] text-warning flex items-start gap-2">
                 <IcoAlert className="w-3.5 h-3.5 shrink-0 mt-0.5" />
-                <span>{semHistorico} {semHistorico === 1 ? "item sem" : "itens sem"} histórico de compra — as margens desses não serão calculadas.</span>
+                <span>{semHistorico} {semHistorico === 1 ? "item sem" : "itens sem"} histórico de compra — sem preço líquido{veMargens ? " nem margens" : ""} para esses.</span>
               </div>
             )}
 
@@ -216,7 +225,8 @@ export default function RebaixaLoteModal({ itens, onClose, onEnviado }) {
                 <div className="divide-y divide-neutral-100">
                   {loja.itens.map((it) => {
                     const d = dadosItem(it);
-                    const ucCarregando = loadingUC && ultimaCompra[it._id] === undefined;
+                    const ctxCarregando = loadingCtx && ctxs[it._id] === undefined;
+                    const travado = !!d.oferta.precoOferta?.travado;
                     return (
                       <div key={it._id} className="px-3 py-3 space-y-2">
                         <div className="flex items-start justify-between gap-3">
@@ -226,15 +236,22 @@ export default function RebaixaLoteModal({ itens, onClose, onEnviado }) {
                               <Badge tone={tipoDe(it) === "oferta_interna" ? "info" : "danger"} className="text-[10px] font-semibold">
                                 {tipoDe(it) === "oferta_interna" ? "Oferta" : "Rebaixa"}
                               </Badge>
+                              <SeloPrecoOferta oferta={d.oferta.precoOferta} />
                             </div>
                             <div className="text-[11px] text-neutral-400 mt-0.5">
                               {it.quantidade} un · vence {fmtData(it.dataValidade)}
                               <span className={`font-semibold ${it.diasParaVencer <= 15 ? "text-danger" : "text-neutral-500"}`}> ({it.diasParaVencer ?? "—"}d)</span>
                             </div>
+                            {d.ctx && (
+                              <div className="text-[11px] text-neutral-500 mt-0.5">
+                                Tabela {fmtBRL(d.ctx.precoTabela)} · Mín. {d.ctx.item?.precoMinimo > 0 ? fmtBRL(d.ctx.item.precoMinimo) : "—"}
+                                {d.ctx.precoLiquido != null && <> · Líquido <b className="text-secondary">{fmtBRL(d.ctx.precoLiquido)}</b> ({Number(d.ctx.descontoClientePercentual || 0).toFixed(2)}%)</>}
+                              </div>
+                            )}
                           </div>
                           <div className="shrink-0 text-right text-[11px]">
                             <div className="text-neutral-400 uppercase tracking-wide text-[9px] font-semibold">Últ. compra</div>
-                            {ucCarregando ? (
+                            {ctxCarregando ? (
                               <div className="text-neutral-400">…</div>
                             ) : d.precoUC != null ? (
                               <>
@@ -254,7 +271,7 @@ export default function RebaixaLoteModal({ itens, onClose, onEnviado }) {
                           </div>
                         </div>
 
-                        <div className="grid grid-cols-3 gap-2">
+                        <div className={`grid gap-2 ${veMargens ? "grid-cols-3" : "grid-cols-2"}`}>
                           <div>
                             <label className="block text-[9px] font-semibold text-neutral-500 uppercase tracking-wide mb-0.5">PDV (R$) *</label>
                             <input type="number" step="0.01" min="0" inputMode="decimal" placeholder="0,00" className="input !px-2.5 !py-2 text-sm"
@@ -262,26 +279,34 @@ export default function RebaixaLoteModal({ itens, onClose, onEnviado }) {
                           </div>
                           <div>
                             <label className="block text-[9px] font-semibold text-neutral-500 uppercase tracking-wide mb-0.5">Oferta (R$) *</label>
-                            <input type="number" step="0.01" min="0" inputMode="decimal" placeholder="0,00" className="input !px-2.5 !py-2 text-sm font-bold"
+                            <input type="number" step="0.01" min="0" inputMode="decimal" placeholder="0,00" readOnly={travado}
+                              className={`input !px-2.5 !py-2 text-sm font-bold ${travado ? "bg-neutral-50 text-neutral-700" : ""}`}
                               value={d.c.precoOferta || ""} onChange={(e) => setCampo(it._id, "precoOferta", e.target.value)} />
                           </div>
-                          <div>
-                            <label className="block text-[9px] font-semibold text-neutral-500 uppercase tracking-wide mb-0.5">Sellout (R$)</label>
-                            <input type="number" step="0.01" min="0" inputMode="decimal" placeholder="0,00" className="input !px-2.5 !py-2 text-sm"
-                              value={d.c.sellout || ""} onChange={(e) => setCampo(it._id, "sellout", e.target.value)} />
-                          </div>
+                          <SelloutCampo
+                            compacto
+                            veMargens={veMargens}
+                            value={d.c.sellout || ""}
+                            onChange={(v) => setCampo(it._id, "sellout", v)}
+                            selloutAutomatico={travado ? d.oferta.selloutAutomatico : null}
+                            margemRede={d.ctx?.margemRede?.margem}
+                            selloutSugeridoPDV={d.sugPDV}
+                            margemPDV={d.margemPDV}
+                          />
                         </div>
 
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <MargemMini label="Margem PDV" pct={d.margemPDV} />
-                          <MargemMini label="Margem oferta" pct={d.margemOferta} />
-                          {d.selloutSugerido != null && String(d.c.sellout || "") !== String(d.selloutSugerido) && (
-                            <button type="button" onClick={() => setCampo(it._id, "sellout", String(d.selloutSugerido))}
-                              className="text-[11px] text-info font-semibold hover:text-info active:opacity-70 transition">
-                              ↑ Sellout sugerido {fmtBRL(d.selloutSugerido)}
-                            </button>
-                          )}
-                        </div>
+                        {veMargens && (
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <MargemMini label="Margem PDV" pct={d.margemPDV} />
+                            <MargemMini label="Margem oferta" pct={d.margemOferta} />
+                            {d.ctx?.precoLiquido != null && (
+                              <span className="text-[11px] text-neutral-500">
+                                Valemilk recebe <b>{fmtBRL(d.ctx.precoLiquido - (d.selloutEfetivo.valor || 0))}</b>
+                                {d.ctx.piso?.valor != null && <> · piso {fmtBRL(d.ctx.piso.valor)}</>}
+                              </span>
+                            )}
+                          </div>
+                        )}
                       </div>
                     );
                   })}
@@ -300,7 +325,7 @@ export default function RebaixaLoteModal({ itens, onClose, onEnviado }) {
 
         {/* Footer fixo */}
         <div className="shrink-0 px-4 py-3 border-t border-neutral-100 bg-white sm:rounded-b-3xl">
-          <Button type="submit" form="form-rebaixa-lote" size="lg" className="w-full" disabled={enviando}>
+          <Button type="submit" form="form-rebaixa-lote" size="lg" className="w-full" disabled={enviando || loadingCtx}>
             {enviando ? "Enviando..." : rotuloEnviar}
           </Button>
         </div>

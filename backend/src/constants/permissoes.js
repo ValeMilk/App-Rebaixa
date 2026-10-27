@@ -30,6 +30,16 @@ const GRUPOS = [
       { chave: "solicitacoes.ver", label: "Tela Solicitações", descricao: "Lista e detalhe dos pedidos de rebaixa e oferta interna." },
       { chave: "solicitacoes.criar", label: "Criar rebaixa ou oferta interna", descricao: "Abrir solicitações a partir das telas Lojas e Painel de Vencimentos." },
       { chave: "solicitacoes.decidir", label: "Aprovar ou rejeitar solicitações", descricao: "O supervisor aprova a primeira etapa; diretoria e admin, a final.", naoSeAplica: ["vendedor"] },
+      { chave: "solicitacoes.ver_margens", label: "Ver margens e sellout", descricao: "Mostrar margem PDV, margem da oferta, sellout e valor recebido nas solicitações. O vendedor nunca vê.", naoSeAplica: ["vendedor"] },
+    ],
+  },
+  {
+    id: "visao_lojas",
+    label: "Estoque, vencimento e ruptura",
+    permissoes: [
+      { chave: "visao_lojas.ver", label: "Telas Estoque e vencimento e Ruptura", descricao: "Tudo o que cada loja comprou nos últimos 90 dias, com a última contagem, a situação (Ok, Giro, Rebaixa, Não contado, Não reencontrado) e as rupturas. Dados da própria carteira." },
+      { chave: "pendencias.receber", label: "Receber pendências de contagem", descricao: "Notificação (no sistema e push) quando uma contagem entra em giro, rebaixa ou ruptura numa loja da carteira." },
+      { chave: "pendencias.acompanhar", label: "Acompanhamento das pendências", descricao: "Por vendedor e supervisor: pendências enviadas, vistas e com ação, e as sem ação há mais de 48 horas." },
     ],
   },
   {
@@ -71,6 +81,8 @@ const GRUPOS = [
     permissoes: [
       { chave: "usuarios.gerenciar", label: "Usuários", descricao: "Cadastrar, editar e desativar usuários e definir seus perfis." },
       { chave: "responsaveis_rede.gerenciar", label: "Responsáveis de rede", descricao: "Definir o supervisor responsável por cada rede." },
+      { chave: "margens_rede.gerenciar", label: "Margens por rede", descricao: "Margem operacional, margem por categoria, dia limite e modelos de e-mail de cada rede; custo médio por loja e produto." },
+      { chave: "custo_medio.anexar", label: "Anexar custo médio da rede", descricao: "Importar a planilha de custo médio de uma rede. Além do admin, só o supervisor responsável pela rede consegue.", naoSeAplica: ["vendedor"] },
       { chave: "redes_infovale.gerenciar", label: "Redes do InfoVale", descricao: "Criar redes para lojas que só existem no Ativmob e definir seus supervisores." },
       { chave: "sincronizacao.executar", label: "Sincronização manual", descricao: "Disparar as sincronizações de estoque, carteira e produtos." },
       { chave: "permissoes.gerenciar", label: "Permissões", descricao: "Editar esta matriz. Exclusiva do perfil Admin.", somenteAdmin: true },
@@ -85,10 +97,12 @@ const SOMENTE_ADMIN = new Set(CATALOGO.filter((p) => p.somenteAdmin).map((p) => 
 const NAO_SE_APLICA = Object.fromEntries(PERFIS.map((perfil) => [perfil, new Set(CATALOGO.filter((p) => (p.naoSeAplica || []).includes(perfil)).map((p) => p.chave))]));
 
 // Acesso de cada perfil ANTES da tela de permissoes (menu + rotas da API).
+// (v2.0, 27/10/2026: o supervisor passou a ter a tela Solicitacoes, a decisao da primeira etapa e as margens; a
+// diretoria ganhou a tela Solicitacoes; vendedor e supervisor recebem as telas de estoque/ruptura e as pendencias.)
 const PADRAO = {
-  vendedor: ["lojas.ver", "solicitacoes.ver", "solicitacoes.criar"],
-  supervisor: ["metricas_redes.ver", "encartes.ver", "encartes.criar", "solicitacoes.criar", "relatorios.ver", "agenda_visitas.gerenciar"],
-  diretoria: ["metricas_redes.ver", "encartes.ver", "encartes.performance", "solicitacoes.criar", "solicitacoes.decidir", "relatorios.ver", "relatorios.ver_todos", "agenda_visitas.ver_todas"],
+  vendedor: ["lojas.ver", "solicitacoes.ver", "solicitacoes.criar", "visao_lojas.ver", "pendencias.receber"],
+  supervisor: ["metricas_redes.ver", "encartes.ver", "encartes.criar", "solicitacoes.ver", "solicitacoes.criar", "solicitacoes.decidir", "solicitacoes.ver_margens", "visao_lojas.ver", "pendencias.receber", "custo_medio.anexar", "relatorios.ver", "agenda_visitas.gerenciar"],
+  diretoria: ["metricas_redes.ver", "encartes.ver", "encartes.performance", "solicitacoes.ver", "solicitacoes.criar", "solicitacoes.decidir", "solicitacoes.ver_margens", "visao_lojas.ver", "relatorios.ver", "relatorios.ver_todos", "agenda_visitas.ver_todas"],
   admin: CHAVES,
 };
 

@@ -25,3 +25,5 @@ Thumbs.db
 # Service worker gerado pelo next-pwa a cada build
 frontend/public/sw.js
 frontend/public/workbox-*.js
+# Service worker gerado pelo next-pwa a cada build (inclui o worker de push compilado)
+frontend/public/worker-*.js

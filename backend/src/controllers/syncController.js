@@ -4,6 +4,8 @@ const { sincronizarProdutos, sincronizarERP } = require("../services/produtoSync
 const { erpConfigurado } = require("../services/erpDbService");
 const { sincronizarCarteiraEsigma, sincronizarProdutosEsigma } = require("../services/esigmaService");
 const { esigmaConfigurado } = require("../services/esigmaDbService");
+const { sincronizarVisaoLojas } = require("../services/visaoLojasService");
+const { sincronizarComprasRecentes } = require("../services/comprasRecentesService");
 
 let executando = false;
 let ultimaExecucao = null;
@@ -115,6 +117,32 @@ async function rodarSyncEsigma(_req, res) {
   }
 }
 
+// v2.0: visao do vendedor (ItemLoja/Ruptura). Depende da Carteira e das compras ja sincronizadas.
+async function rodarSyncVisao(_req, res) {
+  try {
+    const r = await sincronizarVisaoLojas();
+    ultimaExecucao = { tipo: "visao", em: new Date(), resultado: r };
+    res.json({ ok: true, ...r });
+  } catch (err) {
+    console.error("[sync/visao] erro:", err);
+    ultimaExecucao = { tipo: "visao", em: new Date(), resultado: { erro: err.message } };
+    res.status(500).json({ error: err.message || "Erro ao sincronizar a visao das lojas" });
+  }
+}
+
+// v2.0: compras dos ultimos 90 dias por loja x produto (Lacteus) -> CompraRecente
+async function rodarSyncCompras(_req, res) {
+  try {
+    const r = await sincronizarComprasRecentes();
+    ultimaExecucao = { tipo: "compras", em: new Date(), resultado: r };
+    res.json({ ok: true, ...r });
+  } catch (err) {
+    console.error("[sync/compras] erro:", err);
+    ultimaExecucao = { tipo: "compras", em: new Date(), resultado: { erro: err.message } };
+    res.status(500).json({ error: err.message || "Erro ao sincronizar as compras de 90 dias" });
+  }
+}
+
 function status(_req, res) {
   res.json({
     executando,
@@ -132,6 +160,8 @@ module.exports = {
   rodarSyncCarteiraEsigma,
   rodarSyncProdutosEsigma,
   rodarSyncEsigma,
+  rodarSyncVisao,
+  rodarSyncCompras,
   triggerBackground,
   status,
 };

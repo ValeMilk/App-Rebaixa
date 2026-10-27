@@ -118,8 +118,11 @@ SELECT
     CAST(ROUND(e02_validade * 0.73, 0) AS INT)   AS diasRebaixa,
     E29.e29_desc                                 AS subcategoria,
     E02_PRECO                                    AS precoTabela,
-    E02_PRECO_02                                 AS precoMinimo,
-    E02_PRECO_03                                 AS precoPromo,
+    -- Nomes conferidos no dicionario de dados em 27/10/2026: PRECO_MIN e o minimo; PRECO_02/03 sao o P#2 (oferta
+    -- interna) e o P#3 (rebaixa). Ate entao PRECO_02 era lido como "minimo" e PRECO_03 como "promo".
+    E02_PRECO_MIN                                AS precoMinimo,
+    E02_PRECO_02                                 AS precoP2,
+    E02_PRECO_03                                 AS precoP3,
     E02_CUSTO_lIVRE                              AS custo,
     E23.E23_DESC                                 AS categoria
 FROM dbo.E02 WITH (NOLOCK)
@@ -142,6 +145,39 @@ ORDER BY E02_ID ASC
 async function buscarProdutosDoErp() {
   if (!erpConfigurado()) return [];
   return query(SQL_PRODUTOS);
+}
+
+/**
+ * Tabela de preco por REDE (E08 ligada a A16): P#1 (tabela da rede), P#2 (oferta interna), P#3 (rebaixa).
+ * So linhas ativas, de item ativo, apontadas para uma rede (nao para cliente nem vendedor).
+ * Conferido em 27/10/2026: 3.153 linhas de P#1 em uso (Mix Mateus paga 2,50 no 187201 contra 2,90 da Tabela 70).
+ */
+const SQL_PRECOS_REDE = `
+SELECT
+    e08.E08_ID                                   AS id,
+    e08.E08_ID_A16                               AS codigoRede,
+    RTRIM(e02.E02_LIVRE)                         AS produtoCodigo,
+    e08.E08_PRECO_01                             AS p1,
+    e08.E08_PRECO_02                             AS p2,
+    e08.E08_PRECO_03                             AS p3,
+    e08.E08_PRECO_04                             AS p4
+FROM dbo.E08 e08 WITH (NOLOCK)
+INNER JOIN dbo.E02 e02 WITH (NOLOCK)
+   ON e02.E02_ID = e08.E08_ID_E02
+  AND e02.E02_TIPO = '04'
+  AND e02.E02_ATIVO = 1
+  AND (e02.E02_DESC IS NULL OR e02.E02_DESC NOT LIKE '%(INATIVO)%')
+INNER JOIN dbo.A16 a16 WITH (NOLOCK) ON a16.A16_ID = e08.E08_ID_A16
+WHERE e08.E08_ATIVO = 1
+  AND e08.E08_ID_A16 > 0
+  AND ISNULL(e08.E08_ID_CLIENTE, 0) = 0
+  AND ISNULL(e08.E08_ID_VEND, 0) = 0
+ORDER BY e08.E08_ID
+`;
+
+async function buscarPrecosRedeDoErp() {
+  if (!erpConfigurado()) return [];
+  return query(SQL_PRECOS_REDE);
 }
 
 // ---------------------------------------------------------------------------
@@ -444,9 +480,12 @@ async function buscarDescontosContrato(pares) {
         INNER JOIN dbo.A23 a23 WITH (NOLOCK)
            ON ((b.redeId > 0 AND a23.A23_ID_A16 = b.redeId) OR a23.A23_ID_CLIENTE = b.clienteCodigo)
           AND (a23.A23_ATIVO = 1 OR a23.A23_ATIVO IS NULL)
+          -- Tipo de desconto 0 = "Nenhum": o ERP nao aplica (conferido nas notas em 27/10/2026); 2 = financeiro, 6 = calculado
+          AND ISNULL(a23.A23_DESCONTOS, '0') <> '0'
           AND CAST(GETDATE() AS DATE) BETWEEN a23.A23_DT_INICIO AND ISNULL(a23.A23_DT_FIM, CAST(GETDATE() AS DATE))
         INNER JOIN dbo.A24 a24 WITH (NOLOCK)
            ON a24.A24_ID_A23 = a23.A23_ID
+          AND ISNULL(a24.A24_STATUS, 'A') <> 'R'
           AND a24.A24_DESC_PERC > 0
           AND ( (a24.A24_ID_E02 = b.E02_ID AND a24.A24_ID_E02 > 0)
              OR ((a24.A24_ID_E02 IS NULL OR a24.A24_ID_E02 = 0) AND a24.A24_ID_E01 = b.categoriaId) )
@@ -523,6 +562,7 @@ module.exports = {
   buscarCarteiraDoErp,
   sincronizarCarteira,
   buscarProdutosDoErp,
+  buscarPrecosRedeDoErp,
   buscarUltimaCompra,
   buscarUltimaCompraRede,
   buscarUltimaCompraRedeBatch,

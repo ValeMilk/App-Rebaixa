@@ -1,4 +1,4 @@
-import { IcoGrid, IcoStore, IcoClipboard, IcoTag, IcoCalendar, IcoChart, IcoUsers, IcoSync, IcoUpload, IcoPackage, IcoLock, IcoFileText } from "@/components/Icons";
+import { IcoGrid, IcoStore, IcoClipboard, IcoTag, IcoCalendar, IcoChart, IcoUsers, IcoSync, IcoUpload, IcoPackage, IcoLock, IcoFileText, IcoBell, IcoBoxOff, IcoPercent, IcoClock } from "@/components/Icons";
 import { pode } from "@/lib/permissoes";
 
 // Lista UNICA de navegacao: sidebar, sheet mobile e barra inferior leem daqui.
@@ -7,6 +7,9 @@ export const NAV = [
   { href: "/dashboard",            label: "Dashboard",        short: "Painel",    Icon: IcoGrid,      perm: "painel_vencimentos.ver", group: "principal" },
   { href: "/dashboard/supervisor", label: "Métricas Redes",   short: "Métricas",  Icon: IcoChart,     perm: "metricas_redes.ver", group: "principal" },
   { href: "/estoque",              label: "Lojas",            short: "Lojas",     Icon: IcoStore,     perm: "lojas.ver", group: "principal" },
+  { href: "/pendencias",           label: "Pendências",       short: "Pendências", Icon: IcoBell,     perm: "pendencias.receber", group: "principal" },
+  { href: "/visao/estoque",        label: "Estoque e Vencimento", short: "Estoque", Icon: IcoClock,   perm: "visao_lojas.ver", group: "principal" },
+  { href: "/visao/ruptura",        label: "Ruptura",          short: "Ruptura",   Icon: IcoBoxOff,    perm: "visao_lojas.ver", group: "principal" },
   { href: "/solicitacoes",         label: "Solicitações",     short: "Pedidos",   Icon: IcoClipboard, perm: "solicitacoes.ver", group: "principal" },
   { href: "/encartes",             label: "Encartes",         short: "Encartes",  Icon: IcoTag,       perm: "encartes.ver", group: "principal" },
   { href: "/encartes/calendario",  label: "Calendário Geral", short: "Cal. Geral", Icon: IcoCalendar, perm: "encartes.ver", group: "principal" },
@@ -17,6 +20,8 @@ export const NAV = [
   { href: "/integracao-estoque",  label: "Integração Estoque", short: "Integração", Icon: IcoUpload,  perm: "integracao_estoque.usar", group: "principal" },
   { href: "/admin/usuarios",         label: "Usuários",       short: "Usuários",  Icon: IcoUsers,     perm: "usuarios.gerenciar", group: "admin" },
   { href: "/admin/responsabilidades", label: "Resp. Rede",    short: "Resp. Rede", Icon: IcoUsers,    perm: "responsaveis_rede.gerenciar", group: "admin" },
+  { href: "/admin/margens-redes",    label: "Margens por Rede", short: "Margens",  Icon: IcoPercent,   perm: ["margens_rede.gerenciar", "custo_medio.anexar"], group: "admin" },
+  { href: "/admin/pendencias",       label: "Acomp. Pendências", short: "Pendências", Icon: IcoBell,   perm: "pendencias.acompanhar", group: "admin" },
   { href: "/admin/redes",            label: "Redes InfoVale", short: "Redes",     Icon: IcoStore,     perm: "redes_infovale.gerenciar", group: "admin" },
   { href: "/admin/relatorios",      label: "Importar Relatório", short: "Importar", Icon: IcoUpload,    perm: "relatorios.gerenciar", group: "admin" },
   { href: "/admin/sync",             label: "Sincronização",  short: "Sync",      Icon: IcoSync,      perm: "sincronizacao.executar", group: "admin" },

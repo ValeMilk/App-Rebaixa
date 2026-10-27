@@ -13,7 +13,8 @@ function iniciais(nome) {
  * Sidebar de navegacao. `variant="desktop"`: fixa, colapsavel para icones.
  * `variant="sheet"`: a mesma sidebar dentro do painel off-canvas do celular.
  */
-export default function Sidebar({ user, itens, ativo, collapsed = false, variant = "desktop", onNavigate, onLogout, onToggle, className }) {
+// `badges`: { [href]: numero } mostra um contador no item (ex.: pendencias nao vistas).
+export default function Sidebar({ user, itens, ativo, badges = {}, collapsed = false, variant = "desktop", onNavigate, onLogout, onToggle, className }) {
   const compacta = variant === "desktop" && collapsed;
   const inicio = itens[0]?.href || "/";
 
@@ -71,6 +72,7 @@ export default function Sidebar({ user, itens, ativo, collapsed = false, variant
               <ul className="space-y-0.5">
                 {doGrupo.map(({ href, label, Icon }) => {
                   const active = ativo === href;
+                  const badge = badges[href] > 0 ? (badges[href] > 99 ? "99+" : badges[href]) : null;
                   return (
                     <li key={href}>
                       <Link
@@ -84,8 +86,16 @@ export default function Sidebar({ user, itens, ativo, collapsed = false, variant
                           active ? "bg-secondary text-white" : "text-neutral-700 hover:bg-secondary/10 hover:text-primary"
                         )}
                       >
-                        <Icon className="h-5 w-5 shrink-0" aria-hidden />
+                        <span className="relative shrink-0">
+                          <Icon className="h-5 w-5" aria-hidden />
+                          {badge && compacta && (
+                            <span className="absolute -right-1.5 -top-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-danger px-1 text-[10px] font-semibold leading-none text-white" aria-label={`${badges[href]} novas`}>{badge}</span>
+                          )}
+                        </span>
                         {!compacta && <span className="truncate">{label}</span>}
+                        {badge && !compacta && (
+                          <span className={clsx("ml-auto flex h-5 min-w-5 items-center justify-center rounded-full px-1.5 text-[11px] font-semibold leading-none", active ? "bg-white text-secondary" : "bg-danger text-white")} aria-label={`${badges[href]} novas`}>{badge}</span>
+                        )}
                       </Link>
                     </li>
                   );

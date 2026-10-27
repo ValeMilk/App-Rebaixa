@@ -25,6 +25,12 @@ const permissoesRoutes = require("./routes/permissoes");
 const redesInfovaleRoutes = require("./routes/redesInfovale");
 const relatoriosRoutes = require("./routes/relatorios");
 const agendaRoutes = require("./routes/agenda");
+// v2.0 (27/10/2026): visao do vendedor, pendencias/push, precificacao e margens por rede
+const visaoRoutes = require("./routes/visao");
+const pendenciasRoutes = require("./routes/pendencias");
+const pushRoutes = require("./routes/push");
+const precificacaoRoutes = require("./routes/precificacao");
+const margensRedeRoutes = require("./routes/margensRede");
 
 const app = express();
 const PORT = process.env.PORT || 4000;
@@ -66,6 +72,11 @@ app.use("/api/permissoes", permissoesRoutes);
 app.use("/api/redes-infovale", redesInfovaleRoutes);
 app.use("/api/relatorios", relatoriosRoutes);
 app.use("/api/agenda", agendaRoutes);
+app.use("/api/visao", visaoRoutes);
+app.use("/api/pendencias", pendenciasRoutes);
+app.use("/api/push", pushRoutes);
+app.use("/api/precificacao", precificacaoRoutes);
+app.use("/api/margens-rede", margensRedeRoutes);
 
 // Erro
 app.use(errorHandler);

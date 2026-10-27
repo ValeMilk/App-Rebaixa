@@ -19,10 +19,12 @@ const { resolverPerfil, perfisDoUsuario } = require("../../src/services/permisso
 
 // ── Parte 1: regras puras ───────────────────────────────────────────────────────
 
-test("padrao: cada perfil comeca com o acesso que tinha antes do RBAC", () => {
-  assert.deepEqual([...resolverPerfil("vendedor", null)].sort(), ["lojas.ver", "solicitacoes.criar", "solicitacoes.ver"]);
-  assert.deepEqual([...resolverPerfil("supervisor", null)].sort(), ["agenda_visitas.gerenciar", "encartes.criar", "encartes.ver", "metricas_redes.ver", "relatorios.ver", "solicitacoes.criar"]);
-  assert.deepEqual([...resolverPerfil("diretoria", null)].sort(), ["agenda_visitas.ver_todas", "encartes.performance", "encartes.ver", "metricas_redes.ver", "relatorios.ver", "relatorios.ver_todos", "solicitacoes.criar", "solicitacoes.decidir"]);
+test("padrao (v2.0): vendedor e supervisor ganham as telas de estoque/ruptura e as pendencias; supervisor decide a primeira etapa", () => {
+  assert.deepEqual([...resolverPerfil("vendedor", null)].sort(), ["lojas.ver", "pendencias.receber", "solicitacoes.criar", "solicitacoes.ver", "visao_lojas.ver"]);
+  assert.deepEqual([...resolverPerfil("supervisor", null)].sort(), ["agenda_visitas.gerenciar", "custo_medio.anexar", "encartes.criar", "encartes.ver", "metricas_redes.ver", "pendencias.receber", "relatorios.ver", "solicitacoes.criar", "solicitacoes.decidir", "solicitacoes.ver", "solicitacoes.ver_margens", "visao_lojas.ver"]);
+  assert.deepEqual([...resolverPerfil("diretoria", null)].sort(), ["agenda_visitas.ver_todas", "encartes.performance", "encartes.ver", "metricas_redes.ver", "relatorios.ver", "relatorios.ver_todos", "solicitacoes.criar", "solicitacoes.decidir", "solicitacoes.ver", "solicitacoes.ver_margens", "visao_lojas.ver"]);
+  // o vendedor nunca ve margens nem decide, mesmo que alguem marque
+  assert.ok(!resolverPerfil("vendedor", { permissoes: ["solicitacoes.ver_margens", "solicitacoes.decidir"], conhecidas: CHAVES }).has("solicitacoes.ver_margens"));
   assert.deepEqual([...resolverPerfil("admin", null)], CHAVES);
   for (const p of PERFIS) assert.ok(PADRAO[p].every((c) => CHAVES.includes(c)), `padrao de ${p} so usa chaves do catalogo`);
 });
@@ -96,6 +98,8 @@ test.before(async () => {
     ["auth", "auth"], ["users", "users"], ["solicitacoes", "solicitacoes"], ["sync", "sync"], ["responsaveis-rede", "responsaveisRede"],
     ["encartes", "encartes"], ["dashboard", "dashboard"], ["integracao-estoque", "integracaoEstoque"],
     ["acompanhamento-estoque", "acompanhamentoEstoque"], ["permissoes", "permissoes"],
+    // v2.0
+    ["precificacao", "precificacao"], ["visao", "visao"], ["pendencias", "pendencias"], ["margens-rede", "margensRede"],
   ]) app.use(`/api/${rota}`, require(`../../src/routes/${arquivo}`));
   app.use(require("../../src/middlewares/errorHandler"));
   await new Promise((ok) => { server = app.listen(0, ok); });
@@ -120,7 +124,11 @@ const PORTAS = [
   ["GET", "/encartes/performance", ["diretoria", "admin"]],
   ["GET", "/dashboard/supervisor", ["supervisor", "diretoria", "admin"]],
   ["POST", "/solicitacoes", ["vendedor", "supervisor", "diretoria", "admin"], {}],
-  ["POST", `/solicitacoes/${ID}/decidir`, ["diretoria", "admin"], { decisao: "aprovado" }],
+  ["POST", `/solicitacoes/${ID}/decidir`, ["supervisor", "diretoria", "admin"], { decisao: "aprovado" }],
+  ["GET", "/precificacao/contexto", ["vendedor", "supervisor", "diretoria", "admin"]],
+  ["GET", "/visao/estoque", ["vendedor", "supervisor", "diretoria", "admin"]],
+  ["GET", "/pendencias/acompanhamento", ["admin"]],
+  ["PUT", "/margens-rede/1", ["admin"], {}],
   ["GET", "/responsaveis-rede", ["admin"]],
   ["GET", "/responsaveis-rede/redes-disponiveis", ["diretoria", "admin"]],
   ["GET", "/responsaveis-rede/supervisores-disponiveis", ["diretoria", "admin"]],
@@ -144,7 +152,7 @@ test("matriz padrao: cada rota abre para os mesmos perfis de antes", async (t) =
 test("login/me devolvem as permissoes efetivas; perfis adicionais somam", async (t) => {
   if (!pronto()) return t.skip("sem banco de teste");
   const sup = await chamar("supervisor", "GET", "/auth/me");
-  assert.deepEqual(sup.dados.user.permissoes.slice().sort(), ["agenda_visitas.gerenciar", "encartes.criar", "encartes.ver", "metricas_redes.ver", "relatorios.ver", "solicitacoes.criar"]);
+  assert.deepEqual(sup.dados.user.permissoes.slice().sort(), [...PADRAO.supervisor].sort());
   assert.equal(sup.dados.user.senhaHash, undefined);
   const misto = await chamar("vendedorComDiretoria", "GET", "/auth/me");
   assert.ok(misto.dados.user.permissoes.includes("lojas.ver") && misto.dados.user.permissoes.includes("encartes.performance"));
@@ -169,17 +177,17 @@ test("tela de permissoes: catalogo, perfis, padrao e contagem de usuarios", asyn
 
 test("editar a matriz muda o acesso de verdade, na hora; restaurar volta ao padrao", async (t) => {
   if (!pronto()) return t.skip("sem banco de teste");
-  // supervisor nao decide solicitacoes por padrao
-  assert.ok(negado(await chamar("supervisor", "POST", `/solicitacoes/${ID}/decidir`, { decisao: "aprovado" })));
-  const novo = [...PADRAO.supervisor, "solicitacoes.decidir"];
+  // supervisor nao ve a performance de encartes por padrao
+  assert.ok(negado(await chamar("supervisor", "GET", "/encartes/performance")));
+  const novo = [...PADRAO.supervisor, "encartes.performance"];
   const salvo = await chamar("admin", "PUT", "/permissoes/supervisor", { permissoes: novo });
   assert.equal(salvo.status, 200);
   const sup = salvo.dados.perfis.find((p) => p.perfil === "supervisor");
   assert.equal(sup.personalizado, true);
-  assert.ok(sup.permissoes.includes("solicitacoes.decidir"));
+  assert.ok(sup.permissoes.includes("encartes.performance"));
   assert.equal(sup.atualizadoPorNome, "Teste admin");
-  assert.ok(!negado(await chamar("supervisor", "POST", `/solicitacoes/${ID}/decidir`, { decisao: "aprovado" })), "passa a ter acesso");
-  assert.ok((await chamar("supervisor", "GET", "/auth/me")).dados.user.permissoes.includes("solicitacoes.decidir"));
+  assert.ok(!negado(await chamar("supervisor", "GET", "/encartes/performance")), "passa a ter acesso");
+  assert.ok((await chamar("supervisor", "GET", "/auth/me")).dados.user.permissoes.includes("encartes.performance"));
 
   // tirar uma permissao tambem vale na hora
   await chamar("admin", "PUT", "/permissoes/supervisor", { permissoes: ["metricas_redes.ver"] });
@@ -190,7 +198,7 @@ test("editar a matriz muda o acesso de verdade, na hora; restaurar volta ao padr
   const rest = await chamar("admin", "POST", "/permissoes/supervisor/restaurar");
   assert.equal(rest.dados.perfis.find((p) => p.perfil === "supervisor").personalizado, false);
   assert.ok(!negado(await chamar("supervisor", "GET", "/encartes")));
-  assert.ok(negado(await chamar("supervisor", "POST", `/solicitacoes/${ID}/decidir`, { decisao: "aprovado" })));
+  assert.ok(negado(await chamar("supervisor", "GET", "/encartes/performance")));
 });
 
 test("travas: admin nao e editavel, permissao exclusiva nao sai do admin, chave invalida e recusada", async (t) => {

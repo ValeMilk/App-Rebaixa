@@ -497,7 +497,7 @@ async function listarProdutos(req, res) {
 
   const campos = isEsigma
     ? "codigo descricao categoria subcategoria"
-    : "codigo codigoLivre descricao categoria subcategoria precoTabela precoMinimo precoPromo custo";
+    : "codigo codigoLivre descricao categoria subcategoria precoTabela precoMinimo precoP2 precoP3 precoPromo custo";
 
   const produtos = await Model.find(filtro)
     .select(campos)
