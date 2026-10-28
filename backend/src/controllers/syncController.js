@@ -1,6 +1,6 @@
 const { sincronizarEstoque } = require("../services/estoqueSyncService");
 const { sincronizarCarteira } = require("../services/erpService");
-const { sincronizarProdutos, sincronizarERP } = require("../services/produtoSyncService");
+const { sincronizarProdutos, sincronizarPrecosRede, sincronizarERP } = require("../services/produtoSyncService");
 const { erpConfigurado } = require("../services/erpDbService");
 const { sincronizarCarteiraEsigma, sincronizarProdutosEsigma } = require("../services/esigmaService");
 const { esigmaConfigurado } = require("../services/esigmaDbService");
@@ -58,8 +58,18 @@ async function rodarSyncCarteira(_req, res) {
 async function rodarSyncProdutos(_req, res) {
   try {
     const r = await sincronizarProdutos();
-    ultimaExecucao = { tipo: "produtos", em: new Date(), resultado: r };
-    res.json({ ok: true, ...r });
+    // Tabela de preco por rede (E08) tambem vai junto: o preco da rede da rebaixa/oferta depende dela.
+    // Falha aqui nao derruba os produtos; o erro aparece no resultado.
+    let precosRede;
+    try {
+      precosRede = await sincronizarPrecosRede();
+    } catch (e) {
+      console.error("[sync/produtos] precos por rede:", e);
+      precosRede = { erro: e.message };
+    }
+    const resultado = { ...r, precosRede };
+    ultimaExecucao = { tipo: "produtos", em: new Date(), resultado };
+    res.json({ ok: true, ...resultado });
   } catch (err) {
     console.error("[sync/produtos] erro:", err);
     ultimaExecucao = { tipo: "produtos", em: new Date(), resultado: { erro: err.message } };
