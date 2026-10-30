@@ -53,7 +53,7 @@ function ResumoLoja({ totais }) {
 }
 
 export default function VisaoEstoquePage() {
-  useTituloDaPagina("Estoque e vencimento", "Tudo o que cada loja comprou nos últimos 90 dias, com a última contagem");
+  useTituloDaPagina("Visão das lojas", "Tudo o que cada loja comprou nos últimos 90 dias, com a última contagem");
   const { user } = useAuth();
   const podeSolicitar = pode(user, "solicitacoes.criar");
 

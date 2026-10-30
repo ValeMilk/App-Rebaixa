@@ -148,6 +148,17 @@ Um usuário tem um perfil principal e pode receber perfis adicionais; nesse caso
 
 Ao entrar, cada perfil cai na sua tela de trabalho: vendedor em **Lojas**, supervisor em **Métricas Redes**, diretoria em **Encartes**, administrador no **Painel de Vencimentos**. Se essa tela não estiver liberada para o perfil, a pessoa cai na primeira tela do seu menu.
 
+**Menu lateral (desde 30/10/2026).** O menu é dividido em blocos, e cada pessoa vê só os itens que o seu perfil libera:
+
+| Bloco | Itens |
+|---|---|
+| Estoque | Estoques e vencimentos (antigo Dashboard / Painel de Vencimentos), Lojas, Pendências, Visão das lojas, Ruptura, Acompanhamento Estoque, Integração Estoque |
+| Rebaixas, ofertas e encartes | Solicitações, Encartes, Calendário Geral, Performance |
+| Redes e mercado | Métricas Redes, Agenda de Visitas, Relatórios Scanntech |
+| Administração | Usuários, Resp. Rede, Margens por Rede, Acomp. Pendências, Redes InfoVale, Importar Relatório, Sincronização, Permissões |
+
+A tela que antes se chamava Estoque e vencimento passou a se chamar **Visão das lojas**, para não se confundir com **Estoques e vencimentos**. Neste documento, "Painel de Vencimentos" é o nome técnico da tela Estoques e vencimentos.
+
 **Acesso**: o usuário escolhe o nome na lista e digita a senha. A senha é o **código do usuário no ERP Lacteus**. A sessão dura 8 horas.
 
 ---
@@ -279,7 +290,7 @@ E as regras novas do preenchimento:
 
 ### 5.3 Tipo da ação
 
-- No **Painel de Vencimentos**, na tela **Lojas** (desde 27/10/2026) e nas telas **Estoque e vencimento** e **Pendências**, o tipo segue o status do produto: item em **giro** gera **oferta interna**; item em **rebaixa** ou **sem shelf** gera **rebaixa**.
+- No **Painel de Vencimentos**, na tela **Lojas** (desde 27/10/2026) e nas telas **Visão das lojas** e **Pendências**, o tipo segue o status do produto: item em **giro** gera **oferta interna**; item em **rebaixa** ou **sem shelf** gera **rebaixa**.
 - No Painel, o administrador pode marcar vários itens na tabela e criar todas as solicitações de uma vez, com motivo e período comuns e preços por item. Cada item vira **uma solicitação**, do tipo correspondente ao seu status. O botão informa a composição: "Criar N solicitações (x rebaixas · y ofertas)".
 
 ### 5.4 O que acontece depois
@@ -532,11 +543,11 @@ Painel construído sobre os **retratos de estoque** gravados pela Integração E
 
 ---
 
-### 9.6 Estoque e vencimento e Ruptura (vendedor, supervisor, diretoria, administrador) — v2.0, 27/10/2026
+### 9.6 Visão das lojas e Ruptura (vendedor, supervisor, diretoria, administrador) — v2.0, 27/10/2026
 
 Duas telas para o vendedor agir antes do vencimento, com os dados da própria carteira (supervisor: suas lojas e redes; diretoria e administrador: tudo).
 
-**Estoque e vencimento (por loja).** Lista **tudo o que a loja comprou nos últimos 90 dias** (notas do Lacteus, atualizadas uma vez por dia às 5h30) e tudo o que o promotor contou nos últimos 30 dias, mesmo sem compra. Para cada item: os lotes da última contagem com quantidade, validade, % do shelf e situação, quem contou e quando, a última compra. Nada some da tela:
+**Visão das lojas (por loja).** Lista **tudo o que a loja comprou nos últimos 90 dias** (notas do Lacteus, atualizadas uma vez por dia às 5h30) e tudo o que o promotor contou nos últimos 30 dias, mesmo sem compra. Para cada item: os lotes da última contagem com quantidade, validade, % do shelf e situação, quem contou e quando, a última compra. Nada some da tela:
 
 | Situação | Regra |
 |---|---|
@@ -634,7 +645,7 @@ O acesso é controlado **por perfil**: cada usuário tem um perfil (Vendedor, Su
 | Lojas e solicitações | Criar rebaixa ou oferta interna | Todos |
 | Lojas e solicitações | Aprovar ou rejeitar solicitações | Supervisor, Diretoria, Admin (desde 27/10/2026) |
 | Lojas e solicitações | Ver margens e sellout | Supervisor, Diretoria, Admin (nunca o Vendedor) |
-| Estoque, vencimento e ruptura | Telas Estoque e vencimento e Ruptura | Vendedor, Supervisor, Diretoria, Admin |
+| Estoque, vencimento e ruptura | Telas Visão das lojas e Ruptura | Vendedor, Supervisor, Diretoria, Admin |
 | Estoque, vencimento e ruptura | Receber pendências de contagem | Vendedor, Supervisor |
 | Estoque, vencimento e ruptura | Acompanhamento das pendências | Admin |
 | Encartes | Encartes e Calendário Geral | Supervisor, Diretoria, Admin |
@@ -787,7 +798,7 @@ Na mesma tela o administrador **renomeia** (nome e mês), **adiciona PDFs** e **
 | **Piso** | Valor mínimo que a Valemilk deve receber para o supervisor encerrar a aprovação: preço mínimo do item (padrão) ou P#3. |
 | **Pendência** | Aviso ao vendedor e ao supervisor da loja de que uma contagem entrou em giro, rebaixa ou ruptura; registra vista e ação de cada um. |
 | **Ruptura** | Contagem do promotor com zero unidades e ruptura marcada no Ativmob. Zero sem ruptura é "lote encerrado". |
-| **Não reencontrado** | Lote cuja última contagem é mais de 14 dias anterior à última visita à loja; sai do Painel, mas continua visível na tela Estoque e vencimento. |
+| **Não reencontrado** | Lote cuja última contagem é mais de 14 dias anterior à última visita à loja; sai do Painel, mas continua visível na tela Visão das lojas. |
 | **Não contado** | Produto que a loja comprou nos últimos 90 dias e não teve contagem nos últimos 30 dias. |
 | **Ação ativa** | Solicitação não rejeitada nem cancelada cujo período ainda não terminou. |
 | **Cobertura** | Nas Métricas Redes, a proporção dos dias com ação no mês que já estão negociados. |

@@ -97,7 +97,7 @@ function Spinner({ texto }) {
 
 // ── Página ───────────────────────────────────────────────────────────────────
 export default function DashboardPage() {
-  useTituloDaPagina("Painel de Vencimentos", "Estoque em giro/rebaixa · fonte: relatório BI (Ativmob)");
+  useTituloDaPagina("Estoques e vencimentos", "Estoque em giro/rebaixa · fonte: relatório BI (Ativmob)");
   const router = useRouter();
   const { user, loading } = useAuth();
   const podeSolicitar = pode(user, "solicitacoes.criar");
